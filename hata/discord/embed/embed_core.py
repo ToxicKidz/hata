@@ -1,21 +1,30 @@
-__all__ = ('EmbedCore', )
+__all__ = ('EmbedCore',)
 
 from ...backend.utils import copy_docs
 
 from ..utils import parse_time, sanitize_mentions
 from ..color import Color
 
-from .embed_base import EmbedBase, EmbedFooter, EmbedImage, EmbedThumbnail, EmbedVideo, EmbedProvider, EmbedAuthor, \
-    EmbedField
+from .embed_base import (
+    EmbedBase,
+    EmbedFooter,
+    EmbedImage,
+    EmbedThumbnail,
+    EmbedVideo,
+    EmbedProvider,
+    EmbedAuthor,
+    EmbedField,
+)
+
 
 class EmbedCore(EmbedBase):
     """
     Represents Discord embedded content. There are two defined embed classes, the other one is ``Embed``.
-    
+
     Each embed what is received from Discord is stored as ``EmbedCore`` object for better operation support. This
     embed type is a valid embed type to send, but it is more cumbersome to build up, because it requires extra
     imports and it is slower to serialize.
-    
+
     Attributes
     ----------
     author : `None` or ``EmbedAuthor``
@@ -45,13 +54,35 @@ class EmbedCore(EmbedBase):
     video : `None` or `EmbedVideo`
         Video information.
     """
-    __slots__ = ('author', 'color', 'description', 'fields', 'footer', 'image', 'provider', 'thumbnail', 'timestamp',
-        'title', 'type', 'url', 'video',)
-    
-    def __init__(self, title=None, description=None, color=None, url=None, timestamp=None, type_='rich'):
+
+    __slots__ = (
+        'author',
+        'color',
+        'description',
+        'fields',
+        'footer',
+        'image',
+        'provider',
+        'thumbnail',
+        'timestamp',
+        'title',
+        'type',
+        'url',
+        'video',
+    )
+
+    def __init__(
+        self,
+        title=None,
+        description=None,
+        color=None,
+        url=None,
+        timestamp=None,
+        type_='rich',
+    ):
         """
         Creates an embed core instance. Accepts the base parameters of the embed and sets the other ones as `None`.
-        
+
         Parameters
         ----------
         title : `str`, Optional
@@ -72,7 +103,7 @@ class EmbedCore(EmbedBase):
         self.color = color
         self.url = url
         self.timestamp = timestamp
-        self.type = type_ # must be `rich` for webhook embeds
+        self.type = type_  # must be `rich` for webhook embeds
         self.footer = None
         self.image = None
         self.thumbnail = None
@@ -80,23 +111,23 @@ class EmbedCore(EmbedBase):
         self.provider = None
         self.author = None
         self.fields = []
-    
+
     @classmethod
     def from_data(cls, data):
         """
         Creates an `EmbedCore`` object from the data sent by Discord.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Embed data received from Discord.
-        
+
         Returns
         -------
         self : ``EmbedCore``
         """
         self = cls.__new__(cls)
-        
+
         self.title = data.get('title', None)
         self.type = data.get('type', None)
         self.description = data.get('description', None)
@@ -107,9 +138,9 @@ class EmbedCore(EmbedBase):
         except KeyError:
             timestamp = None
         else:
-           timestamp = parse_time(timestamp_data)
+            timestamp = parse_time(timestamp_data)
         self.timestamp = timestamp
-        
+
         try:
             color_data = data['color']
         except KeyError:
@@ -125,7 +156,7 @@ class EmbedCore(EmbedBase):
         else:
             footer = EmbedFooter.from_data(footer_data)
         self.footer = footer
-        
+
         try:
             image_data = data['image']
         except KeyError:
@@ -133,7 +164,7 @@ class EmbedCore(EmbedBase):
         else:
             image = EmbedImage.from_data(image_data)
         self.image = image
-        
+
         try:
             thumbnail_data = data['thumbnail']
         except KeyError:
@@ -141,7 +172,7 @@ class EmbedCore(EmbedBase):
         else:
             thumbnail = EmbedThumbnail.from_data(thumbnail_data)
         self.thumbnail = thumbnail
-        
+
         try:
             video_data = data['video']
         except KeyError:
@@ -149,7 +180,7 @@ class EmbedCore(EmbedBase):
         else:
             video = EmbedVideo.from_data(video_data)
         self.video = video
-        
+
         try:
             provider_data = data['provider']
         except KeyError:
@@ -157,7 +188,7 @@ class EmbedCore(EmbedBase):
         else:
             provider = EmbedProvider.from_data(provider_data)
         self.provider = provider
-        
+
         try:
             author_data = data['author']
         except KeyError:
@@ -165,7 +196,7 @@ class EmbedCore(EmbedBase):
         else:
             author = EmbedAuthor.from_data(author_data)
         self.author = author
-        
+
         try:
             field_datas = data['fields']
         except KeyError:
@@ -173,65 +204,65 @@ class EmbedCore(EmbedBase):
         else:
             fields = [EmbedField.from_data(field_data) for field_data in field_datas]
         self.fields = fields
-        
+
         return self
 
     def to_data(self):
         """
         Converts the embed core to json serializable `dict` representing it.
-        
+
         Returns
         -------
         data : `dict` of (`str`, `Any`) items
         """
         data = {}
-        
+
         type_ = self.type
-        if (type_ is not None):
+        if type_ is not None:
             data['type'] = type_
-        
+
         title = self.title
-        if (title is not None):
+        if title is not None:
             data['title'] = title
-        
+
         description = self.description
-        if (description is not None):
+        if description is not None:
             data['description'] = description
-            
+
         color = self.color
-        if (color is not None):
+        if color is not None:
             data['color'] = color
-        
+
         url = self.url
-        if (url is not None):
+        if url is not None:
             data['url'] = url
-        
+
         timestamp = self.timestamp
-        if (timestamp is not None):
+        if timestamp is not None:
             data['timestamp'] = timestamp.isoformat()
-        
+
         footer = self.footer
-        if (footer is not None):
+        if footer is not None:
             data['footer'] = footer.to_data()
-        
+
         image = self.image
-        if (image is not None):
+        if image is not None:
             data['image'] = image.to_data()
-        
+
         thumbnail = self.thumbnail
-        if (thumbnail is not None):
+        if thumbnail is not None:
             data['thumbnail'] = thumbnail.to_data()
-        
+
         author = self.author
-        if (author is not None):
+        if author is not None:
             data['author'] = author.to_data()
-        
+
         fields = self.fields
         if fields:
             data['fields'] = [field.to_data() for field in fields]
-        
+
         return data
-    
+
     @copy_docs(EmbedBase.clear)
     def clear(self):
         self.author = None
@@ -247,12 +278,12 @@ class EmbedCore(EmbedBase):
         self.type = None
         self.url = None
         self.video = None
-    
+
     @property
     def contents(self):
         """
         Returns the embed's contents.
-        
+
         The embed's contents are the following:
         - `.title`
         - `.description`
@@ -260,52 +291,52 @@ class EmbedCore(EmbedBase):
         - `.footer.text`
         - `.fields[n].name`
         - `.fields[n].value`
-        
+
         Returns
         -------
         contents : `list` of `str`
         """
         contents = []
-        
+
         title = self.title
-        if (title is not None):
+        if title is not None:
             contents.append(title)
-        
+
         description = self.description
-        if (description is not None):
+        if description is not None:
             contents.append(description)
-        
+
         author = self.author
-        if (author is not None):
+        if author is not None:
             name = author.name
-            if (name is not None):
+            if name is not None:
                 contents.append(name)
-        
+
         footer = self.footer
-        if (footer is not None):
+        if footer is not None:
             contents.append(footer.text)
-        
+
         for field in self.fields:
             contents.append(field.name)
             contents.append(field.value)
-        
+
         return contents
-    
+
     def _update_sizes(self, data):
         """
         Updates the size information of the embed.
-        
+
         Called when a ``Message`` is edited, but no `edited` timestamp is included with the data. Returns `0` if
         received data does not contain images, if does, then `1`.
-        
+
         This method tries to update the embed's `image`, `thumbnail` amd `video` with their sizes. If any of those is
         not set already (for any reason), then it also creates them.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Embed data received from Discord.
-        
+
         Returns
         -------
         changed : `int`
@@ -323,7 +354,7 @@ class EmbedCore(EmbedBase):
                 image.height = image_data.get('height', 0)
                 image.width = image_data.get('width', 0)
             changed = 1
-        
+
         try:
             thumbnail_data = data['thumbnail']
         except KeyError:
@@ -333,7 +364,7 @@ class EmbedCore(EmbedBase):
             if thumbnail is None:
                 self.thumbnail = EmbedThumbnail.from_data(thumbnail_data)
             else:
-                thumbnail.height= thumbnail_data.get('height', 0)
+                thumbnail.height = thumbnail_data.get('height', 0)
                 thumbnail.width = thumbnail_data.get('width', 0)
             changed = 1
 
@@ -351,13 +382,13 @@ class EmbedCore(EmbedBase):
             changed = 1
 
         return changed
-    
+
     def _update_sizes_no_return(self, data):
         """
         Updates the size information of the embed.
 
         Familiar to ``._update_sizes`` but it not checks whether the embed's images change, just updates them.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -374,7 +405,7 @@ class EmbedCore(EmbedBase):
             else:
                 image.height = image_data.get('height', 0)
                 image.width = image_data.get('width', 0)
-        
+
         try:
             thumbnail_data = data['thumbnail']
         except KeyError:
@@ -386,7 +417,7 @@ class EmbedCore(EmbedBase):
             else:
                 thumbnail.height = thumbnail_data.get('height', 0)
                 thumbnail.width = thumbnail_data.get('width', 0)
-        
+
         try:
             video_data = data['video']
         except KeyError:
@@ -398,32 +429,36 @@ class EmbedCore(EmbedBase):
             else:
                 video.height = video_data.get('height', 0)
                 video.width = video_data.get('width', 0)
-    
+
     def _clean_copy(self, message):
         """
         Creates a clean copy of the embed by removing the mentions in it's contents.
-        
+
         Called by ``Message.clean_embeds``.
-        
+
         Parameters
         ----------
         message : ``Message``
             The embed's respective message.
-        
+
         Returns
         -------
         embed : ``EmbedCore``
         """
         new = object.__new__(type(self))
-        
+
         new.title = self.title
         description = self.description
-        new.description = None if (description is None) else sanitize_mentions(description, message.guild)
+        new.description = (
+            None
+            if (description is None)
+            else sanitize_mentions(description, message.guild)
+        )
         new.color = self.color
         new.url = self.url
         new.timestamp = self.timestamp
         new.type = self.type
-        
+
         new.footer = self.footer
         new.image = self.image
         new.thumbnail = self.thumbnail
@@ -431,7 +466,12 @@ class EmbedCore(EmbedBase):
         new.provider = self.provider
         new.author = self.author
         new.fields = [
-            type(field)(field.name, sanitize_mentions(field. value, message.guild), inline=field.inline) \
-                for field in self.fields]
-        
+            type(field)(
+                field.name,
+                sanitize_mentions(field.value, message.guild),
+                inline=field.inline,
+            )
+            for field in self.fields
+        ]
+
         return new

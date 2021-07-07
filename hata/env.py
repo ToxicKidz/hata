@@ -46,19 +46,20 @@ HATA_DOCS_ENABLED : `bool` = `True`
 """
 import os, warnings
 
+
 def get_bool_env(name, default):
     """
     Gets the given environmental variable.
-    
+
     If the environmental variable is not present or not present as a bool's representation returns `default` instead.
-    
+
     Parameters
     ----------
     name : `str`
         The name of an environmental variable.
     default : `bool`
         The default value of the respective variable.
-    
+
     Returns
     -------
     env_variable : `bool`
@@ -66,29 +67,32 @@ def get_bool_env(name, default):
     env_variable = os.getenv(name)
     if env_variable is None:
         return default
-    
+
     if env_variable == 'True':
         return True
-    
+
     if env_variable == 'False':
         return False
-    
-    warnings.warn(f'{name!r} is specified as non bool: {env_variable!r}, defaulting to {default!r}!')
+
+    warnings.warn(
+        f'{name!r} is specified as non bool: {env_variable!r}, defaulting to {default!r}!'
+    )
     return default
+
 
 def get_str_env(name, default=None):
     """
     Gets the given environmental variable.
-    
+
     If the environmental variable is not present or present as an empty string returns `default` instead.
-    
+
     Parameters
     ----------
     name : `str`
         The name of an environmental variable.
     default : `Any`, Optional
         The default value of the respective variable. Defaults to `None`
-    
+
     Returns
     -------
     variable : `str` or `default`
@@ -96,25 +100,28 @@ def get_str_env(name, default=None):
     env_variable = os.getenv(name)
     if env_variable is None:
         return default
-    
+
     if env_variable:
         return env_variable
-    
-    warnings.warn(f'{name!r} is specified as empty string: {env_variable!r}, defaulting to {default!r}!')
+
+    warnings.warn(
+        f'{name!r} is specified as empty string: {env_variable!r}, defaulting to {default!r}!'
+    )
     return default
+
 
 def get_int_env(name, default):
     """
     Gets the given environmental variable.
-    
+
     If the environmental variable is not present or present as non `int`, will return `default` instead.
-    
+
     Parameters
     ----------
     name : `str`
         The name of an environmental variable.
     default : `int`
-    
+
     Returns
     -------
     variable : `int` or `default`
@@ -122,18 +129,20 @@ def get_int_env(name, default):
     env_variable = os.getenv(name)
     if env_variable is None:
         return default
-    
+
     if not env_variable:
         return default
-    
+
     try:
         variable = int(env_variable)
     except ValueError:
         pass
     else:
         return variable
-    
-    warnings.warn(f'{name!r} is specified as non `int`: {env_variable!r}, defaulting to {default!r}!')
+
+    warnings.warn(
+        f'{name!r} is specified as non `int`: {env_variable!r}, defaulting to {default!r}!'
+    )
     return default
 
 
@@ -147,7 +156,7 @@ if not DOCS_ENABLED:
     get_int_env.__doc__ = None
 
 # You cannot store presences of not loaded users.
-if (not CACHE_USER):
+if not CACHE_USER:
     CACHE_PRESENCE = False
 
 ALLOW_DEAD_EVENTS = get_bool_env('HATA_ALLOW_DEAD_EVENTS', False)
@@ -160,10 +169,16 @@ API_VERSION = get_int_env('HATA_API_VERSION', 9)
 
 if API_VERSION not in (7, 8):
     if API_VERSION < 6:
-        warnings.warn(f'`API_VERSION` given with a value less than `6`, got {API_VERSION!r}, defaulting to {7!r}!')
+        warnings.warn(
+            f'`API_VERSION` given with a value less than `6`, got {API_VERSION!r}, defaulting to {7!r}!'
+        )
         API_VERSION = 7
     elif API_VERSION > 9:
-        warnings.warn(f'`API_VERSION` given with a value greater than `9`, got {API_VERSION!r}, defaulting to {9!r}!')
+        warnings.warn(
+            f'`API_VERSION` given with a value greater than `9`, got {API_VERSION!r}, defaulting to {9!r}!'
+        )
         API_VERSION = 9
     elif API_VERSION == 6:
-        warnings.warn('`API_VERSION` given as 6, please use version `7` or `8`.', FutureWarning)
+        warnings.warn(
+            '`API_VERSION` given as 6, please use version `7` or `8`.', FutureWarning
+        )

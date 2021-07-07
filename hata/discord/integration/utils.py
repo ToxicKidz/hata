@@ -1,4 +1,4 @@
-__all__ = ('create_partial_integration_from_id', )
+__all__ = ('create_partial_integration_from_id',)
 
 from ...backend.export import export
 
@@ -9,20 +9,21 @@ from .integration_detail import IntegrationDetail
 from .integration import Integration
 from .integration_account import IntegrationAccount
 
+
 @export
 def create_partial_integration_from_id(integration_id, role=None):
     """
     Creates an integration with the given id.
-    
+
     If the integration already exists, returns that instead.
-    
+
     Parameters
     ----------
     integration_id : `int`
         The unique identifier number of the integration.
     role : ``Role``, Optional
         The role of the integration.
-    
+
     Returns
     -------
     integration : ``Integration``
@@ -43,5 +44,5 @@ def create_partial_integration_from_id(integration_id, role=None):
         integration.user = ZEROUSER
         integration.account = IntegrationAccount.create_empty()
         integration.application = None
-    
+
     return integration

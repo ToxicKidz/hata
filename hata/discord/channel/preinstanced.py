@@ -1,18 +1,19 @@
-__all__ = ('VideoQualityMode', )
+__all__ = ('VideoQualityMode',)
 
 from ..bases import PreinstancedBase, Preinstance as P
+
 
 class VideoQualityMode(PreinstancedBase):
     """
     Represents a voice channel's video quality mode.
-    
+
     Attributes
     ----------
     name : `str`
         The name of the video quality mode.
     value : `int`
         The identifier value the video quality mode.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``VideoQualityMode``) items
@@ -21,9 +22,9 @@ class VideoQualityMode(PreinstancedBase):
         The video quality modes' values' type.
     DEFAULT_NAME : `str` = `'UNDEFINED'`
         The default name of the video quality modes.
-    
+
     Every predefined video quality mode can be accessed as class attribute as well:
-    
+
     +-----------------------+-------+-------+-------------------------------------------------------+
     | Class attribute name  | Name  | Value | Description                                           |
     +=======================+=======+=======+=======================================================+
@@ -34,12 +35,13 @@ class VideoQualityMode(PreinstancedBase):
     | full                  | full  | 2     | 720p                                                  |
     +-----------------------+-------+-------+-------------------------------------------------------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = int
     DEFAULT_NAME = 'UNDEFINED'
-    
+
     __slots__ = ()
-    
+
     none = P(0, 'none')
     auto = P(1, 'auto')
     full = P(2, 'full')

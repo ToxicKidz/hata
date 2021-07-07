@@ -2,14 +2,15 @@ __all__ = ()
 
 from .slasher import Slasher
 
+
 async def _do_initial_sync(client):
     """
     `ready` event handler added to the respective client by the ``setup_ext_slash`` function.
-    
+
     On the first ready event syncs the slasher's commands. If the sync is successful, removes itself.
-    
+
     This method is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -20,7 +21,7 @@ async def _do_initial_sync(client):
         success = await slasher.sync()
         if not success:
             return
-    
+
     # If the client's extension disappeared or if initial sync passed, remove the event handler.
     client.events.remove(_do_initial_sync, 'launch', count=1)
 
@@ -28,11 +29,11 @@ async def _do_initial_sync(client):
 async def _application_command_create_watcher(client, guild_id, application_command):
     """
     `application_command_create` event handler.
-    
+
     Tries to register the command at the respective slash command processor as a guild-bound or non-global command.
-    
+
     This method is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -50,11 +51,11 @@ async def _application_command_create_watcher(client, guild_id, application_comm
 async def _application_command_delete_watcher(client, guild_id, application_command):
     """
     `application_command_delete` event handler added to the respective client by the ``setup_ext_slash`` function.
-    
+
     Tries to remove the command from the respective slash command processor.
-    
+
     This method is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -72,11 +73,11 @@ async def _application_command_delete_watcher(client, guild_id, application_comm
 async def _application_command_permission_update_watcher(client, permission):
     """
     `application_command_permission_update` event handler.
-    
+
     Whenever an application command's permissions is updated, will notify the client's ``Slasher`` about it.
-    
+
     This method is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``

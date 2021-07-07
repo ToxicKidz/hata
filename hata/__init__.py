@@ -106,7 +106,7 @@ if BACKEND_ONLY:
 else:
     from .discord import *
     from .ext import *
-    
+
     __all__ = (
         *backend.__all__,
         *discord.__all__,
@@ -114,4 +114,5 @@ else:
     )
 
 from .backend.export import check_satisfaction
+
 check_satisfaction()

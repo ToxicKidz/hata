@@ -2,12 +2,13 @@ __all__ = ('MessageFlag',)
 
 from ..bases import FlagBase
 
+
 class MessageFlag(FlagBase):
     """
     Bitwise flags of a ``Message``.
-    
+
     The implemented message flags are the following:
-    
+
     +---------------------------+-------------------+
     | Respective name           | Bitwise position  |
     +===========================+===================+
@@ -28,6 +29,7 @@ class MessageFlag(FlagBase):
     | loading                   | 7                 |
     +---------------------------+-------------------+
     """
+
     __keys__ = {
         'crossposted': 0,
         'is_crosspost': 1,

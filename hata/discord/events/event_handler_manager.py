@@ -5,10 +5,20 @@ from functools import partial as partial_func
 
 from ...backend.utils import WeakReferer
 
-from .core import DEFAULT_EVENT_HANDLER, EVENT_HANDLER_NAME_TO_PARSER_NAMES, get_event_parser_parameter_count, \
-    PARSER_SETTINGS
-from .handling_helpers import ChunkWaiter, default_error_event, check_parameter_count_and_convert, asynclist, \
-    check_name
+from .core import (
+    DEFAULT_EVENT_HANDLER,
+    EVENT_HANDLER_NAME_TO_PARSER_NAMES,
+    get_event_parser_parameter_count,
+    PARSER_SETTINGS,
+)
+from .handling_helpers import (
+    ChunkWaiter,
+    default_error_event,
+    check_parameter_count_and_convert,
+    asynclist,
+    check_name,
+)
+
 
 class EventHandlerManager:
     """
@@ -622,12 +632,17 @@ class EventHandlerManager:
     webhook_update(client: ``Client``, channel: ``ChannelGuildBase``):
         Called when a webhook of a channel is updated. Discord not provides further details tho.
     """
-    __slots__ = ('client_reference', '_launch_called', *sorted(EVENT_HANDLER_NAME_TO_PARSER_NAMES))
-    
+
+    __slots__ = (
+        'client_reference',
+        '_launch_called',
+        *sorted(EVENT_HANDLER_NAME_TO_PARSER_NAMES),
+    )
+
     def __init__(self, client):
         """
         Creates an ``EventHandlerManager`` for the given client.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -639,11 +654,11 @@ class EventHandlerManager:
         object.__setattr__(self, 'error', default_error_event)
         object.__setattr__(self, '_launch_called', False)
         object.__setattr__(self, 'guild_user_chunk', ChunkWaiter())
-    
+
     def __call__(self, func=None, name=None, overwrite=False):
         """
         Adds the given `func` to the event descriptor as en event handler.
-        
+
         Parameters
         ----------
         func : `callable`, Optional
@@ -652,12 +667,12 @@ class EventHandlerManager:
             A name to be used instead of the passed `func`'s when adding it.
         overwrite : `bool`, Optional
             Whether the passed `func` should overwrite the already added ones with the same name or extend them.
-        
+
         Returns
         -------
         func : `callable`
             The added callable or `functools.partial` instance if `func` was not given.
-        
+
         Raises
         ------
         AttributeError
@@ -670,48 +685,49 @@ class EventHandlerManager:
         """
         if func is None:
             return partial_func(self, name=name, overwrite=overwrite)
-        
+
         name = check_name(func, name)
-        
+
         if name == 'user_profile_edit':
             warnings.warn(
                 f'`user_profile_edit` is deprecated and will be removed in 2021 juli, please use `guild_user_edit`',
-                FutureWarning)
+                FutureWarning,
+            )
             name = 'guild_user_edit'
-        
+
         parameter_count = get_event_parser_parameter_count(name)
         func = check_parameter_count_and_convert(func, parameter_count, name=name)
-        
+
         if overwrite:
             setattr(self, name, func)
             return func
-        
+
         parser_names = EVENT_HANDLER_NAME_TO_PARSER_NAMES.get(name, None)
-        if (parser_names is None):
+        if parser_names is None:
             raise AttributeError(f'Event name: {name!r} is invalid.')
-        
+
         if func is DEFAULT_EVENT_HANDLER:
             return func
-        
+
         actual = getattr(self, name)
         if actual is DEFAULT_EVENT_HANDLER:
             object.__setattr__(self, name, func)
-            
+
             for parser_name in parser_names:
                 parser_setting = PARSER_SETTINGS[parser_name]
                 parser_setting.add_mention(self.client_reference())
             return func
-        
+
         if type(actual) is asynclist:
             list.append(actual, func)
             return func
-        
+
         new = asynclist()
         list.append(new, actual)
         list.append(new, func)
         object.__setattr__(self, name, new)
         return func
-    
+
     def clear(self):
         """
         Clears the ``EventHandlerManager`` to the same state as it were just created.
@@ -719,21 +735,21 @@ class EventHandlerManager:
         delete = type(self).__delattr__
         for name in EVENT_HANDLER_NAME_TO_PARSER_NAMES:
             delete(self, name)
-        
+
         object.__setattr__(self, 'error', default_error_event)
         object.__setattr__(self, 'guild_user_chunk', ChunkWaiter())
-    
+
     def __setattr__(self, name, value):
         """
         Sets the given event handler under the specified event name. Updates the respective event's parser(s) if needed.
-        
+
         Parameters
         ----------
         name : `str`
             The name of the event.
         value : `callable`
             The event handler.
-        
+
         Raises
         ------
         AttributeError
@@ -742,14 +758,15 @@ class EventHandlerManager:
         if name == 'user_profile_edit':
             warnings.warn(
                 f'`user_profile_edit` is deprecated and will be removed in 2021 juli, please use `guild_user_edit`',
-                FutureWarning)
+                FutureWarning,
+            )
             name = 'guild_user_edit'
-        
+
         parser_names = EVENT_HANDLER_NAME_TO_PARSER_NAMES.get(name, None)
         if (parser_names is None) or (not parser_names):
             object.__setattr__(self, name, value)
             return
-        
+
         for parser_name in parser_names:
             parser_setting = PARSER_SETTINGS[parser_name]
             actual = getattr(self, name)
@@ -757,23 +774,23 @@ class EventHandlerManager:
             if actual is DEFAULT_EVENT_HANDLER:
                 if value is DEFAULT_EVENT_HANDLER:
                     continue
-                
+
                 parser_setting.add_mention(self.client_reference())
                 continue
-            
+
             if value is DEFAULT_EVENT_HANDLER:
                 parser_setting.remove_mention(self.client_reference())
             continue
-    
+
     def __delattr__(self, name):
         """
         Removes the event with switching it to `DEFAULT_EVENT_HANDLER`, and updates the event's parser if needed.
-        
+
         Parameters
         ----------
         name : `str`
             The name of the event.
-        
+
         Raises
         ------
         AttributeError
@@ -782,28 +799,29 @@ class EventHandlerManager:
         if name == 'user_profile_edit':
             warnings.warn(
                 f'`user_profile_edit` is deprecated and will be removed in 2021 juli, please use `guild_user_edit`',
-                FutureWarning)
+                FutureWarning,
+            )
             name = 'guild_user_edit'
-        
+
         actual = getattr(self, name)
         if actual is DEFAULT_EVENT_HANDLER:
             return
-        
+
         object.__setattr__(self, name, DEFAULT_EVENT_HANDLER)
-        
-        parser_names=EVENT_HANDLER_NAME_TO_PARSER_NAMES.get(name, None)
+
+        parser_names = EVENT_HANDLER_NAME_TO_PARSER_NAMES.get(name, None)
         if (parser_names is None) or (not parser_names):
             # parser name can be an empty string as well for internal events
             return
-        
+
         for parser_name in parser_names:
             parser_setting = PARSER_SETTINGS[parser_name]
             parser_setting.remove_mention(self.client_reference())
-    
+
     def get_handler(self, name, type_):
         """
         Gets an event handler from the client's.
-        
+
         Parameters
         ----------
         name : `str`
@@ -819,20 +837,21 @@ class EventHandlerManager:
         if name == 'user_profile_edit':
             warnings.warn(
                 f'`user_profile_edit` is deprecated and will be removed in 2021 juli, please use `guild_user_edit`',
-                FutureWarning)
+                FutureWarning,
+            )
             name = 'guild_user_edit'
-        
+
         if name == 'client':
             return None
-        
+
         try:
             actual = getattr(self, name)
         except AttributeError:
             return None
-        
+
         if actual is DEFAULT_EVENT_HANDLER:
             return None
-        
+
         if type(actual) is asynclist:
             for element in list.__iter__(actual):
                 if type(element) is type_:
@@ -840,13 +859,13 @@ class EventHandlerManager:
         else:
             if type(actual) is type_:
                 return actual
-        
+
         return None
-    
+
     def remove(self, func, name=None, by_type=False, count=-1):
         """
         Removes the given event handler from the the event descriptor.
-        
+
         Parameters
         ----------
         func : `Any`
@@ -861,60 +880,61 @@ class EventHandlerManager:
         if name == 'user_profile_edit':
             warnings.warn(
                 f'`user_profile_edit` is deprecated and will be removed in 2021 juli, please use `guild_user_edit`',
-                FutureWarning)
+                FutureWarning,
+            )
             name = 'guild_user_edit'
-        
+
         if (count == 0) or (name == 'client'):
             return
-        
+
         name = check_name(func, name)
-        
+
         try:
             actual = getattr(self, name)
         except AttributeError:
             return
-        
+
         if actual is DEFAULT_EVENT_HANDLER:
             return
-        
+
         if type(actual) is asynclist:
             for index in reversed(range(list.__len__(actual))):
                 element = list.__getitem__(actual, index)
                 if by_type:
                     element = type(element)
-                
+
                 if element != func:
                     continue
-                
+
                 list.__delitem__(actual, index)
                 count -= 1
                 if count == 0:
                     break
-                
+
                 continue
-            
+
             length = list.__len__(actual)
             if length > 1:
                 return
-            
+
             if length == 1:
                 actual = list.__getitem__(actual, 0)
                 object.__setattr__(self, name, actual)
                 return
-        
+
         else:
             if by_type:
                 actual = type(actual)
-            
+
             if actual != func:
                 return
-        
+
         object.__setattr__(self, name, DEFAULT_EVENT_HANDLER)
-        
+
         parser_names = EVENT_HANDLER_NAME_TO_PARSER_NAMES.get(name, None)
-        if (parser_names is None):
+        if parser_names is None:
             return
-        
+
         for parser_name in parser_names:
             parser_setting = PARSER_SETTINGS[parser_name]
             parser_setting.remove_mention(self.client_reference())

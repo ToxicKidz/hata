@@ -31,14 +31,17 @@ class ActivityTypesType:
     """
     `ActivityTypes` is deprecated, please use ``ACTIVITY_TYPES`` instead.
     """
+
     def __getattr__(self, attribute_name):
         attribute_value = getattr(ACTIVITY_TYPES, attribute_name)
-        
+
         warnings.warn(
             f'`ActivityTypes` is deprecated, and will be removed in 2021 September. Please use `ACTIVITY_TYPES` '
             'instead.',
-            FutureWarning)
-        
+            FutureWarning,
+        )
+
         return attribute_value
+
 
 ActivityTypes = ActivityTypesType()

@@ -6,7 +6,7 @@ from ..core import GUILDS, MESSAGES, CHANNELS
 class MessageReference:
     """
     A cross guild reference used as a ``Message``'s `.cross_reference` at crosspost messages.
-    
+
     Attributes
     ----------
     _channel : `object`, `None` or ``ChannelBase``
@@ -22,18 +22,27 @@ class MessageReference:
     message_id : `int`
         The referenced message's id. Might be set as `0`.
     """
-    __slots__ = ('_channel', '_message', '_guild', 'channel_id', 'guild_id', 'message_id',)
+
+    __slots__ = (
+        '_channel',
+        '_message',
+        '_guild',
+        'channel_id',
+        'guild_id',
+        'message_id',
+    )
+
     def __new__(cls, data):
         """
         Creates a ``MessageReference`` from message reference data included inside of a ``Message``'s.
-        
+
         If the message is loaded already, returns that instead.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Message reference data.
-        
+
         Returns
         -------
         self / message : ``MessageReference`` or ``Message``
@@ -49,35 +58,35 @@ class MessageReference:
                 pass
             else:
                 return message
-        
+
         channel_id = data.get('channel_id', None)
         if channel_id is None:
             channel_id = None
         else:
             channel_id = int(channel_id)
-        
+
         guild_id = data.get('guild_id', None)
         if guild_id is None:
             guild_id = 0
         else:
             guild_id = int(guild_id)
-        
+
         self = object.__new__(cls)
-        
+
         self.message_id = message_id
         self.channel_id = channel_id
         self.guild_id = guild_id
         self._message = ...
         self._channel = ...
         self._guild = ...
-        
+
         return self
-    
+
     @property
     def channel(self):
         """
         Returns referenced message's channel if found.
-        
+
         Returns
         -------
         channel : `None` or ``ChannelBase`` instance
@@ -89,16 +98,16 @@ class MessageReference:
                 channel = CHANNELS.get(channel_id, None)
             else:
                 channel = None
-            
+
             self._channel = channel
-        
+
         return channel
-    
+
     @property
     def guild(self):
         """
         Returns referenced message's guild if found.
-        
+
         Returns
         -------
         guild : `None` or ``Guild``
@@ -110,16 +119,16 @@ class MessageReference:
                 guild = GUILDS.get(guild_id, None)
             else:
                 guild = None
-            
+
             self._guild = guild
-        
+
         return guild
-    
+
     @property
     def message(self):
         """
         Returns referenced message if found.
-        
+
         Returns
         -------
         message : `None` or ``Message``
@@ -131,18 +140,18 @@ class MessageReference:
                 message = GUILDS.get(message_id, None)
             else:
                 message = None
-            
+
             self._message = message
-        
+
         return message
-    
+
     def __repr__(self):
         """Returns the representation of the message reference."""
         repr_parts = [
             '<',
             self.__class__.__name__,
         ]
-        
+
         message_id = self.message_id
         if message_id:
             repr_parts.append(' message_id=')
@@ -150,25 +159,25 @@ class MessageReference:
             field_added = True
         else:
             field_added = False
-        
+
         channel_id = self.channel_id
         if channel_id:
             if field_added:
                 repr_parts.append(',')
             else:
                 field_added = True
-            
+
             repr_parts.append(' channel_id=')
             repr_parts.append(repr(channel_id))
-        
+
         guild_id = self.guild_id
         if guild_id:
             if field_added:
                 repr_parts.append(',')
-            
+
             repr_parts.append(' guild_id=')
             repr_parts.append(repr(guild_id))
-        
+
         repr_parts.append('>')
-        
+
         return ''.join(repr_parts)

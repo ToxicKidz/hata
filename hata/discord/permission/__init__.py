@@ -1,4 +1,4 @@
-from .permission import*
+from .permission import *
 from .permission_overwrite import *
 from .preinstanced import *
 from .utils import *

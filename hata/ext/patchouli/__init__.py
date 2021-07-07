@@ -18,5 +18,6 @@ __all__ = (
 )
 
 from .. import register_library_extension
+
 register_library_extension('HuyaneMatsu.patchouli')
 del register_library_extension

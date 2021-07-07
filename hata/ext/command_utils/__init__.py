@@ -25,79 +25,82 @@ __all__ = (
 
 from .. import register_library_extension, register_setup_function
 
+
 def setup_ext_command_utils(client):
     """
     Setups the `command_utils` extension on the given client by adding ``ReactionAddWaitfor``, ``ReactionDeleteWaitfor``
     and ``MessageCreateWaitfor`` to it.
-    
+
     Parameters
     ----------
     client : ``Client``
         The client to setup the extension on.
     """
     if not isinstance(client, Client):
-        raise TypeError(f'Expected type `{Client.__name__}` as client, meanwhile got `{client.__class__.__name__}`.')
-    
+        raise TypeError(
+            f'Expected type `{Client.__name__}` as client, meanwhile got `{client.__class__.__name__}`.'
+        )
+
     event_reaction_add = client.events.reaction_add
     while True:
         if event_reaction_add is DEFAULT_EVENT_HANDLER:
             client.events(ReactionAddWaitfor)
             break
-        
+
         if type(event_reaction_add) is asynclist:
             for event in list.__iter__(event_reaction_add):
                 if isinstance(event, EventWaitforBase):
                     break
             else:
                 client.events(ReactionAddWaitfor)
-            
+
             break
-        
+
         if isinstance(event_reaction_add, EventWaitforBase):
             break
-        
+
         client.events(ReactionAddWaitfor)
         break
-    
+
     event_reaction_delete = client.events.reaction_delete
     while True:
         if event_reaction_delete is DEFAULT_EVENT_HANDLER:
             client.events(ReactionDeleteWaitfor)
             break
-        
+
         if type(event_reaction_delete) is asynclist:
             for event in list.__iter__(event_reaction_add):
                 if isinstance(event, EventWaitforBase):
                     break
             else:
                 client.events(ReactionDeleteWaitfor)
-            
+
             break
-        
+
         if isinstance(event_reaction_delete, EventWaitforBase):
             break
-        
+
         client.events(ReactionDeleteWaitfor)
         break
-    
+
     event_message_create = client.events.message_create
     while True:
         if event_message_create is DEFAULT_EVENT_HANDLER:
             client.events(MessageCreateWaitfor)
             break
-        
+
         if type(event_message_create) is asynclist:
             for event in list.__iter__(event_message_create):
                 if isinstance(event, EventWaitforBase):
                     break
             else:
                 client.events(MessageCreateWaitfor)
-            
+
             break
-        
+
         if isinstance(event_message_create, EventWaitforBase):
             break
-        
+
         client.events(MessageCreateWaitfor)
         break
 

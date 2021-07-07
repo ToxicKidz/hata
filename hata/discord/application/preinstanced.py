@@ -1,18 +1,19 @@
-__all__ = ('TeamMembershipState', )
+__all__ = ('TeamMembershipState',)
 
 from ..bases import PreinstancedBase, Preinstance as P
+
 
 class TeamMembershipState(PreinstancedBase):
     """
     Represents a ``TeamMember``'s state at a ``Team``.
-    
+
     Attributes
     ----------
     name : `str`
         The name of state.
     value : `int`
         The Discord side identifier value of the team membership state.
-        
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``TeamMembershipState``) items
@@ -22,7 +23,7 @@ class TeamMembershipState(PreinstancedBase):
         The team membership states' values' type.
     DEFAULT_NAME : `str` = `'Undefined'`
         The default name of the team membership states.
-    
+
     Every predefined team membership state can be accessed as class attribute as well:
     +-----------------------+-----------+-------+
     | Class attribute name  | name      | value |
@@ -34,11 +35,12 @@ class TeamMembershipState(PreinstancedBase):
     | accepted              | accepted  | 2     |
     +-----------------------+-----------+-------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = int
-    
+
     __slots__ = ()
-    
+
     # predefined
     none = P(0, 'none')
     invited = P(1, 'invited')

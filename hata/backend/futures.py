@@ -1,12 +1,43 @@
 # -*- coding: utf-8 -*-
-__all__ = ('AsyncLifoQueue', 'AsyncQueue', 'CancelledError', 'Event', 'Future', 'FutureAsyncWrapper',
-    'FutureSyncWrapper', 'FutureWM', 'Gatherer', 'InvalidStateError', 'Lock', 'ScarletExecutor', 'ScarletLock', 'Task',
-    'WaitContinuously', 'WaitTillAll', 'WaitTillExc', 'WaitTillFirst', 'enter_executor', 'future_or_timeout',
-    'is_awaitable', 'is_coroutine', 'is_coroutine_function', 'is_coroutine_generator',
-    'is_coroutine_generator_function', 'shield', 'sleep', )
+__all__ = (
+    'AsyncLifoQueue',
+    'AsyncQueue',
+    'CancelledError',
+    'Event',
+    'Future',
+    'FutureAsyncWrapper',
+    'FutureSyncWrapper',
+    'FutureWM',
+    'Gatherer',
+    'InvalidStateError',
+    'Lock',
+    'ScarletExecutor',
+    'ScarletLock',
+    'Task',
+    'WaitContinuously',
+    'WaitTillAll',
+    'WaitTillExc',
+    'WaitTillFirst',
+    'enter_executor',
+    'future_or_timeout',
+    'is_awaitable',
+    'is_coroutine',
+    'is_coroutine_function',
+    'is_coroutine_generator',
+    'is_coroutine_generator_function',
+    'shield',
+    'sleep',
+)
 
 import sys, reprlib, linecache
-from types import GeneratorType, CoroutineType, AsyncGeneratorType, MethodType, FunctionType, coroutine
+from types import (
+    GeneratorType,
+    CoroutineType,
+    AsyncGeneratorType,
+    MethodType,
+    FunctionType,
+    coroutine,
+)
 
 from collections import deque
 from threading import current_thread, Lock as SyncLock, Event as SyncEvent
@@ -21,10 +52,11 @@ EventThread = include('EventThread')
 class CancelledError(BaseException):
     """The Future or Task was cancelled."""
 
+
 class InvalidStateError(Exception):
     """
     The operation is not allowed in this state.
-    
+
     Attributes
     ----------
     future : ``Future`` instance.
@@ -34,10 +66,11 @@ class InvalidStateError(Exception):
     _message : `None` or `str`
         Internal cache for the ``.message`` property.
     """
+
     def __init__(self, future, func_name, message=None):
         """
         Creates a new ``InvalidStateError`` instance.
-        
+
         Parameters
         ----------
         future : ``Future`` instance.
@@ -50,22 +83,22 @@ class InvalidStateError(Exception):
         self.future = future
         self.func_name = func_name
         self._message = message
-    
+
     def __repr__(self):
         """Returns the exception's representation."""
         return f'{self.__class__.__name__}: {self.message}'
-    
+
     __str__ = __repr__
-    
+
     @property
     def message(self):
         """
         Returns the exception's message.
-        
+
         Returns
         -------
         message : `str`
-        
+
         Notes
         -----
         If the exception was created wia ``.__init__``, without giving defining the `message` parameter, then the
@@ -74,10 +107,12 @@ class InvalidStateError(Exception):
         message = self._message
         if message is None:
             future = self.future
-            message = (f'`{future.__class__.__name__}.{self.func_name}` was called, when `.state` is {future._state} '
-               f'of {future!r}')
+            message = (
+                f'`{future.__class__.__name__}.{self.func_name}` was called, when `.state` is {future._state} '
+                f'of {future!r}'
+            )
             self._message = message
-        
+
         return message
 
 
@@ -85,16 +120,19 @@ class InvalidStateError(Exception):
 def is_coroutine_function(func):
     """
     Returns whether the given `obj` is a coroutine function, so is created with `async def`.
-    
+
     Parameters
     ----------
     func : `Any`
-    
+
     Returns
     -------
     is_coroutine_function : `bool`
     """
-    if isinstance(func, (FunctionType, MethodType)) and func.__code__.co_flags&CO_COROUTINE_ALL:
+    if (
+        isinstance(func, (FunctionType, MethodType))
+        and func.__code__.co_flags & CO_COROUTINE_ALL
+    ):
         return True
     else:
         return False
@@ -105,16 +143,19 @@ def is_coroutine_generator_function(func):
     """
     Returns whether the given `obj` is a coroutine generator function, so is created with `async def` and uses `yield`
     statement.
-    
+
     Parameters
     ----------
     func : `Any`
-    
+
     Returns
     -------
     is_coroutine_function_generator : `bool`
     """
-    if isinstance(func, (FunctionType, MethodType)) and func.__code__.co_flags&CO_ASYNC_GENERATOR:
+    if (
+        isinstance(func, (FunctionType, MethodType))
+        and func.__code__.co_flags & CO_ASYNC_GENERATOR
+    ):
         return True
     else:
         return False
@@ -123,11 +164,11 @@ def is_coroutine_generator_function(func):
 def is_coroutine(obj):
     """
     Returns whether the given `obj` is a coroutine created by an `async def` function.
-    
+
     Parameters
     ----------
     obj : `Any`
-    
+
     Returns
     -------
     is_coroutine : `bool`
@@ -138,24 +179,24 @@ def is_coroutine(obj):
 def is_awaitable(obj):
     """
     Returns whether the given `obj` can be used in `await` expression.
-    
+
     Parameters
     ----------
     obj : `Any`
-    
+
     Returns
     -------
     is_awaitable : `bool`
     """
     if isinstance(obj, (CoroutineType, GeneratorType)):
         return True
-        
+
     if isinstance(obj, Future):
         return True
-    
+
     if hasattr(obj.__class__, '__await__'):
         return True
-    
+
     return False
 
 
@@ -163,7 +204,7 @@ def is_coroutine_generator(obj):
     """
     Returns whether the given `obj` is a coroutine generator created by an `async def` function, and can be used inside
     of an `async for` loop.
-    
+
     Returns
     -------
     is_coroutine_generator : `bool`
@@ -176,11 +217,12 @@ def is_coroutine_generator(obj):
         code = obj.gi_code
     else:
         return False
-    
-    if code.co_flags&CO_ASYNC_GENERATOR:
+
+    if code.co_flags & CO_ASYNC_GENERATOR:
         return True
-    
+
     return False
+
 
 # future states
 
@@ -190,15 +232,17 @@ FINISHED = 'FINISHED'
 RETRIEVED = 'RETRIEVED'
 
 # If we run without `-o` or -oo` flag, we have 4 future states instead of the regular 3. Well, we have 4 anyways, we
-# just wont use it. The only exceptions are the `__repr__` methods, where we still check it's existence. These flags 
+# just wont use it. The only exceptions are the `__repr__` methods, where we still check it's existence. These flags
 # also remove the `__del__` notifications and the `__silence__` methods too. Also bad Task awaiting cases are removed
 # too. That's why more methods, which interact with these variables have 2 versions. 1 optimized and 1 debug :^)
 
 _IGNORED_FRAME_INFOS = {}
+
+
 def _ignore_frame(file, name, line):
     """
     When rendering an exception traceback, specified frames can be added to being stopped from rendering.
-    
+
     Parameters
     ----------
     file : `str`
@@ -221,11 +265,12 @@ def _ignore_frame(file, name, line):
         file_s[name] = name_s
 
     name_s.add(line)
-        
+
+
 def _should_ignore_frame(file, name, line):
     """
     Returns whether the given frame should be ignored from rending.
-    
+
     Parameters
     ----------
     file : `str`
@@ -234,7 +279,7 @@ def _should_ignore_frame(file, name, line):
         The frame's respective function's name.
     line : `str`
         The frame's respective stripped line.
-    
+
     Returns
     -------
     should_ignore : `bool`
@@ -248,37 +293,88 @@ def _should_ignore_frame(file, name, line):
         name_s = file_s[name]
     except KeyError:
         return False
-    
-    return (line in name_s)
 
-_ignore_frame(__spec__.origin, 'result', 'raise exception', )
-_ignore_frame(__spec__.origin, 'result_no_wait', 'raise exception', )
-_ignore_frame(__spec__.origin, '__call__', 'raise exception', )
-_ignore_frame(__spec__.origin, '_step', 'result = coro.throw(exception)', )
-_ignore_frame(__spec__.origin, '__iter__', 'yield self', )
-_ignore_frame(__spec__.origin, '_step', 'result = coro.send(None)', )
-_ignore_frame(__spec__.origin, '_wake_up', 'future.result()', )
-_ignore_frame(__spec__.origin, 'wait', 'return self.result()', )
-_ignore_frame(__spec__.origin, '__call__', 'future.result()', )
-_ignore_frame(__spec__.origin, '__aexit__', 'raise exception', )
+    return line in name_s
+
+
+_ignore_frame(
+    __spec__.origin,
+    'result',
+    'raise exception',
+)
+_ignore_frame(
+    __spec__.origin,
+    'result_no_wait',
+    'raise exception',
+)
+_ignore_frame(
+    __spec__.origin,
+    '__call__',
+    'raise exception',
+)
+_ignore_frame(
+    __spec__.origin,
+    '_step',
+    'result = coro.throw(exception)',
+)
+_ignore_frame(
+    __spec__.origin,
+    '__iter__',
+    'yield self',
+)
+_ignore_frame(
+    __spec__.origin,
+    '_step',
+    'result = coro.send(None)',
+)
+_ignore_frame(
+    __spec__.origin,
+    '_wake_up',
+    'future.result()',
+)
+_ignore_frame(
+    __spec__.origin,
+    'wait',
+    'return self.result()',
+)
+_ignore_frame(
+    __spec__.origin,
+    '__call__',
+    'future.result()',
+)
+_ignore_frame(
+    __spec__.origin,
+    '__aexit__',
+    'raise exception',
+)
 
 
 from . import utils
-_ignore_frame(utils.__spec__.origin, '__call__', 'return self.func(*self.args)', )
-_ignore_frame(utils.__spec__.origin, '__call__', 'return self.func(*self.args, **kwargs)', )
+
+_ignore_frame(
+    utils.__spec__.origin,
+    '__call__',
+    'return self.func(*self.args)',
+)
+_ignore_frame(
+    utils.__spec__.origin,
+    '__call__',
+    'return self.func(*self.args, **kwargs)',
+)
 del utils
+
 
 def render_frames_to_list(frames, extend=None):
     """
     Renders the given frames into a list of strings.
-    
+
     Parameters
     ----------
     frames : `list` of (`frame` or ``_EXCFrameType``)
         The frames to render.
     extend : `None` or `list` of `str`
         Whether the frames should be rendered into an already existing list.
-    
+
     Returns
     -------
     extend : `list` of `str`
@@ -287,19 +383,23 @@ def render_frames_to_list(frames, extend=None):
     if extend is None:
         extend = []
     checked = set()
-    
+
     last_file_name = ''
     last_line_number = ''
     last_name = ''
     count = 0
-    
+
     for frame in frames:
         line_number = frame.f_lineno
         code = frame.f_code
         file_name = code.co_filename
         name = code.co_name
-        
-        if last_file_name == file_name and last_line_number == line_number and last_name == name:
+
+        if (
+            last_file_name == file_name
+            and last_line_number == line_number
+            and last_name == name
+        ):
             count += 1
             if count > 2:
                 continue
@@ -310,21 +410,21 @@ def render_frames_to_list(frames, extend=None):
                 extend.append(str(count))
                 extend.append(' more times]\n')
             count = 0
-        
+
         if file_name not in checked:
             checked.add(file_name)
             linecache.checkcache(file_name)
-        
+
         line = linecache.getline(file_name, line_number, None)
         line = line.strip()
-        
+
         if _should_ignore_frame(file_name, name, line):
             continue
-        
+
         last_file_name = file_name
         last_line_number = line_number
         last_name = code.co_name
-        
+
         extend.append('  File \"')
         extend.append(file_name)
         extend.append('\", line ')
@@ -335,106 +435,108 @@ def render_frames_to_list(frames, extend=None):
             extend.append('\n    ')
             extend.append(line)
         extend.append('\n')
-        
+
     if count > 3:
         count -= 3
         extend.append('  [Previous line repeated ')
         extend.append(str(count))
         extend.append(' more times]\n')
-    
+
     return extend
+
 
 class _EXCFrameType:
     """
     Wraps a `traceback` object to be `frame` compatible.
-    
+
     Attributes
     ----------
     tb : `traceback`
         The wrapped traceback frame.
     """
+
     __slots__ = ('tb',)
-    
+
     def __init__(self, tb):
         """
         Creates a new ``_EXCFrameType`` instance with the given traceback.
-        
+
         tb : `traceback`
             The traceback to wrap.
         """
         self.tb = tb
-    
+
     @property
     def f_builtins(self):
         """
         Returns the traceback's frame's builtins.
-        
+
         Returns
         -------
         f_builtins : `dict` of (`str`, `Any`) items
         """
         return self.tb.tb_frame.f_builtins
-    
+
     @property
     def f_code(self):
         """
         Returns the traceback's frame's code.
-        
+
         Returns
         -------
         f_code : `code`
         """
         return self.tb.tb_frame.f_code
-    
+
     @property
     def f_globals(self):
         """
         Returns the traceback's frame's globals.
-        
+
         Returns
         -------
         f_globals : `dict` of (`str`, `Any`)
         """
         return self.tb.tb_frame.f_globals
-    
+
     @property
     def f_lasti(self):
         """
         Returns the traceback's frame's last attempted instruction index in the bytecode.
-        
+
         Returns
         -------
         f_lasti : `int`
         """
         return self.tb.tb_frame.f_lasti
-    
+
     @property
     def f_lineno(self):
         """
         Returns the traceback's frame's current line number in Python source code.
-        
+
         Returns
         -------
         f_lineno : `int`
         """
         return self.tb.tb_lineno
-    
+
     @property
     def f_locals(self):
         """
         Returns the local variables, what the traceback's frame can see.
-        
+
         Returns
         -------
         f_locals : `dict` of (`str`, `Any`)
         """
         return self.tb.tb_frame.f_locals
-    
+
     @property
     def f_trace(self):
         """
         Tracing function for the traceback's frame.
-        
+
         Returns
         -------
         f_trace : `Any`
@@ -442,15 +544,16 @@ class _EXCFrameType:
         """
         return self.tb.tb_frame.f_trace
 
+
 def _get_exc_frames(exception):
     """
     Gets the frames of the given exception.
-    
+
     Parameters
     ----------
     exception : `BaseException` instance
         The exception to trace back.
-    
+
     Returns
     -------
     frames : `list` of ``_EXCFrameType``
@@ -458,27 +561,28 @@ def _get_exc_frames(exception):
     """
     frames = []
     tb = exception.__traceback__
-    
+
     while True:
         if tb is None:
             break
         frame = _EXCFrameType(tb)
         frames.append(frame)
         tb = tb.tb_next
-    
+
     return frames
+
 
 def render_exc_to_list(exception, extend=None):
     """
     Renders the given exception's frames into a list of strings.
-    
+
     Parameters
     ----------
     exception : `BaseException` instance
         The exception to render.
     extend : `None` or `list` of `str`
         Whether the frames should be rendered into an already existing list.
-    
+
     Returns
     -------
     extend : `list` of `str`
@@ -486,53 +590,58 @@ def render_exc_to_list(exception, extend=None):
     """
     if extend is None:
         extend = []
-    
+
     exceptions = []
     reason_type = 0
     while True:
         exceptions.append((exception, reason_type))
         cause_exception = exception.__cause__
-        if (cause_exception is not None):
+        if cause_exception is not None:
             exception = cause_exception
             reason_type = 1
             continue
-        
+
         context_exception = exception.__context__
-        if (context_exception is not None):
+        if context_exception is not None:
             exception = context_exception
             reason_type = 2
             continue
-        
+
         # no other cases
         break
-    
+
     for exception, reason_type in reversed(exceptions):
         frames = _get_exc_frames(exception)
         extend.append('Traceback (most recent call last):\n')
         extend = render_frames_to_list(frames, extend=extend)
         extend.append(repr(exception))
         extend.append('\n')
-        
+
         if reason_type == 0:
             break
-        
+
         if reason_type == 1:
-            extend.append('\nThe above exception was the direct cause of the following exception:\n\n')
+            extend.append(
+                '\nThe above exception was the direct cause of the following exception:\n\n'
+            )
             continue
-        
+
         if reason_type == 2:
-            extend.append('\nDuring handling of the above exception, another exception occurred:\n\n')
+            extend.append(
+                '\nDuring handling of the above exception, another exception occurred:\n\n'
+            )
             continue
-        
+
         # no more cases
         continue
-    
+
     return extend
+
 
 def format_callback(func, args=None, kwargs=None):
     """
     Formats the given callback to a more user friendly representation.
-    
+
     Parameters
     ----------
     func : `callable`
@@ -541,7 +650,7 @@ def format_callback(func, args=None, kwargs=None):
         Additional parameters to call the `func` with.
     kwargs : `None` or `dict` of (`str`, `Any`) items, Optional
         Additional keyword parameters to call the `func` with.
-    
+
     Returns
     -------
     result : `str`
@@ -556,20 +665,20 @@ def format_callback(func, args=None, kwargs=None):
                 for arg in args:
                     sub_result.append(reprlib.repr(arg))
                     sub_result.append(', ')
-            
+
             if (kwargs is not None) and kwargs:
                 for key, arg in kwargs.items():
-                    sub_result.append(str(key)) # never trust
+                    sub_result.append(str(key))  # never trust
                     sub_result.append('=')
                     sub_result.append(reprlib.repr(arg))
                     sub_result.append(', ')
-            
+
             if len(sub_result) > 1:
                 del sub_result[-1]
-            
+
             sub_result.append(')')
             result.append(''.join(sub_result))
-        
+
         try:
             wrapped = func.func
         except AttributeError:
@@ -580,31 +689,34 @@ def format_callback(func, args=None, kwargs=None):
                     coro_repr = getattr(coro, '__name__', None)
                     if coro_repr is None:
                         coro_repr = repr(coro)
-                func_repr = f'<Bound method {func.__func__.__name__} of Task {coro_repr}>'
+                func_repr = (
+                    f'<Bound method {func.__func__.__name__} of Task {coro_repr}>'
+                )
             else:
                 func_repr = getattr(func, '__qualname__', None)
                 if func_repr is None:
                     func_repr = getattr(func, '__name__', None)
                     if func_repr is None:
                         func_repr = repr(func)
-            
+
             result.insert(0, func_repr)
             break
-        
+
         args = getattr(func, 'args', None)
         kwargs = getattr(func, 'kwargs', None)
         func = wrapped
-    
+
     return ''.join(result)
+
 
 def format_coroutine(coro):
     """
     Formats the given coroutine to a more user friendly representation.
-    
+
     Parameters
     ----------
     coro : `coroutine` or `generator` (or any compatible cyi or builtin)
-    
+
     Returns
     -------
     result : `str`
@@ -615,50 +727,51 @@ def format_coroutine(coro):
         name = getattr(coro, '__qualname__', None)
         if name is None:
             name = getattr(coro, '__name__', None)
-            if name is None: # builtins might reach this part
+            if name is None:  # builtins might reach this part
                 name = coro.__class__.__name__
-        
+
         if type(coro) is GeneratorType:
             running = coro.gi_running
         elif type(coro) is CoroutineType:
             running = coro.cr_running
         else:
             running = False
-        
+
         if running:
             state = 'running'
         else:
             state = 'done'
-        
+
         return f'{name}() {state}'
-    
+
     name = format_callback(coro)
-    
+
     if type(coro) is GeneratorType:
         code = coro.gi_code
         frame = coro.gi_frame
     else:
         code = coro.cr_code
         frame = coro.cr_frame
-    
+
     file_name = code.co_filename
-    
+
     if frame is None:
         line_number = code.co_firstlineno
         state = 'done'
     else:
         line_number = frame.f_lineno
         state = 'running'
-    
+
     return f'{name} {state} defined at {file_name}:{line_number}'
+
 
 class Future:
     """
     A Future represents an eventual result of an asynchronous operation.
-    
+
     Future is an awaitable object. Coroutines can await on ``Future`` objects until they either have a result or an
     exception set, or until they are cancelled.
-    
+
     Attributes
     ----------
     _blocking : `bool`
@@ -666,10 +779,10 @@ class Future:
     _callbacks : `list` of `callable`
         The callbacks of the future, which are queued up on the respective event loop to be called, when the future is
         finished. These callback should accept `1` parameter, the future itself.
-        
+
         Note, if the future is already done, then the newly added callbacks are queued up instantly on the respective
         event loop to be called.
-    
+
     _exception : `None` or `BaseException` instance
         The exception set to the future as it's result. Defaults to `None`.
     _loop : ``EventThread``
@@ -678,9 +791,9 @@ class Future:
         The result of the future. Defaults to `None`.
     _state : `str`
         The state of the future.
-        
+
         Can be set as one of the following:
-        
+
         +-----------------+---------------+
         | Respective name | Value         |
         +=================+===============+
@@ -692,17 +805,18 @@ class Future:
         +-----------------+---------------+
         | RETRIEVED       | `'RETRIEVED'` |
         +-----------------+---------------+
-        
+
         Note, that states are checked by memory address and not by equality. Also ``RETRIEVED`` is used only if
         `__debug__` is set as `True`.
     """
+
     __slots__ = ('_blocking', '_callbacks', '_exception', '_loop', '_result', '_state')
-    
+
     # If parameters are not passed will not call `__del__`
     def __new__(cls, loop):
         """
         Creates a new ``Future`` object bound to the given `loop`.
-        
+
         Parameters
         ----------
         loop : ``EventThread``
@@ -714,7 +828,7 @@ class Future:
 
         self._result = None
         self._exception = None
-        
+
         self._callbacks = []
         self._blocking = False
 
@@ -723,10 +837,10 @@ class Future:
     def __repr__(self):
         """Returns the future's representation."""
         result = ['<', self.__class__.__name__, ' ']
-        
+
         state = self._state
         result.append(state)
-        
+
         if state is FINISHED or state is RETRIEVED:
             exception = self._exception
             if exception is None:
@@ -735,7 +849,7 @@ class Future:
             else:
                 result.append(', exception=')
                 result.append(repr(exception))
-        
+
         callbacks = self._callbacks
         limit = len(callbacks)
         if limit:
@@ -747,39 +861,43 @@ class Future:
                 index += 1
                 if index == limit:
                     break
-                
+
                 result.append(', ')
                 continue
-            
+
             result.append(']')
-        
+
         result.append('>')
-        
+
         return ''.join(result)
-    
+
     if __debug__:
+
         def cancel(self):
             state = self._state
-            
+
             if state is not PENDING:
                 # If the future is cancelled, we should not show up not retrieved message at `.__del__`
                 if state is FINISHED:
                     self._state = RETRIEVED
                 return 0
-            
+
             self._state = CANCELLED
             self._loop._schedule_callbacks(self)
             return 1
+
     else:
+
         def cancel(self):
             if self._state is not PENDING:
                 return 0
-            
+
             self._state = CANCELLED
             self._loop._schedule_callbacks(self)
             return 1
-    
-    set_docs(cancel,
+
+    set_docs(
+        cancel,
         """
         Cancels the future if it is pending.
         
@@ -792,78 +910,82 @@ class Future:
         -----
         If `__debug__` is set as `True`, then `.cancel()` also marks the future as retrieved, causing it to not render
         non-retrieved exceptions.
-        """
+        """,
     )
-    
+
     def cancelled(self):
         """
         Returns whether the future is cancelled.
-        
+
         Returns
         -------
         cancelled : `bool`
         """
-        return (self._state is CANCELLED)
-    
+        return self._state is CANCELLED
+
     def done(self):
         """
         Returns whether the future is done.
-        
+
         Returns
         -------
         done : `bool`
         """
-        return (self._state is not PENDING)
-    
+        return self._state is not PENDING
+
     def pending(self):
         """
         Returns whether the future is pending.
-        
+
         Returns
         -------
         pending : `bool`
         """
-        return (self._state is PENDING)
-    
+        return self._state is PENDING
+
     if __debug__:
+
         def result(self):
             state = self._state
-            
+
             if state is FINISHED:
                 self._state = RETRIEVED
                 exception = self._exception
                 if exception is None:
                     return self._result
                 raise exception
-            
+
             if state is RETRIEVED:
                 exception = self._exception
                 if exception is None:
                     return self._result
                 raise exception
-            
+
             if state is CANCELLED:
                 raise CancelledError
-            
+
             # still pending
             raise InvalidStateError(self, 'result')
+
     else:
+
         def result(self):
             state = self._state
-            
+
             if state is FINISHED:
                 exception = self._exception
                 if exception is None:
                     return self._result
                 raise exception
-            
+
             if state is CANCELLED:
                 raise CancelledError
-            
+
             # still pending
             raise InvalidStateError(self, 'result')
-    
-    set_docs(result,
+
+    set_docs(
+        result,
         """
         Returns the result of the future.
         
@@ -891,10 +1013,11 @@ class Future:
             The future has non `BaseException` instance set as exception.
         BaseException
             The future's set exception.
-        """
+        """,
     )
-    
+
     if __debug__:
+
         def exception(self):
             state = self._state
             if state is FINISHED:
@@ -903,27 +1026,29 @@ class Future:
 
             if state is RETRIEVED:
                 return self._exception
-            
+
             if state is CANCELLED:
                 raise CancelledError
-            
+
             # still pending
             raise InvalidStateError(self, 'exception')
-        
+
     else:
+
         def exception(self):
             state = self._state
 
             if state is FINISHED:
                 return self._exception
-            
+
             if state is CANCELLED:
                 raise CancelledError
-            
+
             # still pending
             raise InvalidStateError(self, 'exception')
-    
-    set_docs(exception,
+
+    set_docs(
+        exception,
         """
         Returns the future's exception.
         
@@ -943,19 +1068,19 @@ class Future:
             The future is cancelled.
         InvalidStateError
             The futures is not done yet.
-        """
+        """,
     )
-    
+
     def add_done_callback(self, func):
         """
         Adds the given `func` as a callback of the future.
-        
+
         Parameters
         ----------
         `func` : `callable`
             A callback, what is queued up on the respective event loop, when the future is done. These callback should
             accept `1` parameter, the future itself.
-            
+
         Notes
         -----
         If the future is already done, then the newly added callbacks are queued up instantly on the respective
@@ -965,16 +1090,16 @@ class Future:
             self._callbacks.append(func)
         else:
             self._loop.call_soon(func, self)
-    
+
     def remove_done_callback(self, func):
         """
         Removes the given `func` from the future's ``._callbacks``.
-        
+
         Parameters
         ----------
         func : `Any`
             The callback to remove.
-        
+
         Returns
         -------
         count : `int`
@@ -988,18 +1113,18 @@ class Future:
             if callbacks[index] is func:
                 del callbacks[index]
                 count += 1
-        
+
         return count
-    
+
     def set_result(self, result):
         """
         Marks the future as done and set's it's result.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Raises
         ------
         InvalidStateError
@@ -1007,21 +1132,21 @@ class Future:
         """
         if self._state is not PENDING:
             raise InvalidStateError(self, 'set_result')
-            
+
         self._result = result
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
-    
+
     def set_result_if_pending(self, result):
         """
         Marks the future as done and set's it's result. Not like ``.set_result``, this method will not raise
         ``InvalidStateError`` if the future is already done.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`)
@@ -1029,21 +1154,21 @@ class Future:
         """
         if self._state is not PENDING:
             return 0
-        
+
         self._result = result
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
         return 1
-    
+
     def set_exception(self, exception):
         """
         Marks the future as done and set's it's exception.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the future's exception.
-        
+
         Raises
         ------
         InvalidStateError
@@ -1053,32 +1178,34 @@ class Future:
         """
         if self._state is not PENDING:
             raise InvalidStateError(self, 'set_exception')
-        
+
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+            )
+
         self._exception = exception
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
-    
+
     def set_exception_if_pending(self, exception):
         """
         Marks the future as done and set's it's exception. Not like ``.set_exception``, this method will not raise
         ``InvalidStateError`` if the future is already done.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the future's exception.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`)
             If the future is already done, returns `0`, else `1`.
-        
+
         Raises
         ------
         TypeError
@@ -1086,75 +1213,84 @@ class Future:
         """
         if self._state is not PENDING:
             return 0
-        
+
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+            )
+
         self._exception = exception
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
         return 1
-    
+
     def __iter__(self):
         """
         Awaits the future till it is done.
-        
+
         This method is a generator. Should be used with `await` expression.
         """
         if self._state is PENDING:
             self._blocking = True
             yield self
-        
+
         return self.result()
-    
+
     __await__ = __iter__
-    
+
     if __debug__:
+
         def __del__(self):
             """
             If the future is pending, but it's result was not set, meanwhile anything awaits at it, notifies it.
-            
+
             Also notifies if the future's result was set with ``.set_exception``, or with
             ``.set_exception_if_pending``, and it was not retrieved.
-            
+
             Notes
             -----
             This method is present only if `__debug__` is set as `True`.
             """
             if not self._loop.running:
                 return
-            
+
             state = self._state
             if state is PENDING:
                 if self._callbacks:
-                    
+
                     # ignore being silenced
                     silence_cb = type(self).__silence_cb__
                     for callback in self._callbacks:
                         if callback is silence_cb:
                             return
-                    
-                    sys.stderr.write(f'{self.__class__.__name__} is not finished, but still pending!\n{self!r}\n')
+
+                    sys.stderr.write(
+                        f'{self.__class__.__name__} is not finished, but still pending!\n{self!r}\n'
+                    )
                 return
-            
+
             if state is FINISHED:
-                if (self._exception is not None):
-                    self._loop.render_exc_maybe_async(self._exception, [
-                        self.__class__.__name__,
-                        ' exception was never retrieved\n',
-                        repr(self),
-                        '\n',])
+                if self._exception is not None:
+                    self._loop.render_exc_maybe_async(
+                        self._exception,
+                        [
+                            self.__class__.__name__,
+                            ' exception was never retrieved\n',
+                            repr(self),
+                            '\n',
+                        ],
+                    )
                 return
-            
+
             # no more notify case
-        
+
         def __silence__(self):
             """
             Silences the future's `__del__`, so it will not notify if it would.
-            
+
             Notes
             -----
             This method is present only if `__debug__` is set as `True`.
@@ -1163,21 +1299,21 @@ class Future:
             if state is PENDING:
                 self._callbacks.append(type(self).__silence_cb__)
                 return
-            
+
             if state is FINISHED:
                 self._state = RETRIEVED
-        
+
         def __silence_cb__(self):
             """
             Callback added to the future, when ``.__silence__`` is called, when the future is still pending.
-            
+
             Notes
             -----
             This method is present only if `__debug__` is set as `True`.
             """
             if self._state is FINISHED:
                 self._state = RETRIEVED
-    
+
     def cancel_handles(self):
         """
         Cancels the handles (``_HandleCancellerBase`` instances) added as callbacks to the future.
@@ -1189,7 +1325,7 @@ class Future:
                 if isinstance(callback, _HandleCancellerBase):
                     del callbacks[index]
                     callback.cancel()
-    
+
     def clear(self):
         """
         Clears the future, making it reusable.
@@ -1199,27 +1335,27 @@ class Future:
         self._result = None
         self.cancel_handles()
         self._blocking = False
-    
+
     def sync_wrap(self):
         """
         Wraps the future, so it's result can be retrieved from a sync thread.
-        
+
         Returns
         -------
         future_wrapper : ``FutureSyncWrapper``
             A future awaitable from sync threads.
         """
         return FutureSyncWrapper(self)
-    
+
     def async_wrap(self, loop):
         """
         Wraps the future, so it's result can be retrieved from an other async thread.
-        
+
         Parameters
         ----------
         loop : ``EventThread``
             The event loop, from where the future would be awaited.
-        
+
         Returns
         -------
         future_wrapper : ``FutureAsyncWrapper``
@@ -1227,10 +1363,11 @@ class Future:
         """
         return FutureAsyncWrapper(self, loop)
 
+
 class FutureSyncWrapper:
     """
     Sync wrapper for ``Future`` instances enabling them to be waited from a sync threads.
-    
+
     Attributes
     ----------
     _exception : `None` or `BaseException` instance
@@ -1244,9 +1381,9 @@ class FutureSyncWrapper:
         The result of the future. Defaults to `None`.
     _state : `str`
         The state of the future.
-        
+
         Can be set as one of the following:
-        
+
         +-----------------+---------------+
         | Respective name | Value         |
         +=================+===============+
@@ -1258,18 +1395,19 @@ class FutureSyncWrapper:
         +-----------------+---------------+
         | RETRIEVED       | `'RETRIEVED'` |
         +-----------------+---------------+
-        
+
         Note, that states are checked by memory address and not by equality. Also ``RETRIEVED`` is used only if
         `__debug__` is set as `True`.
     _waiter : `threading.Event`
         An event, what is set, when the waited future is done.
     """
+
     __slots__ = ('_exception', '_future', '_lock', '_result', '_state', '_waiter')
-    
+
     def __new__(cls, future):
         """
         Creates a new ``FutureSyncWrapper`` instance wrapping the given `future`
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -1282,22 +1420,22 @@ class FutureSyncWrapper:
         self._state = PENDING
         self._result = None
         self._exception = None
-        
+
         loop = future._loop
         loop.call_soon(future.add_done_callback, self._done_callback)
         loop.wake_up()
-        
+
         return self
-    
+
     def __call__(self, future):
         """
         By calling a ``FutureSyncWrapper`` you can make it bound to an other future.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
             The future on what you would want to wait from a sync thread.
-        
+
         Returns
         -------
         self : ``FutureSyncWrapper``
@@ -1321,16 +1459,20 @@ class FutureSyncWrapper:
             loop.wake_up()
 
         return self
-    
+
     def __repr__(self):
         """Returns the future sync wrapper's representation."""
-        result = ['<', self.__class__.__name__, ' ', ]
-        
+        result = [
+            '<',
+            self.__class__.__name__,
+            ' ',
+        ]
+
         state = self._state
         result.append(state)
-        
+
         if state is FINISHED or state is RETRIEVED:
-            
+
             exception = self._exception
             if exception is None:
                 result.append(' result=')
@@ -1338,7 +1480,7 @@ class FutureSyncWrapper:
             else:
                 result.append(' exception=')
                 result.append(repr(exception))
-        
+
         future = self._future
         if future is not None:
             # we do not want to repr it, keep it thread safe
@@ -1346,46 +1488,49 @@ class FutureSyncWrapper:
             result.append(future.__class__.__name__)
             result.append('(...)')
         result.append('>')
-        
+
         return ''.join(result)
-    
+
     if __debug__:
+
         def cancel(self):
             state = self._state
             if state is not PENDING:
                 if state is FINISHED:
                     self._state = RETRIEVED
-                
+
                 return 0
-            
+
             future = self._future
             if future is None:
                 self._state = CANCELLED
                 self._waiter.set()
                 return 1
-            
+
             loop = future._loop
             loop.call_soon(future.cancel)
             loop.wake_up()
             return 1
-        
+
     else:
+
         def cancel(self):
             if self._state is not PENDING:
                 return 0
-            
+
             future = self._future
             if future is None:
                 self._state = CANCELLED
                 self._waiter.set()
                 return 1
-            
+
             loop = future._loop
             loop.call_soon(future.cancel)
             loop.wake_up()
             return 1
-    
-    set_docs(cancel,
+
+    set_docs(
+        cancel,
         """
         Cancels the future if it is pending.
         
@@ -1398,64 +1543,66 @@ class FutureSyncWrapper:
         -----
         If `__debug__` is set as `True`, then `.cancel()` also marks the future as retrieved, causing it to not render
         non-retrieved exceptions.
-        """
+        """,
     )
-    
+
     def cancelled(self):
         """
         Returns whether the future is cancelled.
-        
+
         Returns
         -------
         cancelled : `bool`
         """
-        return (self._state is CANCELLED)
-    
+        return self._state is CANCELLED
+
     def done(self):
         """
         Returns whether the future is done.
-        
+
         Returns
         -------
         done : `bool`
         """
-        return (self._state is not PENDING)
-    
+        return self._state is not PENDING
+
     def pending(self):
         """
         Returns whether the future is pending.
-        
+
         Returns
         -------
         pending : `bool`
         """
-        return (self._state is PENDING)
-    
+        return self._state is PENDING
+
     if __debug__:
+
         def result(self):
             with self._lock:
                 state = self._state
-                
+
                 if state is FINISHED:
                     self._state = RETRIEVED
                     exception = self._exception
                     if exception is None:
                         return self._result
                     raise exception
-                
+
                 if state is RETRIEVED:
                     exception = self._exception
                     if exception is None:
                         return self._result
                     raise exception
-                
+
                 if state is CANCELLED:
                     raise CancelledError
-            
+
             # still pending
             raise InvalidStateError(self, 'result')
-    
+
     else:
+
         def result(self):
             with self._lock:
                 if self._state is FINISHED:
@@ -1463,14 +1610,15 @@ class FutureSyncWrapper:
                     if exception is None:
                         return self._result
                     raise exception
-                
+
                 if self._state is CANCELLED:
                     raise CancelledError
-            
+
             # still pending
             raise InvalidStateError(self, 'result')
-    
-    set_docs(result,
+
+    set_docs(
+        result,
         """
         Returns the result of the future.
         
@@ -1498,10 +1646,11 @@ class FutureSyncWrapper:
             The future has non `BaseException` instance set as exception.
         BaseException
             The future's set exception.
-        """
+        """,
     )
-    
+
     if __debug__:
+
         def exception(self):
             with self._lock:
                 state = self._state
@@ -1519,6 +1668,7 @@ class FutureSyncWrapper:
             raise InvalidStateError(self, 'exception')
 
     else:
+
         def exception(self):
             with self._lock:
                 if self._state is FINISHED:
@@ -1529,8 +1679,9 @@ class FutureSyncWrapper:
 
             # still pending
             raise InvalidStateError(self, 'exception')
-    
-    set_docs(exception,
+
+    set_docs(
+        exception,
         """
         Returns the future's exception.
         
@@ -1550,39 +1701,43 @@ class FutureSyncWrapper:
             The future is cancelled.
         InvalidStateError
             The futures is not done yet.
-        """
+        """,
     )
-    
+
     if __debug__:
+
         def _done_callback(self, future):
             with self._lock:
-                if (self._future is not future):
+                if self._future is not future:
                     return
-                
+
                 state = future._state
                 if state is FINISHED:
                     future._state = RETRIEVED
                 elif state is RETRIEVED:
                     state = FINISHED
-                
+
                 self._state = state
                 self._result = future._result
                 self._exception = future._exception
                 self._future = None
                 self._waiter.set()
+
     else:
+
         def _done_callback(self, future):
             with self._lock:
-                if (self._future is not future):
+                if self._future is not future:
                     return
-                
+
                 self._state = future._state
                 self._result = future._result
                 self._exception = future._exception
                 self._future = None
                 self._waiter.set()
-    
-    set_docs(_done_callback,
+
+    set_docs(
+        _done_callback,
         """
         Callback added to the waited future to retrieve it's result.
         
@@ -1596,13 +1751,13 @@ class FutureSyncWrapper:
         If a different future is given as parameter than the currently waited one, then wont do anything.
         
         If `_debug__` is set as `True`, then this callback also marks the waited future as retrieved.
-        """
+        """,
     )
-    
+
     def _remove_callback(self, future):
         """
         Removes ``._done_callback`` callback from the given `future`'s callbacks.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -1615,26 +1770,26 @@ class FutureSyncWrapper:
                 if (type(callback) is MethodType) and (callback.__self__ is self):
                     del callbacks[index]
                     break
-    
+
     def wait(self, timeout=None):
         """
         Waits till the waited future's result or exception is set.
-        
+
         If the future is cancelled, raises ``CancelledError``.
-        
+
         If the future has exception set with `.set_exception` or `.set_exception_if_pending` successfully, then raises
         the given exception.
-        
+
         If the future has result set with `.set_result` or `.set_result_if_pending` successfully, then returns the
         given object.
-        
+
         If the future is not done yet, raises ``InvalidStateError``.
-        
+
         Parameters
         ----------
         timeout : `None` or `float`, Optional
             Timeout in seconds till the waited future's result should be set. Giving it as `None`, means no time limit.
-        
+
         Raises
         ------
         TimeoutError
@@ -1652,14 +1807,14 @@ class FutureSyncWrapper:
             return self.result()
         else:
             raise CancelledError
-    
+
     def _set_future_result(self, future, result):
         """
         Sets the given `result` as the `future`'s result if applicable.
-        
+
         This method is put on the respective event loop to be called, by ``.set_result`` or by
         ``.set_result_if_pending``, if the future's result can be set.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -1669,23 +1824,26 @@ class FutureSyncWrapper:
         """
         try:
             future.set_result(result)
-        except (RuntimeError, InvalidStateError): # the future does not support this operation
+        except (
+            RuntimeError,
+            InvalidStateError,
+        ):  # the future does not support this operation
             pass
-        
+
         with self._lock:
             if self._future is future:
                 self._state = RETRIEVED
                 self._future = None
-    
+
     def set_result(self, result):
         """
         Marks the waited future and this as done and set their result.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Raises
         ------
         InvalidStateError
@@ -1694,29 +1852,29 @@ class FutureSyncWrapper:
         with self._lock:
             if self._state is not PENDING:
                 raise InvalidStateError(self, 'set_result')
-            
+
             future = self._future
-            
+
             if future is None:
                 self._result = result
                 self._state = FINISHED
                 self._waiter.set()
                 return
-        
+
         loop = future._loop
         loop.call_soon(self.__class__._set_future_result, self, future, result)
         loop.wake_up()
-    
+
     def set_result_if_pending(self, result):
         """
         Marks the waited future and this as done and set their result. Not like ``.set_result``, this method will not
         raise ``InvalidStateError`` if the future is already done.
-        
+
         Parameters
         ----------
         result : `Any`
            The object to set as result.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`, `2`)
@@ -1726,7 +1884,7 @@ class FutureSyncWrapper:
         with self._lock:
             if self._state is not PENDING:
                 return 0
-            
+
             future = self._future
 
             if future is None:
@@ -1739,14 +1897,14 @@ class FutureSyncWrapper:
         loop.call_soon(self.__class__._set_future_result, self, future, result)
         loop.wake_up()
         return 1
-    
+
     def _set_future_exception(self, future, exception):
         """
         Sets the given `exception` as the `future`'s exception if applicable.
-        
+
         This method is put on the respective event loop to be called, by ``.set_exception`` or by
         ``.set_exception_if_pending``, if the future's result can be set.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -1756,9 +1914,12 @@ class FutureSyncWrapper:
         """
         try:
             future.set_exception(exception)
-        except (RuntimeError, InvalidStateError): # the future does not supports this operation
+        except (
+            RuntimeError,
+            InvalidStateError,
+        ):  # the future does not supports this operation
             pass
-        
+
         with self._lock:
             if self._future is future:
                 self._state = RETRIEVED
@@ -1767,12 +1928,12 @@ class FutureSyncWrapper:
     def set_exception(self, exception):
         """
         Marks the waited future and this as done and set's it's exception.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the future's exception.
-        
+
         Raises
         ------
         InvalidStateError
@@ -1783,40 +1944,42 @@ class FutureSyncWrapper:
         with self._lock:
             if self._state is not PENDING:
                 raise InvalidStateError(self, 'set_exception')
-            
+
             if isinstance(exception, type):
                 exception = exception()
-            
+
             if type(exception) is StopIteration:
-                 raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-            
+                raise TypeError(
+                    f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+                )
+
             future = self._future
             if future is None:
                 self._exception = exception
                 self._state = FINISHED
                 self._waiter.set()
                 return
-        
+
         loop = future._loop
         loop.call_soon(self._set_future_exception, future, exception)
         loop.wake_up()
-    
+
     def set_exception_if_pending(self, exception):
         """
         Marks the waited future and this as done and set's it's exception. Not like ``.set_exception``, this method
         will not raise ``InvalidStateError`` if the future is already done.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the future's exception.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`, `2`)
             If the future is already done, returns `0`. If `self` not bound to any other futures, returns `2`. If
             self's and the waited future's exception can be set, returns `1`.
-        
+
         Raises
         ------
         TypeError
@@ -1825,63 +1988,72 @@ class FutureSyncWrapper:
         with self._lock:
             if self._state is not PENDING:
                 return 0
-            
+
             if isinstance(exception, type):
                 exception = exception()
-            
+
             if type(exception) is StopIteration:
-                 raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-            
+                raise TypeError(
+                    f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+                )
+
             future = self._future
             if future is None:
                 self._exception = exception
                 self._state = FINISHED
                 self._waiter.set()
                 return 2
-        
+
         loop = future._loop
         loop.call_soon(self._set_future_exception, future, exception)
         loop.wake_up()
         return 1
-    
+
     if __debug__:
+
         def __del__(self):
             """
             If the future is pending, but it's result was not set, meanwhile anything waits at it, notifies it.
-            
+
             Also notifies if the future's result was set with ``.set_exception``, or with
             ``.set_exception_if_pending``, and it was not retrieved.
-            
+
             Notes
             -----
             This method is present only if `__debug__` is set as `True`.
             """
             if self._state is PENDING:
                 if self._future is not None:
-                    sys.stderr.write(f'{self.__class__.__name__} is not finished, but still pending!\n{self!r}\n')
+                    sys.stderr.write(
+                        f'{self.__class__.__name__} is not finished, but still pending!\n{self!r}\n'
+                    )
                 return
 
             if self._state is FINISHED:
-                if (self._exception is not None):
-                    self._future._loop.render_exc_maybe_async(self._exception, [
-                        self.__class__.__name__,
-                        ' exception was never retrieved\n',
-                        repr(self),
-                        '\n',])
+                if self._exception is not None:
+                    self._future._loop.render_exc_maybe_async(
+                        self._exception,
+                        [
+                            self.__class__.__name__,
+                            ' exception was never retrieved\n',
+                            repr(self),
+                            '\n',
+                        ],
+                    )
                 return
-            
+
             # no more notify case
-        
+
         def __silence__(self):
             """
             Silences the future's `__del__`, so it will not notify if it would.
-            
+
             Notes
             -----
             This method is present only if `__debug__` is set as `True`.
             """
             self._state = RETRIEVED
-    
+
     def clear(self):
         """
         Clears the future, making it reusable.
@@ -1893,7 +2065,7 @@ class FutureSyncWrapper:
                 loop.call_soon(self._remove_callback, future)
                 loop.wake_up()
                 self._future = None
-            
+
             self._waiter.clear()
             self._state = PENDING
             self._exception = None
@@ -1903,7 +2075,7 @@ class FutureSyncWrapper:
 class FutureAsyncWrapper(Future):
     """
     Async wrapper for ``Future`` instances enabling them to be awaited from an another event loop.
-    
+
     Attributes
     ----------
     _blocking : `bool`
@@ -1911,10 +2083,10 @@ class FutureAsyncWrapper(Future):
     _callbacks : `list` of `callable`
         The callbacks of the future, which are queued up on the respective event loop to be called, when the future is
         finished. These callback should accept `1` parameter, the future itself.
-        
+
         Note, if the future is already done, then the newly added callbacks are queued up instantly on the respective
         event loop to be called.
-    
+
     _exception : `None` or `BaseException` instance
         The exception set to the future as it's result. Defaults to `None`.
     _future : `None` or ``Future`` instance
@@ -1926,9 +2098,9 @@ class FutureAsyncWrapper(Future):
         The result of the future. Defaults to `None`.
     _state : `str`
         The state of the future.
-        
+
         Can be set as one of the following:
-        
+
         +-----------------+---------------+
         | Respective name | Value         |
         +=================+===============+
@@ -1940,25 +2112,34 @@ class FutureAsyncWrapper(Future):
         +-----------------+---------------+
         | RETRIEVED       | `'RETRIEVED'` |
         +-----------------+---------------+
-        
+
         Note, that states are checked by memory address and not by equality. Also ``RETRIEVED`` is used only if
         `__debug__` is set as `True`.
     """
-    __slots__ = ('_blocking', '_callbacks', '_exception', '_future', '_loop', '_result', '_state',)
+
+    __slots__ = (
+        '_blocking',
+        '_callbacks',
+        '_exception',
+        '_future',
+        '_loop',
+        '_result',
+        '_state',
+    )
 
     def __new__(cls, future, loop):
         """
         Creates a new ``FutureAsyncWrapper`` object bound to the given `loop` and `future`.
-        
+
         If the given `future` is an ``FutureAsyncWrapper`` instance, then will wrap it's future instead.
-        
+
         Parameters
         ----------
         loop : ``EventThread``
             The loop from where the created wrapper futures can be awaited.
         future : ``Future`` or ``FutureAsyncWrapper`` instance
             The future to wrap.
-        
+
         Returns
         -------
         self : ``Future`` or ``FutureAsyncWrapper`` instance
@@ -1966,37 +2147,37 @@ class FutureAsyncWrapper(Future):
         """
         if future._loop is loop:
             return future
-        
+
         if isinstance(future, cls):
             future = future._future
             if future._loop is loop:
                 return future
-        
+
         self = object.__new__(cls)
         self._future = future
         self._loop = loop
         self._state = PENDING
         self._result = None
         self._exception = None
-        
+
         self._callbacks = []
         self._blocking = False
-        
+
         loop = future._loop
         loop.call_soon(future.add_done_callback, self._done_callback)
         loop.wake_up()
-        
+
         return self
-    
+
     def __call__(self, future):
         """
         By calling a ``FutureAsyncWrapper`` you can make it bound to an other future.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
             The future on what you would want to wait from the other event loop.
-        
+
         Returns
         -------
         self : ``FutureAsyncWrapper``
@@ -2006,24 +2187,24 @@ class FutureAsyncWrapper(Future):
             loop = old_future._loop
             loop.call_soon(self._remove_callback, old_future)
             loop.wake_up()
-        
+
         self._future = future
         self._state = PENDING
         self._result = None
         self._exception = None
         self._blocking = False
-        
+
         loop = future._loop
         loop.call_soon(future.add_done_callback, self._done_callback)
         loop.wake_up()
-    
+
     def __repr__(self):
         """Returns the future async wrapper's representation."""
         result = ['<', self.__class__.__name__, ' ']
-        
+
         state = self._state
         result.append(state)
-        
+
         if state is FINISHED or state is RETRIEVED:
             exception = self._exception
             if exception is None:
@@ -2032,7 +2213,7 @@ class FutureAsyncWrapper(Future):
             else:
                 result.append(', exception=')
                 result.append(repr(exception))
-        
+
         callbacks = self._callbacks
         limit = len(callbacks)
         if limit:
@@ -2044,12 +2225,12 @@ class FutureAsyncWrapper(Future):
                 index += 1
                 if index == limit:
                     break
-                
+
                 result.append(', ')
                 continue
-            
+
             result.append(']')
-        
+
         future = self._future
         if future is not None:
             # we do not want to repr it, keep it thread safe
@@ -2057,46 +2238,49 @@ class FutureAsyncWrapper(Future):
             result.append(future.__class__.__name__)
             result.append('(...)')
         result.append('>')
-        
+
         return ''.join(result)
-    
+
     if __debug__:
+
         def cancel(self):
             state = self._state
             if state is not PENDING:
                 if state is FINISHED:
                     self._state = RETRIEVED
-                
+
                 return 0
-            
+
             future = self._future
             if future is None:
                 self._state = CANCELLED
                 self._loop._schedule_callbacks(self)
                 return 1
-            
+
             loop = future._loop
             loop.call_soon(future.cancel)
             loop.wake_up()
             return 1
-        
+
     else:
+
         def cancel(self):
             if self._state is not PENDING:
                 return 0
-            
+
             future = self._future
             if future is None:
                 self._state = CANCELLED
                 self._loop._schedule_callbacks(self)
                 return 1
-            
+
             loop = future._loop
             loop.call_soon(future.cancel)
             loop.wake_up()
             return 1
-    
-    set_docs(cancel,
+
+    set_docs(
+        cancel,
         """
         Cancels the future if it is pending.
         
@@ -2109,33 +2293,49 @@ class FutureAsyncWrapper(Future):
         -----
         If `__debug__` is set as `True`, then `.cancel()` also marks the future as retrieved, causing it to not render
         non-retrieved exceptions.
-        """
+        """,
     )
-    
+
     if __debug__:
+
         def _done_callback(self, future):
             if self._future is not future:
                 return
-            
+
             state = future._state
             if state is FINISHED:
                 future._state = RETRIEVED
             elif state is RETRIEVED:
                 state = FINISHED
-            
+
             loop = self._loop
-            loop.call_soon(self.__class__._done_callback_re, self, state, future._result, future._exception)
+            loop.call_soon(
+                self.__class__._done_callback_re,
+                self,
+                state,
+                future._result,
+                future._exception,
+            )
             loop.wake_up()
+
     else:
+
         def _done_callback(self, future):
-            if (self._future is not future):
+            if self._future is not future:
                 return
-            
+
             loop = self._loop
-            loop.call_soon(self.__class__._done_callback_re, self, future._state, future._result, future._exception)
+            loop.call_soon(
+                self.__class__._done_callback_re,
+                self,
+                future._state,
+                future._result,
+                future._exception,
+            )
             loop.wake_up()
-    
-    set_docs(_done_callback,
+
+    set_docs(
+        _done_callback,
         """
         Callback added to the waited future to retrieve it's result.
         
@@ -2149,13 +2349,13 @@ class FutureAsyncWrapper(Future):
         If a different future is given as parameter than the currently waited one, then wont do anything.
         
         If `_debug__` is set as `True`, then this callback also marks the waited future as retrieved.
-        """
+        """,
     )
-    
+
     def _done_callback_re(self, state, result, exception):
         """
         Function queued up on the wrapper future's loop, by ``._done_callback``, marking this future as done.
-        
+
         Parameters
         ----------
         state : `str`
@@ -2168,13 +2368,13 @@ class FutureAsyncWrapper(Future):
         self._state = state
         self._result = result
         self._exception = exception
-        
+
         self._loop._schedule_callbacks(self)
-    
+
     def _remove_callback(self, future):
         """
         Removes ``._done_callback`` callback from the given `future`'s callbacks.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -2187,14 +2387,14 @@ class FutureAsyncWrapper(Future):
                 if (type(callback) is MethodType) and (callback.__self__ is self):
                     del callbacks[index]
                     break
-    
+
     def _set_future_result(self, future, result):
         """
         Sets the given `result` as the `future`'s result if applicable.
-        
+
         This method is put on the respective event loop to be called, by ``.set_result`` or by
         ``.set_result_if_pending``, if the future's result can be set.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -2204,18 +2404,21 @@ class FutureAsyncWrapper(Future):
         """
         try:
             future.set_result(result)
-        except (RuntimeError, InvalidStateError): # the future does not support this operation
+        except (
+            RuntimeError,
+            InvalidStateError,
+        ):  # the future does not support this operation
             pass
-        
+
         loop = self._loop
         loop.call_soon(self.__class__._set_future_any_re, self, future)
         loop.wake_up()
-    
+
     def _set_future_any_re(self, future):
         """
         If self is still waiting on the given future, marks self as retrieved and removes `._future`, so further results
         wont be retrieved.
-        
+
         Parameters
         ----------
         future : ``Future`` instance.
@@ -2223,16 +2426,16 @@ class FutureAsyncWrapper(Future):
         if self._future is future:
             self._state = RETRIEVED
             self._future = None
-    
+
     def set_result(self, result):
         """
         Marks the waited future and this as done and set their result.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Raises
         ------
         InvalidStateError
@@ -2240,29 +2443,29 @@ class FutureAsyncWrapper(Future):
         """
         if self._state is not PENDING:
             raise InvalidStateError(self, 'set_result')
-        
+
         future = self._future
-        
+
         if future is None:
             self._result = result
             self._state = FINISHED
             self._loop._schedule_callbacks(self)
             return
-        
+
         loop = future._loop
         loop.call_soon(self._set_future_result, future, result)
         loop.wake_up()
-    
+
     def set_result_if_pending(self, result):
         """
         Marks the waited future and this as done and set their result. Not like ``.set_result``, this method will
         not raise ``InvalidStateError`` if the future is already done.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`, `2`)
@@ -2271,27 +2474,27 @@ class FutureAsyncWrapper(Future):
         """
         if self._state is not PENDING:
             return 1
-        
+
         future = self._future
-        
+
         if future is None:
             self._result = result
             self._state = FINISHED
             self._loop._schedule_callbacks(self)
             return 2
-        
+
         loop = future._loop
         loop.call_soon(self._set_future_result, future, result)
         loop.wake_up()
         return 1
-    
+
     def _set_future_exception(self, future, exception):
         """
         Sets the given `exception` as the `future`'s exception if applicable.
-        
+
         This method is put on the respective event loop to be called, by ``.set_exception`` or by
         ``.set_exception_if_pending``, if the future's result can be set.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -2301,22 +2504,25 @@ class FutureAsyncWrapper(Future):
         """
         try:
             future.set_exception(exception)
-        except (RuntimeError, InvalidStateError): #the future does not supports this operation
+        except (
+            RuntimeError,
+            InvalidStateError,
+        ):  # the future does not supports this operation
             pass
-        
+
         loop = self._loop
         loop.call_soon(self._set_future_any_re, future)
         loop.wake_up()
-    
+
     def set_exception(self, exception):
         """
         Marks the waited future and this as done and set's it's exception.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the future's exception.
-        
+
         Raises
         ------
         InvalidStateError
@@ -2326,40 +2532,42 @@ class FutureAsyncWrapper(Future):
         """
         if self._state is not PENDING:
             raise InvalidStateError(self, 'set_exception')
-        
+
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+            )
+
         future = self._future
         if future is None:
             self._exception = exception
             self._state = FINISHED
             self._loop._schedule_callbacks(self)
             return
-        
+
         loop = future._loop
         loop.call_soon(self._set_future_exception, future, exception)
         loop.wake_up()
-    
+
     def set_exception_if_pending(self, exception):
         """
         Marks the waited future and this as done and set's it's exception. Not like ``.set_exception``, this method
         will not raise ``InvalidStateError`` if the future is already done.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the future's exception.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`, `2`)
             If the future is already done, returns `0`. If `self` not bound to any other futures, returns `2`. If
             self's and the waited future's exception can be set, returns `1`.
-        
+
         Raises
         ------
         TypeError
@@ -2367,25 +2575,27 @@ class FutureAsyncWrapper(Future):
         """
         if self._state is not PENDING:
             return 0
-        
+
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+            )
+
         future = self._future
         if future is None:
             self._exception = exception
             self._state = FINISHED
             self._loop._schedule_callbacks(self)
             return 2
-        
+
         loop = future._loop
         loop.call_soon(self._set_future_exception, future, exception)
         loop.wake_up()
         return 1
-    
+
     def clear(self):
         """
         Clears the future, making it reusable.
@@ -2403,12 +2613,13 @@ class FutureAsyncWrapper(Future):
         self.cancel_handles()
         self._blocking = False
 
+
 class FutureWM(Future):
     """
     A Future subclass, which yields after it's result was set a set amount of times with ``.set_result``, or with
     ``.set_result_if_pending``, or till an exception is set to with ``.set_exception``, or with
     ``.set_exception_if_pending``.
-    
+
     Attributes
     ----------
     _blocking : `bool`
@@ -2416,10 +2627,10 @@ class FutureWM(Future):
     _callbacks : `list` of `callable`
         The callbacks of the future, which are queued up on the respective event loop to be called, when the future is
         finished. These callback should accept `1` parameter, the future itself.
-        
+
         Note, if the future is already done, then the newly added callbacks are queued up instantly on the respective
         event loop to be called.
-    
+
     _exception : `None` or `BaseException` instance
         The exception set to the future as it's result. Defaults to `None`.
     _loop : ``EventThread``
@@ -2428,9 +2639,9 @@ class FutureWM(Future):
         The results of the future.
     _state : `str`
         The state of the future.
-        
+
         Can be set as one of the following:
-        
+
         +-----------------+---------------+
         | Respective name | Value         |
         +=================+===============+
@@ -2442,19 +2653,20 @@ class FutureWM(Future):
         +-----------------+---------------+
         | RETRIEVED       | `'RETRIEVED'` |
         +-----------------+---------------+
-        
+
         Note, that states are checked by memory address and not by equality. Also ``RETRIEVED`` is used only if
         `__debug__` is set as `True`.
     _count : `int`
         The amount, how much times the future's result need to be set, because it will yield.
     """
+
     __slots__ = ('_count',)
-    
+
     def __new__(cls, loop, count):
         """
         Creates a new ``FutureWM`` object bound to the given `loop`, which will be marked as done, only if `count`
         results are set to it with ``.set_result``, or with ``.set_result_if_pending``.
-        
+
         Parameters
         ----------
         loop : ``EventThread``
@@ -2466,22 +2678,22 @@ class FutureWM(Future):
         self._loop = loop
         self._count = count
         self._state = PENDING
-        
+
         self._result = []
         self._exception = None
-        
+
         self._callbacks = []
         self._blocking = False
-        
+
         return self
-    
+
     def __repr__(self):
         """Returns the future's representation."""
         result = ['<', self.__class__.__name__, ' ']
-        
+
         state = self._state
         result.append(state)
-        
+
         if state is FINISHED or state is RETRIEVED:
             exception = self._exception
             if exception is None:
@@ -2491,13 +2703,13 @@ class FutureWM(Future):
                     result.append(repr(index))
                     result.append(']=')
                     result.append(reprlib.repr(result_))
-                
+
                 result.append(', needed=')
-                result.append(str(self._count-len(results)))
+                result.append(str(self._count - len(results)))
             else:
                 result.append(', exception=')
                 result.append(repr(exception))
-        
+
         callbacks = self._callbacks
         limit = len(callbacks)
         if limit:
@@ -2509,25 +2721,25 @@ class FutureWM(Future):
                 index += 1
                 if index == limit:
                     break
-                
+
                 result.append(', ')
                 continue
-            
+
             result.append(']')
-        
+
         result.append('>')
-        
+
         return ''.join(result)
-    
+
     def set_result(self, result):
         """
         Sets the future result, and if it waits for no more results, marks it as done as well.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Raises
         ------
         InvalidStateError
@@ -2535,12 +2747,12 @@ class FutureWM(Future):
         """
         if self._state is not PENDING:
             raise InvalidStateError(self, 'set_result')
-        
+
         results = self._result
         results.append(result)
         if self._count != len(results):
             return
-        
+
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
 
@@ -2553,7 +2765,7 @@ class FutureWM(Future):
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`, `2`)
@@ -2562,16 +2774,16 @@ class FutureWM(Future):
         """
         if self._state is not PENDING:
             return 0
-        
+
         results = self._result
         results.append(result)
         if self._count != len(results):
             return 1
-            
+
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
         return 2
-        
+
     def clear(self):
         """
         Clears the future making it reusable.
@@ -2582,14 +2794,15 @@ class FutureWM(Future):
         self.cancel_handles()
         self._blocking = False
 
+
 class Task(Future):
     """
     A Future-like object that runs a Python coroutine.
-    
+
     Tasks are used to run coroutines in event loops. If a coroutine awaits on a ``Future`, the ``Task`` suspends the
     execution of the coroutine and waits for the completion of the ``Future``. When the ``Future`` is done, the
     execution of the wrapped coroutine resumes.
-    
+
     Attributes
     ----------
     _blocking : `bool`
@@ -2597,10 +2810,10 @@ class Task(Future):
     _callbacks : `list` of `callable`
         The callbacks of the task, which are queued up on the respective event loop to be called, when the task is
         finished. These callback should accept `1` parameter, the task itself.
-        
+
         Note, if the task is already done, then the newly added callbacks are queued up instantly on the respective
         event loop to be called.
-    
+
     _exception : `None` or `BaseException` instance
         The exception raised by task's internal coroutine. Defaults to `None`.
     _loop : ``EventThread``
@@ -2609,9 +2822,9 @@ class Task(Future):
         The result of the task. Defaults to `None`.
     _state : `str`
         The state of the task.
-        
+
         Can be set as one of the following:
-        
+
         +-----------------+---------------+
         | Respective name | Value         |
         +=================+===============+
@@ -2623,10 +2836,10 @@ class Task(Future):
         +-----------------+---------------+
         | RETRIEVED       | `'RETRIEVED'` |
         +-----------------+---------------+
-        
+
         Note, that states are checked by memory address and not by equality. Also ``RETRIEVED`` is used only if
         `__debug__` is set as `True`.
-    
+
     _coro : `coroutine` or `generator`
         The wrapped coroutine.
     _fut_waiter : `None` or ``Future`` instance
@@ -2634,12 +2847,13 @@ class Task(Future):
     _must_cancel : `bool`
         Whether the task is cancelled, and at it's next step a ``CancelledError`` would be raised into it's coroutine.
     """
+
     __slots__ = ('_coro', '_fut_waiter', '_must_cancel')
-    
+
     def __new__(cls, coro, loop):
         """
         Creates a new ``Task`` object running the given coroutine on the given event loop.
-        
+
         Parameters
         ----------
         coro : `coroutine` or `generator`
@@ -2653,35 +2867,35 @@ class Task(Future):
 
         self._result = None
         self._exception = None
-        
+
         self._callbacks = []
         self._blocking = False
 
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
-        
+
         loop.call_soon(self._step)
 
         return self
-    
+
     def get_stack(self, limit=-1):
         """
         Return the list of stack frames for the task. If the task is already done, returns an empty list.
-        
+
         Parameters
         ----------
         limit : `int`, Optional
             The maximal amount of stacks to fetch. By giving it as negative integer, there will be no stack limit
             to fetch back, Defaults to `-1`.
-        
+
         Returns
         -------
         frames : `list` of `frame`
             The stack frames of the task.
         """
         frames = []
-        
+
         coro = self._coro
         if isinstance(coro, GeneratorType):
             frame = coro.gi_frame
@@ -2689,27 +2903,27 @@ class Task(Future):
             frame = coro.cr_frame
         else:
             frame = None
-        
+
         if frame is None:
             return frames
-        
+
         while limit:
             limit -= 1
-            
+
             if frame in frames:
                 frames.append(frame)
                 frames.append(None)
                 return frames
-            
+
             frames.append(frame)
-            
+
             if isinstance(coro, GeneratorType):
                 coro = coro.gi_yieldfrom
             elif isinstance(coro, CoroutineType):
                 coro = coro.cr_await
             else:
                 coro = None
-            
+
             if coro is not None:
                 if isinstance(coro, GeneratorType):
                     frame = coro.gi_frame
@@ -2717,45 +2931,45 @@ class Task(Future):
                     frame = coro.cr_frame
                 else:
                     frame = None
-                
+
                 if frame is not None:
                     continue
-            
+
             self = self._fut_waiter
             if self is None:
                 break
-            
+
             del frames[-1]
             if not isinstance(self, Task):
                 break
-            
+
             coro = self._coro
-            
+
             if isinstance(coro, GeneratorType):
                 frame = coro.gi_frame
             elif isinstance(coro, CoroutineType):
                 frame = coro.cr_frame
             else:
                 frame = None
-                
+
             if frame is None:
                 break
-        
+
         return frames
-    
+
     def __repr__(self):
         """Returns the task's representation."""
         result = ['<', self.__class__.__name__, ' ']
-        
+
         state = self._state
         result.append(state)
-        
+
         if self._must_cancel:
             result.append(' (cancelling)')
-        
+
         result.append(' coro=')
         result.append(format_coroutine(self._coro))
-        
+
         fut_waiter = self._fut_waiter
         if fut_waiter is not None:
             result.append(', waits for=')
@@ -2763,7 +2977,7 @@ class Task(Future):
                 result.append(fut_waiter.qualname)
             else:
                 result.append(repr(fut_waiter))
-        
+
         if (not self._must_cancel) and (state is FINISHED or state is RETRIEVED):
             exception = self._exception
             if exception is None:
@@ -2772,7 +2986,7 @@ class Task(Future):
             else:
                 result.append(', exception=')
                 result.append(repr(exception))
-        
+
         callbacks = self._callbacks
         limit = len(callbacks)
         if limit:
@@ -2784,20 +2998,20 @@ class Task(Future):
                 index += 1
                 if index == limit:
                     break
-                
+
                 result.append(', ')
                 continue
-            
+
             result.append(']')
-        
+
         result.append('>')
-        
+
         return ''.join(result)
-    
+
     def print_stack(self, limit=-1, file=None):
         """
         Prints the stack or traceback of the task.
-        
+
         Parameters
         ----------
         limit : `int`, Optional
@@ -2805,22 +3019,27 @@ class Task(Future):
             to print out, Defaults to `-1`.
         file : `None` or `I/O stream`, Optional
             The file to print the stack to. Defaults to `sys.stderr`.
-        
+
         Notes
         -----
         If the task is finished with an exception, then `limit` is ignored when printing traceback.
         """
         local_thread = current_thread()
         if isinstance(local_thread, EventThread):
-            return local_thread.run_in_executor(alchemy_incendiary(self._print_stack,(self, limit, file),))
+            return local_thread.run_in_executor(
+                alchemy_incendiary(
+                    self._print_stack,
+                    (self, limit, file),
+                )
+            )
         else:
             self._print_stack(self, limit, file)
-    
+
     @staticmethod
     def _print_stack(self, limit, file):
         """
         Prints the stack or traceback of the task to the given `file`.
-        
+
         Parameters
         ----------
         limit : `int`, Optional
@@ -2828,29 +3047,31 @@ class Task(Future):
             to print out,
         file : `None` or `I/O stream`
             The file to print the stack to. Defaults to `sys.stderr`.
-        
+
         Notes
         -----
         This function calls blocking operations and should not run inside of an event loop.
-        
+
         If the task is finished with an exception, then `limit` is ignored when printing traceback.
         """
         if file is None:
             file = sys.stdout
-        
+
         exception = self._exception
-        
+
         if exception is None:
             frames = self.get_stack(limit)
             if frames:
-                recursive = (frames[-1] is None)
+                recursive = frames[-1] is None
                 if recursive:
                     del frames[-1]
 
                 extracted = ['Stack for ', repr(self), ' (most recent call last):\n']
                 extracted = render_frames_to_list(frames, extend=extracted)
                 if recursive:
-                    extracted.append('Last frame is a repeat from a frame above. Rest of the recursive part is not rendered.')
+                    extracted.append(
+                        'Last frame is a repeat from a frame above. Rest of the recursive part is not rendered.'
+                    )
             else:
                 extracted = ['No stack for ', repr(self), '\n']
         else:
@@ -2858,34 +3079,37 @@ class Task(Future):
             extracted[0] = f'Traceback for {self!r} (most recent call last):\n'
 
         file.write(''.join(extracted))
-    
+
     if __debug__:
+
         def cancel(self):
             state = self._state
             if state is not PENDING:
                 if state is FINISHED:
                     self._state = RETRIEVED
-                
+
                 return 0
-            
+
             fut_waiter = self._fut_waiter
             if (fut_waiter is None) or (not fut_waiter.cancel()):
                 self._must_cancel = True
-            
+
             return 1
-        
+
     else:
+
         def cancel(self):
             if self._state is not PENDING:
                 return 0
-            
+
             fut_waiter = self._fut_waiter
             if (fut_waiter is None) or (not fut_waiter.cancel()):
                 self._must_cancel = True
-            
+
             return 1
-    
-    set_docs(cancel,
+
+    set_docs(
+        cancel,
         """
         Cancels the waited future of the task, if it is still pending, causing the task to be cancelled as well.
         
@@ -2900,14 +3124,14 @@ class Task(Future):
         
         If `__debug__` is set as `True`, then `.cancel()` also marks the task as retrieved, causing it to not render
         non-retrieved exceptions.
-        """
+        """,
     )
-    
+
     @property
     def name(self):
         """
         Returns the task's wrapped coroutine's name.
-        
+
         Returns
         -------
         name : `str`
@@ -2917,12 +3141,12 @@ class Task(Future):
             return coro.__name__
         except AttributeError:
             return coro.__class__.__name__
-    
+
     @property
     def qualname(self):
         """
         Returns the task's wrapped coroutine's qualname.
-        
+
         Returns
         -------
         qualname : `str`
@@ -2932,39 +3156,43 @@ class Task(Future):
             return coro.__qualname__
         except AttributeError:
             return coro.__class__.__qualname__
-        
+
     def set_result(self, result):
         """
         Tasks do not support `.set_result` operation.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Raises
         ------
         RuntimeError
             Tasks do not support `.set_result` operation.
         """
-        raise RuntimeError(f'{self.__class__.__name__} does not support `.set_result` operation')
-    
+        raise RuntimeError(
+            f'{self.__class__.__name__} does not support `.set_result` operation'
+        )
+
     def set_result_if_pending(self, result):
         """
         Tasks do not support `.set_result_if_pending` operation.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Raises
         ------
         RuntimeError
             Tasks do not support `.set_result_if_pending` operation.
         """
-        raise RuntimeError(f'{self.__class__.__name__} does not support `.set_result_if_pending` operation')
-    
+        raise RuntimeError(
+            f'{self.__class__.__name__} does not support `.set_result_if_pending` operation'
+        )
+
     # We will not send an exception to a task, but we will cancel it.
     # The exception will show up as `._exception` tho.
     # We also wont change the state of the Task, it will be changed, when the
@@ -2972,12 +3200,12 @@ class Task(Future):
     def set_exception(self, exception):
         """
         Cancels the task and sets the given exception as it's.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the task's exception.
-        
+
         Raises
         ------
         InvalidStateError
@@ -2987,33 +3215,35 @@ class Task(Future):
         """
         if self._state is not PENDING:
             raise InvalidStateError(self, 'set_exception')
-    
+
         if (self._fut_waiter is None) or self._fut_waiter.cancel():
-            self._must_cancel=True
+            self._must_cancel = True
 
         if isinstance(exception, type):
             exception = exception()
-            
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+            )
+
         self._exception = exception
-    
+
     def set_exception_if_pending(self, exception):
         """
         Cancels the task and sets the given exception as it's. Not like ``.set_exception``, this method will not raise
         ``InvalidStateError`` if the task is already done.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the task's exception.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`)
             If the task is already done, returns `0`, else `1`.
-        
+
         Raises
         ------
         TypeError
@@ -3021,59 +3251,66 @@ class Task(Future):
         """
         if self._state is not PENDING:
             return 0
-        
+
         if (self._fut_waiter is None) or self._fut_waiter.cancel():
-            self._must_cancel=True
-        
+            self._must_cancel = True
+
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+            )
+
         self._exception = exception
         return 1
-    
+
     def clear(self):
         """
         Tasks do not support `.clear` operation.
-        
+
         Raises
         ------
         RuntimeError
             Tasks do not support `.clear` operation.
         """
-        raise RuntimeError(f'{self.__class__.__name__} does not support `.clear` operation')
-    
+        raise RuntimeError(
+            f'{self.__class__.__name__} does not support `.clear` operation'
+        )
+
     def _step(self, exception=None):
         """
         Does a step, by giving control to the wrapped coroutine by the task.
-        
+
         If `exception` is given, then that exception will be raised to the internal coroutine, exception if the task
         is already cancelled, because, then the exception to raise will be decided by ``._must_exception``.
-        
+
         Parameters
         ----------
         exception : `None` or `BaseException`
             Exception to raise into the wrapped coroutine.
-        
+
         Raises
         ------
         InvalidStateError
             If the task is already done.
         """
         if self._state is not PENDING:
-            raise InvalidStateError(self, '_step', message = \
-                f'`{self.__class__.__name__}._step` already done of {self!r}, exception={exception!r}')
-        
+            raise InvalidStateError(
+                self,
+                '_step',
+                message=f'`{self.__class__.__name__}._step` already done of {self!r}, exception={exception!r}',
+            )
+
         if self._must_cancel:
             exception = self._must_exception(exception)
-        
+
         coro = self._coro
         self._fut_waiter = None
-        
+
         self._loop.current_task = self
-        
+
         # call either coro.throw(err) or coro.send(None).
         try:
             if exception is None:
@@ -3103,13 +3340,12 @@ class Task(Future):
                 self._loop.call_soon(self._step)
         finally:
             self._loop.current_task = None
-            self = None # Need to set `self` as `None`, or `self` might never get garbage collected.
-    
-    
+            self = None  # Need to set `self` as `None`, or `self` might never get garbage collected.
+
     def _wake_up(self, future):
         """
         Callback used by ``._step``, when the wrapped coroutine waits on a future to be marked as done.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -3121,18 +3357,18 @@ class Task(Future):
             self._step(err)
         else:
             self._step()
-        
-        self = None # set self as `None`, so when exception occurs, self can be garbage collected.
-    
+
+        self = None  # set self as `None`, so when exception occurs, self can be garbage collected.
+
     def _must_exception(self, exception):
         """
         Returns the exception, what should be raised into the tasks's wrapped coroutine.
-        
+
         Parameters
         ----------
         exception : `None` or `BaseException`
             The exception, what would be preferable raised into the task.
-        
+
         Returns
         -------
         exception : `BaseException`
@@ -3145,17 +3381,18 @@ class Task(Future):
                 exception = CancelledError()
         else:
             exception = self_exception
-        
+
         self._must_cancel = False
         return exception
+
 
 class AsyncQueue:
     """
     An asynchronous FIFO queue.
-    
+
     ``AsyncQueue`` is async iterable, so if you iterate over it inside of an `async for` loop do
     `.set_exception(CancelledError())` to stop it without any specific exception.
-    
+
     Attributes
     ----------
     _exception : `None` or `BaseException` instance
@@ -3168,11 +3405,18 @@ class AsyncQueue:
         If the queue is empty and it's result is already waited, then this future is set. It's result is set, by the
         first ``.set_result``, or ``.set_exception`` call.
     """
-    __slots__ = ('_exception', '_loop', '_results', '_waiter',)
+
+    __slots__ = (
+        '_exception',
+        '_loop',
+        '_results',
+        '_waiter',
+    )
+
     def __new__(cls, loop, iterable=None, max_length=None, exception=None):
         """
         Creates a new ``AsyncQueue`` instance with the given parameter.
-        
+
         Parameters
         ----------
         loop : ``EventThread``
@@ -3181,37 +3425,37 @@ class AsyncQueue:
             The maximal length of the queue.
         exception : `None` or `BaseException` instance
             Exception to raise when the queue is empty.
-        
+
         Raises
         ------
         TypeError
             If `StopIteration` is given as `exception`.
         """
-        if (exception is not None):
+        if exception is not None:
             if isinstance(exception, type):
                 exception = exception()
-            
+
             if type(exception) is StopIteration:
-                 raise TypeError(f'{exception} cannot be raised to a {cls.__name__}')
-        
+                raise TypeError(f'{exception} cannot be raised to a {cls.__name__}')
+
         if iterable is None:
             results = deque(maxlen=max_length)
         else:
             results = deque(iterable, maxlen=max_length)
-        
+
         self = object.__new__(cls)
         self._loop = loop
         self._results = results
         self._waiter = None
         self._exception = exception
-        
+
         return self
-    
+
     def set_result(self, element):
         """
         Puts the given `element` on the queue. If the queue is empty and it's result is already waited, feeds it to
         ``._waiter`` instead.
-        
+
         Parameters
         ----------
         element : `Any`
@@ -3224,17 +3468,17 @@ class AsyncQueue:
         else:
             self._waiter = None
             waiter.set_result_if_pending(element)
-    
+
     def set_exception(self, exception):
         """
         Sets the given `exception` to raise, when it's queue gets empty. If the queue is empty and it's result is
         already waited, feeds it to ``._waiter`` instead.
-        
+
         Parameters
         ----------
         exception : `None` or `BaseException` instance
             Exception to raise when the queue is empty.
-        
+
         Raises
         ------
         TypeError
@@ -3243,29 +3487,31 @@ class AsyncQueue:
         # should we raise InvalidStateError?
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+            )
+
         self._exception = exception
-        
+
         waiter = self._waiter
         if waiter is not None:
             self._waiter = None
             waiter.set_exception_if_pending(exception)
-    
+
     def __await__(self):
         """
         Waits till the next element of the queue is set. If the queue has elements set, yields the next of them, or if
         the queue has exception set, raises it.
-        
+
         This method is a generator. Should be used with `await` expression.
-        
+
         Returns
         -------
         result : `Any`
             The next element on the queue.
-        
+
         Raises
         ------
         BaseException
@@ -3274,31 +3520,31 @@ class AsyncQueue:
         results = self._results
         if results:
             return results.popleft()
-        
+
         exception = self._exception
         if exception is not None:
             raise exception
-        
+
         waiter = self._waiter
         if waiter is None:
             waiter = Future(self._loop)
             self._waiter = waiter
-        
+
         return (yield from waiter)
-    
+
     result = coroutine(copy_func(__await__))
-    
+
     def result_no_wait(self):
         """
         Returns the queue's next element if applicable.
         Waits till the next element of the queue is set. If the queue has elements set, yields the next of them, or if
         the queue has exception set, raises it.
-        
+
         Returns
         -------
         result : `Any`
             The next element on the queue.
-        
+
         Raises
         ------
         IndexError
@@ -3309,20 +3555,20 @@ class AsyncQueue:
         results = self._results
         if results:
             return results.popleft()
-        
+
         exception = self._exception
         if exception is None:
             raise IndexError('The queue is empty')
-        
+
         raise exception
-    
+
     def __repr__(self):
         """Returns the async queue's representation."""
         repr_parts = [
             self.__class__.__name__,
             '([',
         ]
-        
+
         results = self._results
         limit = len(results)
         if limit:
@@ -3333,51 +3579,51 @@ class AsyncQueue:
                 index += 1
                 if index == limit:
                     break
-                
+
                 repr_parts.append(', ')
-            
+
         repr_parts.append(']')
-        
+
         max_length = results.maxlen
-        if (max_length is not None):
+        if max_length is not None:
             repr_parts.append(', max_length=')
             repr_parts.append(repr(max_length))
-        
+
         exception = self._exception
-        if (exception is not None):
+        if exception is not None:
             repr_parts.append(', exception=')
             repr_parts.append(str(exception))
-        
+
         repr_parts.append(')')
         return ''.join(repr_parts)
-    
+
     __str__ = __repr__
-    
+
     def __aiter__(self):
         """
         Async iterating over an ``AsyncQueue``, returns itself
-        
+
         Returns
         -------
         self : ``AsyncQueue``
         """
         return self
-    
+
     async def __anext__(self):
         """
         Waits till the next element of the queue is set. If the queue has elements set, yields the next of them, or if
         the queue has exception set, raises it.
-        
+
         If the queue has ``CancelledError`` set as ``._exception``, then raises ``StopAsyncIteration`` to stop the queue
         instead.
-        
+
         This method is a coroutine.
-        
+
         Returns
         -------
         result : `Any`
             The next element on the queue.
-        
+
         Raises
         ------
         StopAsyncIteration
@@ -3388,47 +3634,47 @@ class AsyncQueue:
         results = self._results
         if results:
             return results.popleft()
-        
+
         exception = self._exception
         if exception is not None:
             if type(exception) is CancelledError:
                 raise StopAsyncIteration from CancelledError
-            
+
             raise exception
-        
+
         waiter = self._waiter
         if waiter is None:
             waiter = Future(self._loop)
             self._waiter = waiter
-        
+
         try:
-            return (await waiter)
+            return await waiter
         except CancelledError as err:
             raise StopAsyncIteration from err
-    
+
     # deque operations
-    
+
     @property
     def max_length(self):
         """
         Returns the queue's max length.
-        
+
         Returns
         -------
         max_length: `int`
         """
         return self._results.maxlen
-    
+
     def clear(self):
         """
         Clears the queue's results.
         """
         self._results.clear()
-    
+
     def copy(self):
         """
         Copies the queue.
-        
+
         Returns
         -------
         new : ``AsyncQueue``
@@ -3438,26 +3684,27 @@ class AsyncQueue:
         new._results = self._results.copy()
         new._waiter = None
         new._exception = self._exception
-        
+
         return new
-    
+
     def reverse(self):
         """
         Reverses the queue's actual results.
         """
         self._results.reverse()
-    
+
     def __len__(self):
         """
         Returns the queue's actual length.
         """
         return len(self._results)
-    
+
     if __debug__:
+
         def __del__(self):
             """
             If the queue has ``_waiter`` set, silences it.
-            
+
             Notes
             -----
             This function is only present, when `__debug__` is set as `True`.
@@ -3470,10 +3717,10 @@ class AsyncQueue:
 class AsyncLifoQueue(AsyncQueue):
     """
     An asynchronous LIFO queue.
-    
+
     ``AsyncLifoQueue`` is async iterable, so if you iterate over it inside of an `async for` loop do
     `.set_exception(CancelledError())` to stop it without any specific exception.
-    
+
     Attributes
     ----------
     _exception : `None` or `BaseException` instance
@@ -3486,57 +3733,58 @@ class AsyncLifoQueue(AsyncQueue):
         If the queue is empty and it's result is already waited, then this future is set. It's result is set, by the
         first ``.set_result``, or ``.set_exception`` call.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(AsyncQueue.__await__)
     def __await__(self):
         results = self._results
         if results:
             return results.pop()
-        
+
         exception = self._exception
         if exception is not None:
             raise exception
-        
+
         waiter = self._waiter
         if waiter is None:
             waiter = Future(self._loop)
             self._waiter = waiter
-        
+
         return (yield from waiter)
-    
+
     @copy_docs(AsyncQueue.result_no_wait)
     def result_no_wait(self):
         results = self._results
         if results:
             return results.pop()
-        
+
         exception = self._exception
         if exception is None:
             raise IndexError('The queue is empty')
-        
+
         raise exception
-    
+
     @copy_docs(AsyncQueue.__anext__)
     async def __anext__(self):
         results = self._results
         if results:
             return results.pop()
-        
+
         exception = self._exception
         if exception is not None:
             if type(exception) is CancelledError:
                 raise StopAsyncIteration from CancelledError
-            
+
             raise exception
-        
+
         waiter = self._waiter
         if waiter is None:
             waiter = Future(self._loop)
             self._waiter = waiter
-        
+
         try:
-            return (await waiter)
+            return await waiter
         except CancelledError as err:
             raise StopAsyncIteration from err
 
@@ -3544,7 +3792,7 @@ class AsyncLifoQueue(AsyncQueue):
 class FGElement:
     """
     An element of a ``FutureG`` results.
-    
+
     Attributes
     ----------
     result : `Any`
@@ -3552,11 +3800,16 @@ class FGElement:
     exception : `None` or `BaseException`
         The exception of a gathered exception.
     """
-    __slots__ = ('exception', 'result',)
+
+    __slots__ = (
+        'exception',
+        'result',
+    )
+
     def __init__(self, result, exception):
         """
         Creates a new ``FGElement`` with the given parameters.
-        
+
         Parameters
         ----------
         result : `Any`
@@ -3566,16 +3819,16 @@ class FGElement:
         """
         self.result = result
         self.exception = exception
-    
+
     def __call__(self):
         """
         Returns a gathered future's result or raises it's exception.
-        
+
         Returns
         -------
         result : `Any`
             A gathered future's result.
-        
+
         Raises
         ------
         BaseException
@@ -3586,31 +3839,34 @@ class FGElement:
             return self.result
         raise exception
 
+
 class FGCallback:
     """
     Callback of ``FutureG`` to set a waited future's result or exception to itself.
-    
+
     Attributes
     ----------
     parent : ``FutureG``
         The gathering future
     """
+
     __slots__ = ('parent',)
+
     def __init__(self, parent):
         """
         Creates a new gathering future callback.
-        
+
         Parameters
         ----------
         parent : ``FutureG``
             The gathering future
         """
         self.parent = parent
-    
+
     def __call__(self, future):
         """
         Sets a result of an exception to the parent gatherer future.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -3628,7 +3884,7 @@ class FGCallback:
 class Gatherer(FutureWM):
     """
     A ``Future`` subclass to gather more future's results and their exceptions.
-    
+
     Attributes
     ----------
     _blocking : `bool`
@@ -3636,10 +3892,10 @@ class Gatherer(FutureWM):
     _callbacks : `list` of `callable`
         The callbacks of the future, which are queued up on the respective event loop to be called, when the future is
         finished. These callback should accept `1` parameter, the future itself.
-        
+
         Note, if the future is already done, then the newly added callbacks are queued up instantly on the respective
         event loop to be called.
-    
+
     _exception : `None` or `BaseException` instance
         The exception set to the future as it's result. Defaults to `None`.
     _loop : ``EventThread``
@@ -3648,9 +3904,9 @@ class Gatherer(FutureWM):
         The already gathered future's results.
     _state : `str`
         The state of the future.
-        
+
         Can be set as one of the following:
-        
+
         +-----------------+---------------+
         | Respective name | Value         |
         +=================+===============+
@@ -3662,25 +3918,26 @@ class Gatherer(FutureWM):
         +-----------------+---------------+
         | RETRIEVED       | `'RETRIEVED'` |
         +-----------------+---------------+
-        
+
         Note, that states are checked by memory address and not by equality. Also ``RETRIEVED`` is used only if
         `__debug__` is set as `True`.
     _count : `int`
         The amount, for how much future's result the gatherer waits.
     """
+
     __slots__ = ()
-    
+
     def __new__(cls, loop, coros_or_futures):
         """
         Creates a new gatherer bound to the given `loop`, waiting for the given `coros_or_futures`-s results.
-        
+
         Parameters
         ----------
         loop : ``EventThread``
             The loop to what the created future will be bound to.
         coros_or_futures : `iterable` of `awaitable`
             Awaitables, which result will be gathered.
-        
+
         Raises
         ------
         TypeError
@@ -3689,42 +3946,44 @@ class Gatherer(FutureWM):
         awaitables = set()
         for awaitable in coros_or_futures:
             if not is_awaitable(awaitable):
-                raise TypeError(f'Cannot await on {awaitable.__class__.__name__}: {awaitable!r}')
+                raise TypeError(
+                    f'Cannot await on {awaitable.__class__.__name__}: {awaitable!r}'
+                )
             awaitables.add(awaitable)
-        
+
         self = object.__new__(cls)
         self._loop = loop
         self._count = len(awaitables)
-        
+
         self._result = []
         self._exception = None
-        
+
         self._callbacks = []
         self._blocking = False
-        
+
         if awaitables:
             self._state = PENDING
-            
+
             callback = FGCallback(self)
-            
+
             for awaitable in awaitables:
                 task = loop.ensure_future(awaitable)
                 task.add_done_callback(callback)
         else:
             self._state = FINISHED
-        
+
         return self
-    
+
     def set_result(self, result):
         """
         Sets a result to the gatherer. if all the expected results of the gatherer are retrieved already, marks it as
         done as well.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Raises
         ------
         InvalidStateError
@@ -3732,12 +3991,12 @@ class Gatherer(FutureWM):
         """
         if self._state is not PENDING:
             raise InvalidStateError(self, 'set_result')
-        
+
         results = self._result
         results.append(FGElement(result, None))
         if self._count != len(results):
             return
-        
+
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
 
@@ -3746,12 +4005,12 @@ class Gatherer(FutureWM):
         Sets a result to the gatherer. If all the expected results of the gatherer are retrieved already, marks it as
         done as well. Not like ``.set_result``, this method will not raise ``InvalidStateError`` if the future is
         already done.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`, `2`)
@@ -3760,26 +4019,26 @@ class Gatherer(FutureWM):
         """
         if self._state is not PENDING:
             return 0
-        
+
         results = self._result
         results.append(FGElement(result, None))
         if self._count != len(results):
             return 2
-        
+
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
         return 1
-    
+
     def set_exception(self, exception):
         """
         Sets an exception to the gatherer. If all the expected results of the gatherer are retrieved already, marks it
         as done as well.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as a result of the gatherer.
-        
+
         Raises
         ------
         InvalidStateError
@@ -3789,18 +4048,20 @@ class Gatherer(FutureWM):
         """
         if self._state is not PENDING:
             raise InvalidStateError(self, 'set_exception')
-        
+
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+            )
+
         results = self._result
         results.append(FGElement(None, exception))
         if self._count != len(results):
             return
-        
+
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
 
@@ -3809,18 +4070,18 @@ class Gatherer(FutureWM):
         Sets an exception to the gatherer. If all the expected results of the gatherer are retrieved already, marks it
         as done as well. Not like ``.set_exception``, this method will not raise ``InvalidStateError`` if the future is
         already done.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as a result of the gatherer.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`, `2`)
             If the gatherer is already done, returns `0`. If the exception was set successfully as a gatherer result,
             returns `1`, meanwhile if the gatherer was marked as done as well, returns `2`.
-        
+
         Raises
         ------
         TypeError
@@ -3828,82 +4089,88 @@ class Gatherer(FutureWM):
         """
         if self._state is not PENDING:
             return 0
-        
+
         results = self._result
         results.append(FGElement(None, exception))
         if self._count != len(results):
             return 1
-        
+
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
         return 2
+
 
 class _HandleCancellerBase:
     """
     ``Future`` callback-base to cancel a respective ``Handle`` instance when the future is marked as done before the
     handle, or if the handler runs first, then sets the future result or exception.
-    
+
     This class do not implements ``.__call__`. Subclasses should implement that.
-    
+
     Attributes
     ----------
     handler : `None` or ``Handle``
         The handle to cancel, when the future is marked as done before the respective handle ran.
     """
+
     __slots__ = ('handler',)
+
     def __init__(self):
         """
         Creates a new handle canceller.
-        
+
         Note, that a handle canceller is created with empty ``.handle``, because it is a callback and a ``Handle``'s
         function at the same time, so ``.handle`` is needed to be set from outside.
         """
         self.handler = None
-    
+
     def __call__(self, future):
         """
         Called by the respective ``Future`` instance as callback, or by the respective handle.
-        
+
         Subclasses should overwrite this method.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
             The respective future to what the handle canceller was added as callback.
         """
         pass
-    
+
     def cancel(self):
         """
         Cancels the handle.
-        
+
         This method is usually called when the respective future's handles are cleared.
         """
         handler = self.handler
         if handler is None:
             return
-         
+
         self.handler = None
         handler.cancel()
+
 
 class _SleepHandleCanceller(_HandleCancellerBase):
     """
     ``Future`` callback to cancel a respective ``Handle`` instance when the future is marked as done before the
     handle, or if the handler runs first, then sets the future result as `None˛.
-    
+
     Attributes
     ----------
     handler : `None` or ``Handle``
         The handle to cancel, when the future is marked as done before the respective handle ran.
     """
+
     __slots__ = ()
+
     def __call__(self, future):
         """
         Called by the respective ``Future`` instance as callback, or by the respective handle. Sets the given
         `future`'s result as `None` if applicable.
-        
+
         Sets ``._handle`` as `None`, marking the canceller as it ran already.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -3912,15 +4179,16 @@ class _SleepHandleCanceller(_HandleCancellerBase):
         handler = self.handler
         if handler is None:
             return
-        
+
         self.handler = None
         handler.cancel()
         future.set_result_if_pending(None)
 
+
 def sleep(delay, loop=None):
     """
     Suspends the current task, allowing other tasks to run.
-    
+
     Parameters
     ----------
     delay : `float`
@@ -3928,12 +4196,12 @@ def sleep(delay, loop=None):
     loop : `None` or ``EventThread``, Optional
         The event loop to which the returned `future` will be bound to. If not given, or given as `None`, then the
         current event loop will be used.
-    
+
     Returns
     -------
     future : ``Future``
         Future, what can be awaited, to suspend a task.
-    
+
     Raises
     ------
     RuntimeError
@@ -3942,42 +4210,48 @@ def sleep(delay, loop=None):
     if loop is None:
         loop = current_thread()
         if not isinstance(loop, EventThread):
-            raise RuntimeError(f'`sleep` called without passing `loop` parameter from a non {EventThread.__name__}: '
-                f'{loop!r}.')
-    
+            raise RuntimeError(
+                f'`sleep` called without passing `loop` parameter from a non {EventThread.__name__}: '
+                f'{loop!r}.'
+            )
+
     future = Future(loop)
-    if delay <= 0.:
+    if delay <= 0.0:
         future.set_result(None)
         return future
-    
+
     callback = object.__new__(_SleepHandleCanceller)
     handler = loop.call_later(delay, callback, future)
     if handler is None:
-        raise RuntimeError(f'`sleep` was called with future with a stopped loop {loop!r}')
-    
+        raise RuntimeError(
+            f'`sleep` was called with future with a stopped loop {loop!r}'
+        )
+
     future._callbacks.append(callback)
     callback.handler = handler
     return future
+
 
 class _TimeoutHandleCanceller(_HandleCancellerBase):
     """
     ``Future`` callback to cancel a respective ``Handle`` instance when the future is marked as done before the
     handle, or if the handler runs first, then sets the future's exception to `TimeoutError`.
-    
+
     Attributes
     ----------
     handler : `None` or ``Handle``
         The handle to cancel, when the future is marked as done before the respective handle ran.
     """
+
     __slots__ = ('handler',)
-    
+
     def __call__(self, future):
         """
         Called by the respective ``Future`` instance as callback, or by the respective handle. Sets the given
         `future`'s exception to `TimeoutError` if applicable.
-        
+
         Sets ``._handle`` as `None`, marking the canceller as it ran already.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -3986,36 +4260,37 @@ class _TimeoutHandleCanceller(_HandleCancellerBase):
         handler = self.handler
         if handler is None:
             return
-        
+
         handler.cancel()
         self.handler = None
         future.set_exception_if_pending(TimeoutError())
 
+
 def future_or_timeout(future, timeout):
     """
     If the given ``Future`` is not done till the given `timeout` occurs, set `TimeoutError` as it's exception.
-    
+
     Parameters
     ----------
     future : ``future`` instance
         The future to set the timeout to.
     timeout : `float`
         The time after the given `future`'s exception is set as `TimeoutError`.
-    
+
     Raises
     ------
     RuntimeError
         The future's event loop is already stopped.
-    
+
     Notes
     -----
     For futures, which wait for more results and exceptions like ``Gatherer``, `TimeoutError` gives only 1 result,
     rigging it's results. This is not the case of ``FutureWM``, because that stops when the first exception is received.
-    
+
     If `future_or_timeout` is used on ``WaitTillFirst``, ``WaitTillAll`` or on ``WaitTillAll``, then they stop
     collecting their result at the point, when the timeout occurs and they yield their actual result at that point
     without any specific exception.
-    
+
     At the case of ``WaitContinuously``, when the timeout occurs the next yielded result will be `None` instead of a
     ``Future`` instance.
     """
@@ -4023,33 +4298,39 @@ def future_or_timeout(future, timeout):
     callback = _TimeoutHandleCanceller()
     handler = loop.call_later(timeout, callback, future)
     if handler is None:
-        raise RuntimeError(f'`future_or_timeout` was called with future with a stopped loop {loop!r}')
-    
+        raise RuntimeError(
+            f'`future_or_timeout` was called with future with a stopped loop {loop!r}'
+        )
+
     callback.handler = handler
     future.add_done_callback(callback)
+
 
 class _FutureChainer:
     """
     Chains a future's result into an other one used as a callback of the source future.
-    
+
     Attributes
     ----------
     target : ``Future``
         The target future to chain the result into if applicable.
     """
+
     __slots__ = ('target',)
+
     def __init__(self, target):
         """
         Creates a new ``_FutureChainer`` instance with the given target future.
-        
+
         Parameters
         ----------
         target : ``Future``
             The target future to chain the result into if applicable.
         """
         self.target = target
-    
+
     if __debug__:
+
         def __call__(self, future):
             # remove chain remover
             target = self.target
@@ -4059,7 +4340,7 @@ class _FutureChainer:
                 if (type(callback) is _ChainRemover) and (callback.target is future):
                     del callbacks[index]
                     break
-            
+
             # set result
             state = future._state
             if state is FINISHED:
@@ -4069,18 +4350,19 @@ class _FutureChainer:
                 else:
                     target.set_exception(future._exception)
                 return
-            
+
             if state is RETRIEVED:
                 if future._exception is None:
                     target.set_result(future._result)
                 else:
                     target.set_exception(future._exception)
                 return
-            
+
             # if state is CANCELLED: normally, but the future can be cleared as well.
             target.cancel()
-    
+
     else:
+
         def __call__(self, future):
             # remove chain remover
             target = self.target
@@ -4090,7 +4372,7 @@ class _FutureChainer:
                 if type(callback) is _ChainRemover and callback.target is future:
                     del callbacks[index]
                     break
-            
+
             # set result
             if future._state is FINISHED:
                 exception = future._exception
@@ -4099,11 +4381,12 @@ class _FutureChainer:
                 else:
                     target.set_exception(exception)
                 return
-            
+
             # if state is CANCELLED: normally, but the future can be cleared as well.
             target.cancel()
-    
-    set_docs(__call__,
+
+    set_docs(
+        __call__,
         """
         Chains the source future's result into the target one.
         
@@ -4111,22 +4394,25 @@ class _FutureChainer:
         ----------
         future : ``Future`` instance
             The source future to chain it's result from.
-        """
+        """,
     )
+
 
 class _ChainRemover:
     """
     Removes the ``_FutureChainer`` callback of the source future if the chained target future is marked as done before.
-    
+
     Parameters
     -------
     target : ``Future`` instance
         The source future.
     """
+
     __slots__ = ('target',)
+
     def __init__(self, target):
         self.target = target
-    
+
     def __call__(self, future):
         # remove chainer
         callbacks = self.target._callbacks
@@ -4139,22 +4425,23 @@ class _ChainRemover:
                     future.__silence__()
                 break
 
+
 def shield(awaitable, loop):
     """
     Protects the given `awaitable` from being cancelled.
-    
+
     Parameters
     ----------
     awaitable : `awaitable`
         The awaitable object to shield.
     loop : ``EventThread``
         The event loop to run the `awaitable` on.
-    
+
     Returns
     -------
     TypeError
         The given `awaitable` is not `awaitable`.
-    
+
     Returns
     -------
     un_protected : ``Future`` instance
@@ -4163,18 +4450,19 @@ def shield(awaitable, loop):
     """
     protected = loop.ensure_future(awaitable)
     if protected._state is not PENDING:
-        return protected # already done, we can return
-    
+        return protected  # already done, we can return
+
     un_protected = Future(loop)
     protected._callbacks.append(_FutureChainer(un_protected))
     un_protected._callbacks.append(_ChainRemover(protected))
     return un_protected
 
+
 class WaitTillFirst(Future):
     """
     A future subclass, which waits till the first task or future is completed from the given ones. When finished,
     returns the `done` and the `pending` futures.
-    
+
     Attributes
     ----------
     _blocking : `bool`
@@ -4182,10 +4470,10 @@ class WaitTillFirst(Future):
     _callbacks : `list` of `callable`
         The callbacks of the future, which are queued up on the respective event loop to be called, when the future is
         finished. These callback should accept `1` parameter, the future itself.
-        
+
         Note, if the future is already done, then the newly added callbacks are queued up instantly on the respective
         event loop to be called.
-    
+
     _exception : `None` or `BaseException` instance
         The exception set to the future as it's result. Defaults to `None`.
     _loop : ``EventThread``
@@ -4194,9 +4482,9 @@ class WaitTillFirst(Future):
         The result of the future. Defaults to `None`.
     _state : `str`
         The state of the future.
-        
+
         Can be set as one of the following:
-        
+
         +-----------------+---------------+
         | Respective name | Value         |
         +=================+===============+
@@ -4208,19 +4496,20 @@ class WaitTillFirst(Future):
         +-----------------+---------------+
         | RETRIEVED       | `'RETRIEVED'` |
         +-----------------+---------------+
-        
+
         Note, that states are checked by memory address and not by equality. Also ``RETRIEVED`` is used only if
         `__debug__` is set as `True`.
-    
+
     _callback : ``._wait_callback``
         Callback added to the waited futures.
     """
-    __slots__ = ('_callback', )
-    
+
+    __slots__ = ('_callback',)
+
     def __new__(cls, futures, loop):
         """
         Creates a new ``WaitTillFirst`` object with the given parameters.
-        
+
         Parameters
         ----------
         futures : `iterable` of ``Future`` instances
@@ -4230,19 +4519,19 @@ class WaitTillFirst(Future):
         """
         pending = set(futures)
         done = set()
-        
+
         self = object.__new__(cls)
         self._loop = loop
-        
+
         callback = cls._wait_callback(self)
         self._callback = callback
-        
+
         self._result = (done, pending)
         self._exception = None
-        
+
         self._callbacks = []
         self._blocking = False
-        
+
         if pending:
             try:
                 for future in pending:
@@ -4251,40 +4540,41 @@ class WaitTillFirst(Future):
                 self._state = PENDING
         else:
             self._state = FINISHED
-        
+
         return self
-    
+
     # `__repr__` is same as ``Future.__repr__``
-    
+
     class _wait_callback:
         """
         ``WaitTillFirst``'s callback put on the future's waited by it.
-        
+
         Attributes
         ----------
         _parent : ``WaitTillFirst``
             The parent future.
         """
+
         __slots__ = ('_parent',)
-        
+
         def __init__(self, parent):
             """
             Creates a new ``WaitTillFirst`` callback object with the given parent ``WaitTillFirst`` instance.
-            
+
             Parameters
             ----------
             parent : ``WaitTillFirst``
                 The parent future.
             """
             self._parent = parent
-        
+
         def __call__(self, future):
             """
             The callback, which runs when a waited future is done.
-            
+
             Removes the done future from the parent's `pending` futures and puts it on the `done` ones. Also marks the
             parent ``WaitTillFirst`` instance as finished.
-            
+
             Parameters
             ----------
             future : ``Future`` instance
@@ -4293,14 +4583,14 @@ class WaitTillFirst(Future):
             parent = self._parent
             if parent is None:
                 return
-            
+
             done, pending = parent._result
-            
+
             pending.remove(future)
             done.add(future)
-            
+
             parent._mark_as_finished()
-    
+
     def _mark_as_finished(self):
         """
         Marks self as finished, ensures it's callbacks, stops other waited futures to go to it's `done` result group
@@ -4308,67 +4598,70 @@ class WaitTillFirst(Future):
         """
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
-        
+
         callback = self._callback
         callback._parent = None
-        
+
         for future in self._result[1]:
             future.remove_done_callback(callback)
-    
+
     @property
     def futures_done(self):
         """
         Returns the already done futures.
-        
+
         Returns
         -------
         done : `set` of ``Future`` instances.
         """
         return self._result[0]
-    
+
     @property
     def futures_pending(self):
         """
         Returns the yet pending futures.
-        
+
         Returns
         -------
         done : `set` of ``Future`` instances.
         """
         return self._result[1]
-    
+
     # cancels the future, but every pending one as well.
     if __debug__:
+
         def cancel(self):
             state = self._state
             if state is not PENDING:
                 if state is FINISHED:
                     self._state = RETRIEVED
-                
+
                 return 0
-                
+
             self._callback._parent = None
             for future in self._result[1]:
                 future.cancel()
-            
+
             self._state = CANCELLED
             self._loop._schedule_callbacks(self)
             return 1
-    
+
     else:
+
         def cancel(self):
             if self._state is not PENDING:
                 return 0
-            
+
             self._callback._parent = None
             for future in self._result[1]:
                 future.cancel()
-            
+
             self._state = CANCELLED
             self._loop._schedule_callbacks(self)
             return 1
-    
-    set_docs(cancel,
+
+    set_docs(
+        cancel,
         """
         Cancels the future if it is pending.
         
@@ -4383,9 +4676,9 @@ class WaitTillFirst(Future):
         -----
         If `__debug__` is set as `True`, then `.cancel()` also marks the future as retrieved, causing it to not render
         non-retrieved exceptions.
-        """
+        """,
     )
-    
+
     # `cancelled` is same as ``Future.cancelled``
     # `done` is same as ``Future.done``
     # `pending` is same as ``Future.pending``
@@ -4393,51 +4686,55 @@ class WaitTillFirst(Future):
     # `exception` is same as ``Future.exception``
     # `add_done_callback` is same as ``Future.add_done_callback``
     # `remove_done_callback` is same as ``Future.remove_done_callback``
-    
+
     def set_result(self, result):
         """
         Result waiter future types do not support `.set_result` operation.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Raises
         ------
         RuntimeError
             Waiter futures do not support `.set_result` operation.
         """
-        raise RuntimeError(f'{self.__class__.__name__} does not support `set_result` operation.')
-    
+        raise RuntimeError(
+            f'{self.__class__.__name__} does not support `set_result` operation.'
+        )
+
     def set_result_if_pending(self, result):
         """
         Result waiter future types do not support `.set_result_if_pending` operation.
-        
+
         Parameters
         ----------
         result : `Any`
             The object to set as result.
-        
+
         Raises
         ------
         RuntimeError
             Waiter futures do not support `.set_result_if_pending` operation.
         """
-        raise RuntimeError(f'{self.__class__.__name__} does not support `set_result_if_pending` operation.')
-    
+        raise RuntimeError(
+            f'{self.__class__.__name__} does not support `set_result_if_pending` operation.'
+        )
+
     def set_exception(self, exception):
         """
         Sets an exception as a result of the waiter future.
-        
+
         If `exception` is given as `TimeoutError`, then the waiter will not raise, instead will yield it's `done`
         and `pending` future's current status.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the future's exception.
-        
+
         Raises
         ------
         InvalidStateError
@@ -4447,37 +4744,39 @@ class WaitTillFirst(Future):
         """
         if self._state is not PENDING:
             raise InvalidStateError(self, 'set_exception')
-        
+
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}.')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}.'
+            )
+
         if type(exception) is not TimeoutError:
             self._exception = exception
-        
+
         self._mark_as_finished()
-    
+
     def set_exception_if_pending(self, exception):
         """
         Sets an exception as a result of the waiter future. Not like ``.set_exception``, this method will not raise
         ``InvalidStateError`` if the future is already done.
-        
+
         If `exception` is given as `TimeoutError`, then the waiter will not raise, instead will yield it's `done`
         and `pending` future's current status.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the future's exception.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`)
             If the future is already done, returns `0`. If `exception` is given as `TimeoutError`, returns `2`, else
             `1`.
-        
+
         Raises
         ------
         TypeError
@@ -4485,21 +4784,23 @@ class WaitTillFirst(Future):
         """
         if self._state is not PENDING:
             return 0
-        
+
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}.')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}.'
+            )
+
         self._mark_as_finished()
-        
+
         if type(exception) is TimeoutError:
             return 2
-        
+
         self._exception = exception
         return 1
-    
+
     # `__iter__` is same as ``Future.__iter__``
     # `__await__` is same as ``Future.__await__``
     # if __debug__:
@@ -4507,26 +4808,29 @@ class WaitTillFirst(Future):
     #    `__silence__` is same as ``Future.__silence__``
     #    `__silence_cb__` is same as ``Future.__silence_cb__``
     # `cancel_handles` is same as ``Future.cancel_handles``
-    
+
     def clear(self):
         """
         Waiter futures do not support `.clear` operation.
-        
+
         Raises
         ------
         RuntimeError
             Waiter futures do not support `.clear` operation.
         """
-        raise RuntimeError(f'{self.__class__.__name__} does not support `.clear` operation.')
-    
+        raise RuntimeError(
+            f'{self.__class__.__name__} does not support `.clear` operation.'
+        )
+
     # `sync_wrap` is same as ``Future.sync_wrap``
     # `async_wrap` is same as ``Future.async_wrap``
-    
+
+
 class WaitTillExc(WaitTillFirst):
     """
     A future subclass, which waits till the first task or future raises an exception, or till all of them becomes done.
     When finished, returns the `done` and the `pending` futures.
-    
+
     Attributes
     ----------
     _blocking : `bool`
@@ -4534,10 +4838,10 @@ class WaitTillExc(WaitTillFirst):
     _callbacks : `list` of `callable`
         The callbacks of the future, which are queued up on the respective event loop to be called, when the future is
         finished. These callback should accept `1` parameter, the future itself.
-        
+
         Note, if the future is already done, then the newly added callbacks are queued up instantly on the respective
         event loop to be called.
-    
+
     _exception : `None` or `BaseException` instance
         The exception set to the future as it's result. Defaults to `None`.
     _loop : ``EventThread``
@@ -4546,9 +4850,9 @@ class WaitTillExc(WaitTillFirst):
         The result of the future. Defaults to `None`.
     _state : `str`
         The state of the future.
-        
+
         Can be set as one of the following:
-        
+
         +-----------------+---------------+
         | Respective name | Value         |
         +=================+===============+
@@ -4560,47 +4864,49 @@ class WaitTillExc(WaitTillFirst):
         +-----------------+---------------+
         | RETRIEVED       | `'RETRIEVED'` |
         +-----------------+---------------+
-        
+
         Note, that states are checked by memory address and not by equality. Also ``RETRIEVED`` is used only if
         `__debug__` is set as `True`.
-    
+
     _callback : ``._wait_callback``
         Callback added to the waited futures.
     """
+
     __slots__ = ()
     # `__new__` is same as ``WaitTillFirst.__new__``
     # `__repr__` is same as ``Future.__repr__``
-    
+
     class _wait_callback:
         """
         ``WaitTillExc``'s callback put on the future's waited by it.
-        
+
         Attributes
         ----------
         _parent : ``WaitTillExc``
             The parent future.
         """
+
         __slots__ = ('_parent',)
-        
+
         def __init__(self, parent):
             """
             Creates a new ``WaitTillExc`` callback object with the given parent ``WaitTillExc`` instance.
-            
+
             Parameters
             ----------
             parent : ``WaitTillExc``
                 The parent future.
             """
             self._parent = parent
-        
+
         def __call__(self, future):
             """
             The callback, which runs when a waited future is done.
-            
+
             Removes the done future from the parent's `pending` futures and puts it on the `done` ones. If there is no
             more future to wait for, or if the future ended with an exception, marks the parent ``WaitTillExc``
             as finished as well.
-            
+
             Parameters
             ----------
             future : ``Future`` instance
@@ -4609,17 +4915,17 @@ class WaitTillExc(WaitTillFirst):
             parent = self._parent
             if parent is None:
                 return
-            
+
             done, pending = parent._result
-            
+
             pending.remove(future)
             done.add(future)
-            
+
             if (future._exception is None) and pending:
                 return
-            
+
             parent._mark_as_finished()
-    
+
     # `futures_done` is same as ``WaitTillFirst.futures_done``
     # `futures_pending` is same as ``WaitTillFirst.futures_pending``
     # `cancel` is same as ``WaitTillFirst.cancel``
@@ -4646,11 +4952,12 @@ class WaitTillExc(WaitTillFirst):
     # `sync_wrap` is same as ``Future.cancel_handles``
     # `async_wrap` is same as ``Future.cancel_handles``
 
+
 class WaitTillAll(WaitTillFirst):
     """
     A future subclass, which waits till all the given tasks or futures become done. When finished, returns the `done`
     and the `pending` futures.
-    
+
     Attributes
     ----------
     _blocking : `bool`
@@ -4658,10 +4965,10 @@ class WaitTillAll(WaitTillFirst):
     _callbacks : `list` of `callable`
         The callbacks of the future, which are queued up on the respective event loop to be called, when the future is
         finished. These callback should accept `1` parameter, the future itself.
-        
+
         Note, if the future is already done, then the newly added callbacks are queued up instantly on the respective
         event loop to be called.
-    
+
     _exception : `None` or `BaseException` instance
         The exception set to the future as it's result. Defaults to `None`.
     _loop : ``EventThread``
@@ -4670,9 +4977,9 @@ class WaitTillAll(WaitTillFirst):
         The result of the future. Defaults to `None`.
     _state : `str`
         The state of the future.
-        
+
         Can be set as one of the following:
-        
+
         +-----------------+---------------+
         | Respective name | Value         |
         +=================+===============+
@@ -4684,13 +4991,14 @@ class WaitTillAll(WaitTillFirst):
         +-----------------+---------------+
         | RETRIEVED       | `'RETRIEVED'` |
         +-----------------+---------------+
-        
+
         Note, that states are checked by memory address and not by equality. Also ``RETRIEVED`` is used only if
         `__debug__` is set as `True`.
-    
+
     _callback : ``._wait_callback``
         Callback added to the waited futures.
     """
+
     __slots__ = ()
     # `__new__` is same as ``WaitTillFirst.__new__``
     # `__repr__` is same as ``Future.__repr__``
@@ -4698,32 +5006,33 @@ class WaitTillAll(WaitTillFirst):
     class _wait_callback:
         """
         ``WaitTillAll``'s callback put on the future's waited by it.
-        
+
         Attributes
         ----------
         _parent : ``WaitTillAll``
             The parent future.
         """
+
         __slots__ = ('_parent',)
-        
+
         def __init__(self, parent):
             """
             Creates a new ``WaitTillAll`` callback object with the given parent ``WaitTillAll`` instance.
-            
+
             Parameters
             ----------
             parent : ``WaitTillAll``
                 The parent future.
             """
             self._parent = parent
-            
+
         def __call__(self, future):
             """
             The callback, which runs when a waited future is done.
-            
+
             Removes the done future from the parent's `pending` futures and puts it on the `done` ones. If there is no
             more future to wait for, marks the parent ``WaitTillAll`` as finished as well.
-            
+
             Parameters
             ----------
             future : ``Future`` instance
@@ -4732,17 +5041,17 @@ class WaitTillAll(WaitTillFirst):
             parent = self._parent
             if parent is None:
                 return
-            
+
             done, pending = parent._result
-            
+
             pending.remove(future)
             done.add(future)
-            
+
             if pending:
                 return
-            
+
             parent._mark_as_finished()
-    
+
     # `futures_done` is same as ``WaitTillFirst.futures_done``
     # `futures_pending` is same as ``WaitTillFirst.futures_pending``
     # `cancel` is same as ``WaitTillFirst.cancel``
@@ -4769,33 +5078,34 @@ class WaitTillAll(WaitTillFirst):
     # `sync_wrap` is same as ``Future.cancel_handles``
     # `async_wrap` is same as ``Future.cancel_handles``
 
+
 class Lock:
     """
     Implements a mutex lock for hata tasks.
 
     A hata lock can be used to guarantee exclusive access to a shared resource.
-    
+
     The preferred way of using a hata lock is with `async with` statement:
-    
+
     ```py
     lock = Lock(loop)
-    
+
     async with lock:
         # access resources
     ```
-    
+
     You can also manually acquire and release locks, like:
-    
+
     ```py
     lock = Lock(loop)
-    
+
     await lock.acquire()
     try:
         # access resources
     finally:
         lock.release()
     ```
-    
+
     Attributes
     ----------
     _loop : ``EventThread``
@@ -4803,11 +5113,16 @@ class Lock:
     _waiters : `deque` of ``Future``
         Futures on which the suspended tasks wait.
     """
-    __slots__ = ('_loop', '_waiters', )
+
+    __slots__ = (
+        '_loop',
+        '_waiters',
+    )
+
     def __new__(cls, loop):
         """
         Creates a new lock instance.
-        
+
         loop : ``EventThread``
             The event loop to what the lock will be bound to.
         """
@@ -4815,17 +5130,17 @@ class Lock:
         self._loop = loop
         self._waiters = deque()
         return self
-    
+
     async def __aenter__(self):
         """
         Acquires the lock.
-        
+
         This method is a coroutine.
         """
         future = Future(self._loop)
         waiters = self._waiters
         waiters.appendleft(future)
-        
+
         if len(waiters) > 1:
             waiter = waiters[1]
             try:
@@ -4835,23 +5150,23 @@ class Lock:
                     waiters.remove(waiter)
                 except ValueError:
                     pass
-                
+
                 raise
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """
         Releases the lock.
-        
+
         This method is a coroutine.
         """
         future = self._waiters.pop()
         future.set_result_if_pending(None)
         return False
-    
+
     def locked(self):
         """
         Returns whether the lock is entered anywhere.
-        
+
         Returns
         -------
         locked: `bool`
@@ -4859,53 +5174,53 @@ class Lock:
         if self._waiters:
             return True
         return False
-    
 
     def __iter__(self):
         """
         Blocks until all the lock is unlocked everywhere. If lock is used meanwhile anywhere meanwhile the we acquire
         it, will await that as well.
-        
+
         This method is a generator. Should be used with `await` expression.
         """
         waiters = self._waiters
         while waiters:
             yield from waiters[0]
-    
+
     __await__ = __iter__
-    
+
     acquire = __aenter__
-    
+
     def release(self):
         """Releases the lock."""
         future = self._waiters.pop()
         future.set_result_if_pending(None)
-    
+
     def __repr__(self):
         """Returns the lock's representation."""
         result = [
             '<',
             self.__class__.__name__,
             ' locked=',
-                ]
-        
+        ]
+
         count = len(self._waiters)
         if count:
             result.append('True, waiting=')
             result.append(repr(count))
         else:
             result.append('False')
-        
+
         result.append('>')
-        
+
         return ''.join(result)
+
 
 class ScarletLock(Lock):
     """
     A hata scarlet lock can be used to guarantee access to a shared resource `n` amount of times.
-    
+
     Should be used with `async with` statement
-    
+
     Attributes
     ----------
     _loop : ``EventThread``
@@ -4915,16 +5230,18 @@ class ScarletLock(Lock):
     _size : `int`
         The maximal amount of parallel entries to this lock.
     """
+
     __slots__ = ('_size',)
+
     def __new__(cls, loop, size=1):
         """
         Creates a new lock instance.
-        
+
         loop : ``EventThread``
             The event loop to what the lock will be bound to.
         size : `int`
             The maximal amount of parallel entries to this lock.
-        
+
         Raises
         ------
         TypeError
@@ -4938,28 +5255,30 @@ class ScarletLock(Lock):
         elif issubclass(size_type, int):
             size = int(size)
         else:
-            raise TypeError(f'`size` can be given as `int` instance, got {size_type.__name__}.')
-        
+            raise TypeError(
+                f'`size` can be given as `int` instance, got {size_type.__name__}.'
+            )
+
         if size < 1:
             raise ValueError(f'`size` can be given only as positive, got {size!r}.')
-        
+
         self = object.__new__(cls)
         self._loop = loop
         self._waiters = deque()
         self._size = size
-        
+
         return self
-    
+
     async def __aenter__(self):
         """
         Acquires the lock.
-        
+
         This method is a coroutine.
         """
         future = Future(self._loop)
         waiters = self._waiters
         waiters.appendleft(future)
-        
+
         size = self._size
         if len(waiters) > size:
             waiter = waiters[size]
@@ -4970,25 +5289,25 @@ class ScarletLock(Lock):
                     waiters.remove(waiter)
                 except ValueError:
                     pass
-                
+
                 raise
-    
+
     acquire = __aenter__
-    
+
     def get_size(self):
         """
         Returns the size of the ``ScarletLock``
-        
+
         Returns
         -------
         size : `int`
         """
         return self._size
-    
+
     def get_acquired(self):
         """
         Returns how much times the lock is acquired currently. Caps at the size of the lock.
-        
+
         Returns
         --------
         acquired : `int`
@@ -4997,13 +5316,13 @@ class ScarletLock(Lock):
         size = self._size
         if waiter_count > size:
             waiter_count = size
-        
+
         return waiter_count
-    
+
     def get_waiting(self):
         """
         Returns how tasks are waiting to acquire the lock.
-        
+
         Returns
         --------
         waiting : `int`
@@ -5014,14 +5333,14 @@ class ScarletLock(Lock):
             waiting = waiter_count - size
         else:
             waiting = 0
-        
+
         return waiting
-    
+
     # returns True if the Lock is entered anywhere
     def locked(self):
         """
         Returns whether the lock is entered same or more times than ``.size`` is set to.
-        
+
         Returns
         -------
         locked: `bool`
@@ -5029,38 +5348,38 @@ class ScarletLock(Lock):
         if len(self._waiters) >= self._size:
             return True
         return False
-    
+
     def __repr__(self):
         """Returns the scarlet lock's representation."""
         result = [
             '<',
             self.__class__.__name__,
             ' size=',
-                ]
-        
+        ]
+
         size = self._size
         result.append(repr(size))
-        
+
         result.append(', locked=')
         count = len(self._waiters)
         if count >= size:
             result.append('True')
         else:
             result.append('False')
-        
+
         if count:
             result.append(', waiting=')
             result.append(repr(count))
-        
+
         result.append('>')
-        
+
         return ''.join(result)
 
 
 class Event:
     """
     Asynchronous equivalent to `threading.Event`.
-    
+
     Attributes
     ----------
     _loop : ``EventThread``
@@ -5070,11 +5389,17 @@ class Event:
     _waiters : `list` of ``Future``
         A list of futures waiting on the event to be set.
     """
-    __slots__ = ('_loop', '_value', '_waiters',)
+
+    __slots__ = (
+        '_loop',
+        '_value',
+        '_waiters',
+    )
+
     def __new__(cls, loop):
         """
         Creates a new event object bound to the given event loop.
-        
+
         Parameters
         ----------
         loop : ``EventThread``
@@ -5085,87 +5410,87 @@ class Event:
         self._value = False
         self._waiters = []
         return self
-    
+
     def is_set(self):
         """
         Returns whether the event's internal flag is set as `True`.
-        
+
         Returns
         -------
         is_set: `bool`
         """
         return self._value
-    
+
     def set(self):
         """
         Sets the event's internal flag to `True`, waking up all the tasks waiting for it.
         """
         if self._value:
             return
-        
+
         self._value = True
         waiters = self._waiters
         for waiter in waiters:
             waiter.set_result_if_pending(None)
-        
+
         waiters.clear()
-    
+
     def clear(self):
         """
         Clears the internal flag of the event.
         """
         self._value = False
-    
+
     def __iter__(self):
         """
         Waits util the event is set, or if it is already, returns immediately.
-        
+
         This method is a generator. Should be used with `await` expression.
         """
         if self._value:
             return
-        
+
         future = Future(self._loop)
         self._waiters.append(future)
         yield from future
-    
+
     __await__ = __iter__
-    
+
     wait = coroutine(copy_func(__iter__))
-    
+
     def __repr__(self):
         """Returns the event's representation."""
         result = [
             '<',
             self.__class__.__name__,
             ' ',
-                ]
-        
+        ]
+
         if self._value:
             state = 'set'
         else:
             state = 'unset'
         result.append(state)
-        
+
         result.append('>')
-        
+
         return ''.join(result)
 
 
 class enter_executor:
     """
     Async context manager for moving a ``Task``'s section's execution to an executor thread.
-    
+
     Usage:
     ```py
     # Do async code
     async with enter_executor():
         # Do blocking stuff
         # Also async operation are still possible, but not recommended, because they cause my thread switch.
-    
+
     # Do async code
     ```
-    
+
     Attributes
     ----------
     _enter_future : `None` or ``Future``
@@ -5176,19 +5501,21 @@ class enter_executor:
         Blocking future used inside of the task, meanwhile it is in executor.
     _task : `None` or ``Task``
     """
+
     __slots__ = ('_enter_future', '_exit_future', '_fut_waiter', '_task')
+
     def __init__(self):
         self._enter_future = None
         self._task = None
-        self._exit_future=None
+        self._exit_future = None
         self._fut_waiter = None
-    
+
     async def __aenter__(self):
         """
         Moves the current tasks's execution to an executor thread.
-        
+
         This method is a coroutine.
-        
+
         Raises
         ------
         RuntimeError
@@ -5197,12 +5524,16 @@ class enter_executor:
         """
         thread = current_thread()
         if not isinstance(thread, EventThread):
-            raise RuntimeError(f'{self.__class__.__name__} used outside of {EventThread.__name__}, at {thread!r}.')
-        
+            raise RuntimeError(
+                f'{self.__class__.__name__} used outside of {EventThread.__name__}, at {thread!r}.'
+            )
+
         task = thread.current_task
         if task is None:
-            raise RuntimeError(f'{self.__class__.__name__} used outside of a {Task.__name__}.')
-        
+            raise RuntimeError(
+                f'{self.__class__.__name__} used outside of a {Task.__name__}.'
+            )
+
         self._task = task
         loop = task._loop
         future = Future(loop)
@@ -5210,11 +5541,11 @@ class enter_executor:
         loop.call_soon(self._enter_executor)
         await future
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """
         Moves the current task's executor back from an executor thread.
-        
+
         This method is a coroutine.
         """
         await self._exit_future
@@ -5223,19 +5554,19 @@ class enter_executor:
         self._exit_future = None
         self._fut_waiter = None
         return False
-    
+
     def _enter_executor(self):
         """
         Moves the task's execution to an executor thread and wakes it up.
         """
         callbacks = self._enter_future._callbacks
         callbacks.clear()
-        
+
         task = self._task
         task.add_done_callback(self._cancel_callback)
-        
+
         task._loop.run_in_executor(self._executor_task)
-    
+
     def _cancel_callback(self, future):
         """
         Callback added to the wrapped task. If the wrapped task is cancelled, then the section running inside of the
@@ -5243,13 +5574,13 @@ class enter_executor:
         """
         if future._state is not CANCELLED:
             return
-        
+
         fut_waiter = self._fut_waiter
         if fut_waiter is None:
             return
-        
+
         fut_waiter.cancel()
-    
+
     def _executor_task(self):
         """
         Wraps the tasks's section's running inside of an executor, still allowing it to use `await`-s.
@@ -5260,34 +5591,34 @@ class enter_executor:
         end_future = Future(loop)
         task._fut_waiter = end_future
         self._exit_future = end_future
-        
+
         # Set result to the enter task, so it can be retrieved.
         self._enter_future.set_result(None)
-        
+
         exception = None
         coro = task._coro
-        
+
         # If some1 await at the block, we will sync_wrap it. If the exit future
         # is awaited, then we quit.
         local_fut_waiter = None
-        
+
         try:
             while True:
                 if task._must_cancel:
                     exception = task._must_exception(exception)
-                    
-                if (local_fut_waiter is not None):
+
+                if local_fut_waiter is not None:
                     if local_fut_waiter is end_future:
                         end_future.set_result(None)
                         loop.call_soon_thread_safe(task._step, exception)
                         break
-                    
+
                     try:
                         self._fut_waiter = local_fut_waiter
                         if type(exception) is CancelledError:
                             local_fut_waiter.cancel()
                         local_fut_waiter.sync_wrap().wait()
-                    
+
                     except CancelledError:
                         break
                     except BaseException as err:
@@ -5295,18 +5626,18 @@ class enter_executor:
                     finally:
                         local_fut_waiter = None
                         self._fut_waiter = None
-                
+
                 if task._state is not PENDING:
                     # there is no reason to raise
                     break
-                
+
                 # call either coro.throw(err) or coro.send(None).
                 try:
                     if exception is None:
                         result = coro.send(None)
                     else:
                         result = coro.throw(exception)
-                
+
                 except StopIteration as exception:
                     if task._must_cancel:
                         # the task is cancelled meanwhile
@@ -5314,20 +5645,20 @@ class enter_executor:
                         Future.set_exception(task, CancelledError())
                     else:
                         Future.set_result(task, exception.value)
-                    
+
                     loop.wake_up()
                     break
-                    
+
                 except CancelledError:
                     Future.cancel(task)
                     loop.wake_up()
                     break
-                
+
                 except BaseException as exception:
                     Future.set_exception(task, exception)
                     loop.wake_up()
                     break
-                
+
                 else:
                     try:
                         blocking = result._blocking
@@ -5335,76 +5666,88 @@ class enter_executor:
                         if result is None:
                             # bare yield relinquishes control for one event loop iteration.
                             continue
-                        
+
                         elif isinstance(result, GeneratorType):
-                            #Yielding a generator is just wrong.
-                            exception = RuntimeError(f'`yield` was used instead of `yield from` in '
-                                f'{self.__class__.__name__} {self!r} with `{result!r}`')
+                            # Yielding a generator is just wrong.
+                            exception = RuntimeError(
+                                f'`yield` was used instead of `yield from` in '
+                                f'{self.__class__.__name__} {self!r} with `{result!r}`'
+                            )
                             continue
-                            
+
                         else:
                             # yielding something else is an error.
-                            exception = RuntimeError(f'{self.__class__.__name__} got bad yield: `{result!r}`')
+                            exception = RuntimeError(
+                                f'{self.__class__.__name__} got bad yield: `{result!r}`'
+                            )
                             continue
                     else:
                         if blocking:
                             if loop is not result._loop:
-                                exception = RuntimeError(f'{self.__class__.__name__} {self!r} got a Future {result!r} '
-                                    f'attached to a different loop')
+                                exception = RuntimeError(
+                                    f'{self.__class__.__name__} {self!r} got a Future {result!r} '
+                                    f'attached to a different loop'
+                                )
                                 continue
-                                
+
                             elif result is self:
-                                exception = RuntimeError(f'{self.__class__.__name__} cannot await on itself: {self!r}')
+                                exception = RuntimeError(
+                                    f'{self.__class__.__name__} cannot await on itself: {self!r}'
+                                )
                                 continue
-                            
+
                             else:
                                 result._blocking = False
                                 local_fut_waiter = result
                                 if task._must_cancel:
                                     if local_fut_waiter.cancel():
                                         task._must_cancel = False
-                                
+
                                 continue
                         else:
-                            exception = RuntimeError(f'`yield` was used instead of `yield from` in task {self!r} with '
-                                f'{result!r}')
+                            exception = RuntimeError(
+                                f'`yield` was used instead of `yield from` in task {self!r} with '
+                                f'{result!r}'
+                            )
                             continue
         finally:
             task.remove_done_callback(self._cancel_callback)
             self = None
             task = None
 
+
 class ScarletExecutorCB:
     """
     ``ScarletExecutor`` callback's added to futures or tasks waited by it.
-    
+
     Attributes
     ----------
     _parent : ``ScarletExecutor``
         The parent Scarlet executor.
     """
+
     __slots__ = ('_parent',)
-    
+
     def __init__(self, parent):
         """
         Creates a new scarlet executor with the given parameters.
-        
+
         Parameters
         ----------
         parent : ``ScarletExecutor``
             The parent Scarlet executor.
         """
         self._parent = parent
-    
+
     def __call__(self, future):
         """
         Called as a callback when a waited future or task is finished.
-        
+
         Removes the given `future`'s from the parent's active ones. If the parent Scarlet executor is overloaded with
         tasks, wakes it up.
-        
+
         If the `future` is finished with an exception then propagates it to it's parent to re-raise.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
@@ -5413,11 +5756,11 @@ class ScarletExecutorCB:
         parent = self._parent
         if parent is None:
             return
-        
+
         active = parent._active
-        
+
         active.discard(future)
-        
+
         try:
             future.result()
         except CancelledError:
@@ -5426,37 +5769,38 @@ class ScarletExecutorCB:
             exception = parent._exception
             if exception is None:
                 parent._exception = err
-        
+
         parent._waiter.set_result_if_pending(None)
-    
+
+
 class ScarletExecutor:
     """
     Scarlet executor allows the user to limit parallelly running task amount to a set one. Not that, only those tasks
     count, which are added to the executor with it's ``.add`` method.
-    
+
     If an exception (except ``CancelledError``) occurs in any of the added tasks, then that exception is propagated
     and every other task is cancelled.
-    
+
     Should be used, like:
-    
+
     ```py
     from time import perf_counter
     from hata import ScarletExecutor, sleep
-    
+
     async def showcase():
         start = perf_counter()
-        
+
         async with ScarletExecutor(2) as scarlet:
             for sleep_time in range(10):
                 await scarlet.add(sleep(sleep_time))
-        
+
         end = perf_counter()
         print(end-start)
     ```
-    
+
     Running showcase will take at least `25` seconds, because ``ScarletExecutor`` will allow only `2` sleeps to run
     at the same time, like:
-    
+
     +---------------+-------------------------------+-----------------------+
     | Time passed   | Slot 1                        | Slot 2                |
     +===============+===============================+=======================+
@@ -5514,21 +5858,21 @@ class ScarletExecutor:
     +---------------+-------------------------------+-----------------------+
     | 25 (s)        | N/A                           | sleep(9) -> N/A       |
     +---------------+-------------------------------+-----------------------+
-    
+
     By increasing parallelism to `3`, the showcase will take only `18` seconds to finish:
-    
+
     ```py
     async def showcase():
         start = perf_counter()
-        
+
         async with ScarletExecutor(3) as scarlet:
             for sleep_time in range(10):
                 await scarlet.add(sleep(sleep_time))
-        
+
         end = perf_counter()
         print(end-start)
     ```
-    
+
     +---------------+-------------------------------+-----------------------+-----------------------+
     | Time passed   | Slot 1                        | Slot 2                | Slot 3                |
     +===============+===============================+=======================+=======================+
@@ -5570,7 +5914,7 @@ class ScarletExecutor:
     +---------------+-------------------------------+-----------------------+-----------------------+
     | 18 (s)        | sleep(9) -> N/A               | N/A                   | N/A                   |
     +---------------+-------------------------------+-----------------------+-----------------------+
-    
+
     Attributes
     ----------
     _active : `set` of ``Future`` instances
@@ -5587,16 +5931,25 @@ class ScarletExecutor:
         A future which is used to block the main task's execution if the parallelly running tasks's amount is greater or
         equal to the ``._limit``.
     """
-    __slots__ = ('_active', '_callback', '_exception', '_limit', '_loop', '_waiter', )
+
+    __slots__ = (
+        '_active',
+        '_callback',
+        '_exception',
+        '_limit',
+        '_loop',
+        '_waiter',
+    )
+
     def __new__(cls, limit=10):
         """
         Creates a new Scarlet executor instance.
-        
+
         Parameters
         ----------
         limit : `int`, Optional
             The maximal amount of parallelism allowed by the Scarlet executor. Defaults to `10`.
-        
+
         Raises
         ------
         TypeError
@@ -5610,28 +5963,30 @@ class ScarletExecutor:
         elif issubclass(limit_type, int):
             limit = int(limit)
         else:
-            raise TypeError(f'`limit` can be given as `int` instance, got {limit_type.__name__}.')
-        
+            raise TypeError(
+                f'`limit` can be given as `int` instance, got {limit_type.__name__}.'
+            )
+
         if limit < 1:
             raise ValueError(f'`limit` can be given only as positive, got {limit!r}.')
-        
+
         self = object.__new__(cls)
         self._limit = limit
-        
+
         self._active = set()
         self._loop = None
         self._callback = None
         self._waiter = None
         self._exception = None
-        
+
         return self
-    
+
     async def __aenter__(self):
         """
         Enters the scarlet executor.
-        
+
         This method is a coroutine.
-        
+
         Raises
         ------
         RuntimeError
@@ -5639,21 +5994,23 @@ class ScarletExecutor:
         """
         loop = current_thread()
         if not isinstance(loop, EventThread):
-            raise RuntimeError(f'`{self.__class__.__name__}` used at non {EventThread.__name__}: {loop!r}.')
-        
+            raise RuntimeError(
+                f'`{self.__class__.__name__}` used at non {EventThread.__name__}: {loop!r}.'
+            )
+
         self._loop = loop
         self._waiter = Future(loop)
         self._callback = ScarletExecutorCB(self)
-        
+
         return self
-    
+
     async def add(self, future):
         """
         Adds a task to the Scarlet executor to execute parallelly with the other added ones. Blocks execution, if the
         amount of added tasks is greater or equal than the set limit.
-        
+
         This method is a coroutine.
-        
+
         Raises
         ------
         RuntimeError
@@ -5664,39 +6021,41 @@ class ScarletExecutor:
         """
         callback = self._callback
         if callback is None:
-            raise RuntimeError(f'Calling `{self.__class__.__name__}.add` when {self!r} is not entered.')
-        
+            raise RuntimeError(
+                f'Calling `{self.__class__.__name__}.add` when {self!r} is not entered.'
+            )
+
         future = self._loop.ensure_future(future)
         future.add_done_callback(callback)
-        
+
         active = self._active
         active.add(future)
-        
+
         waiter = self._waiter
-        
+
         if waiter.done():
             if self._exception is None:
                 waiter.clear()
             else:
                 raise CancelledError
-        
+
         limit = self._limit
         while len(active) >= limit:
             await waiter
-            if (self._exception is not None):
+            if self._exception is not None:
                 raise CancelledError
-            
+
             waiter.clear()
-            
+
             break
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """
         Leaves from the scarlet execution, blocking till all the added tasks are finished.
-        
+
         If any of the added tasks raised an exception, what is not ``CancelledError``, then cancels all of them and
         propagates the given exception.
-        
+
         This method is a coroutine.
         """
         if exc_type is None:
@@ -5708,44 +6067,44 @@ class ScarletExecutor:
                 if exception is None:
                     waiter.clear()
                     continue
-                
+
                 self._callback._parent = None
                 self._callback = None
-                
+
                 self._waiter = None
                 self._loop = None
                 self._exception = None
-                
+
                 for future in active:
                     future.cancel()
-                
+
                 active.clear()
-                
+
                 raise exception
-            
+
             self._callback._parent = None
             self._callback = None
-            
+
             self._waiter = None
             self._loop = None
             self._exception = None
             return False
-        
+
         active = self._active
         for future in active:
             future.cancel()
-        
+
         active.clear()
-        
+
         exception = self._exception
-        
+
         self._callback._parent = None
         self._callback = None
-        
+
         self._waiter = None
         self._loop = None
         self._exception = None
-        
+
         if exception is None:
             if exc_type is CancelledError:
                 return True
@@ -5753,7 +6112,7 @@ class ScarletExecutor:
                 return False
         else:
             raise exception
-    
+
     def __repr__(self):
         """Returns the scarlet executor's representation."""
         result = [
@@ -5761,22 +6120,23 @@ class ScarletExecutor:
             self.__class__.__name__,
             ' limit=',
             repr(self._limit),
-                ]
-        
-        if (self._loop is None):
+        ]
+
+        if self._loop is None:
             result.append(', closed')
         else:
             result.append(', active=')
             result.append(repr(len(self._active)))
-        
+
         result.append('>')
-        
+
         return ''.join(result)
+
 
 class WaitContinuously(WaitTillFirst):
     """
     A future subclass, which allows waiting for future or task results continuously, yielding `1` result, when awaited.
-    
+
     Attributes
     ----------
     _blocking : `bool`
@@ -5784,10 +6144,10 @@ class WaitContinuously(WaitTillFirst):
     _callbacks : `list` of `callable`
         The callbacks of the future, which are queued up on the respective event loop to be called, when the future is
         finished. These callback should accept `1` parameter, the future itself.
-        
+
         Note, if the future is already done, then the newly added callbacks are queued up instantly on the respective
         event loop to be called.
-    
+
     _exception : `None` or `BaseException` instance
         The exception set to the future as it's result. Defaults to `None`.
     _loop : ``EventThread``
@@ -5796,9 +6156,9 @@ class WaitContinuously(WaitTillFirst):
         The result of the future. Defaults to `None`.
     _state : `str`
         The state of the future.
-        
+
         Can be set as one of the following:
-        
+
         +-----------------+---------------+
         | Respective name | Value         |
         +=================+===============+
@@ -5810,21 +6170,22 @@ class WaitContinuously(WaitTillFirst):
         +-----------------+---------------+
         | RETRIEVED       | `'RETRIEVED'` |
         +-----------------+---------------+
-        
+
         Note, that states are checked by memory address and not by equality. Also ``RETRIEVED`` is used only if
         `__debug__` is set as `True`.
-    
+
     _callback : ``._wait_callback``
         Callback added to the waited futures.
     _last_done : `None` or ``Future`` instance
         The last done future or task of the ``WaitContinuously`` instance.
     """
-    __slots__ = ('_last_done')
-    
+
+    __slots__ = '_last_done'
+
     def __new__(cls, futures, loop):
         """
         Creates a new ``WaitContinuously`` from the given `futures` bound to the given `loop`.
-        
+
         Parameters
         ----------
         futures : `None` or `iterable` of ``Future`` instances
@@ -5832,27 +6193,27 @@ class WaitContinuously(WaitTillFirst):
         loop : ``EventThread``
             The loop to what the created future will be bound to.
         """
-        if (futures is None):
+        if futures is None:
             pending = set()
         else:
             pending = set(futures)
-        
+
         done = set()
-        
+
         self = object.__new__(cls)
         self._loop = loop
-        
+
         callback = cls._wait_callback(self)
         self._callback = callback
-        
+
         self._result = (done, pending)
         self._exception = None
-        
+
         self._callbacks = []
         self._blocking = False
-        
+
         self._last_done = None
-        
+
         if pending:
             try:
                 for future in pending:
@@ -5861,40 +6222,41 @@ class WaitContinuously(WaitTillFirst):
                 self._state = PENDING
         else:
             self._state = FINISHED
-        
+
         return self
-    
+
     # `__repr__` is same as ``Future.__repr__``
-    
+
     class _wait_callback:
         """
         ``WaitContinuously``'s callback put on the future's waited by it.
-        
+
         Attributes
         ----------
         _parent : ``WaitContinuously``
             The parent future.
         """
+
         __slots__ = ('_parent',)
-        
+
         def __init__(self, parent):
             """
             Creates a new ``WaitContinuously`` callback object with the given parent ``WaitContinuously`` instance.
-            
+
             Parameters
             ----------
             parent : ``WaitContinuously``
                 The parent future.
             """
             self._parent = parent
-        
+
         def __call__(self, future):
             """
             The callback, which runs when a waited future is done.
-            
+
             Removes the done future from the parent's `pending` futures and puts it on the `done` ones. Also marks the
             parent ``WaitContinuously`` instance as finished if it is pending.
-            
+
             Parameters
             ----------
             future : ``Future`` instance
@@ -5903,26 +6265,26 @@ class WaitContinuously(WaitTillFirst):
             parent = self._parent
             if parent is None:
                 return
-            
+
             done, pending = parent._result
-            
+
             pending.remove(future)
             done.add(future)
-            
+
             if parent._state is PENDING:
                 parent._state = FINISHED
                 parent._last_done = future
                 parent._loop._schedule_callbacks(parent)
-    
+
     def add(self, future):
         """
         Adds a new future to the ``WaitContinuously`` to wait for.
-        
+
         Parameters
         ----------
         future : ``Future`` instance
             A task or future to the ``WaitContinuously`` to wait for.
-        
+
         Raises
         ------
         RuntimeError
@@ -5937,99 +6299,105 @@ class WaitContinuously(WaitTillFirst):
                 self._loop._schedule_callbacks(self)
                 self._last_done = future
                 return
-            
+
             pending = self._result[1]
             pending_count = len(pending)
             pending.add(future)
             if pending_count != pending:
                 future.add_done_callback(self._callback)
-            
+
             return
-        
+
         if state is FINISHED:
             exception = self._exception
-            if (exception is not None):
+            if exception is not None:
                 future.cancel()
-                raise RuntimeError(f'`{self.__class__.__name__}.add` called, when {self.__class__.__name__} is already '
-                    f'finished with an exception : {exception!r}') from exception
-            
+                raise RuntimeError(
+                    f'`{self.__class__.__name__}.add` called, when {self.__class__.__name__} is already '
+                    f'finished with an exception : {exception!r}'
+                ) from exception
+
             if future.done():
                 self._result[0].add(future)
                 return
-            
+
             pending = self._result[1]
             pending_count = len(pending)
             pending.add(future)
             if pending_count != len(pending):
                 future.add_done_callback(self._callback)
-            
+
             self._state = PENDING
             return
-        
+
         if __debug__:
             if state is RETRIEVED:
                 exception = self._exception
-                if (exception is not None):
+                if exception is not None:
                     future.cancel()
-                    raise RuntimeError(f'`{self.__class__.__name__}.add` called, when {self.__class__.__name__} is '
-                        f'already finished with an exception : {exception!r}') from exception
-                
+                    raise RuntimeError(
+                        f'`{self.__class__.__name__}.add` called, when {self.__class__.__name__} is '
+                        f'already finished with an exception : {exception!r}'
+                    ) from exception
+
                 if future.done():
                     self._result[0].append(future)
                     self._state = FINISHED
                     return
-                
+
                 pending = self._result[1]
                 pending_count = len(pending)
                 pending.add(future)
                 if pending_count != len(pending):
                     future.add_done_callback(self._callback)
-                
+
                 self._state = PENDING
                 return
-        
+
         future.cancel()
-        raise RuntimeError(f'`{self.__class__.__name__}.add` called, when {self.__class__.__name__} is already '
-               f'cancelled.')
-    
+        raise RuntimeError(
+            f'`{self.__class__.__name__}.add` called, when {self.__class__.__name__} is already '
+            f'cancelled.'
+        )
+
     def _mark_as_finished(self):
         """
         Marks self as finished, ensures it's callbacks, and cancels all the added futures.
         """
         self._state = FINISHED
         self._loop._schedule_callbacks(self)
-        
+
         self._callback._parent = None
-        
+
         done, pending = self._result
         # silence them
         if __debug__:
             for future in done:
                 future.cancel()
-        
+
         callback = self._callback
         callback._parent = None
-        
+
         while pending:
             future = pending.pop()
             future.remove_done_callback(callback)
             future.cancel()
             done.add(future)
-    
+
     # `futures_done` same as ``WaitTillFirst.futures_done``
     # `futures_pending` same as ``WaitTillFirst.futures_pending``
-    
+
     def cancel(self):
         """
         Cancels the ``WaitContinuously`` instance.
-        
+
         By calling it, also cancels all the waited futures as well.
-        
+
         Returns
         -------
         cancelled : `int` (`0`, `1`)
             If the future is already done, returns `0`, if it got cancelled, returns `1`-
-        
+
         Notes
         -----
         If `__debug__` is set as `True`, then `.cancel()` also marks the future and all the waited-done futures as well
@@ -6038,35 +6406,35 @@ class WaitContinuously(WaitTillFirst):
         state = self._state
         if state is CANCELLED:
             return 0
-        
-        if (self._exception is not None):
+
+        if self._exception is not None:
             if __debug__:
                 if state is FINISHED:
                     self._state = RETRIEVED
                     return 0
-                
+
                 if state is RETRIEVED:
                     return 0
-            
+
             else:
                 if state is FINISHED:
                     return 0
-        
+
         done, pending = self._result
         # silence them
         if __debug__:
             for future in done:
                 future.cancel()
-        
+
         callback = self._callback
         callback._parent = None
-        
+
         while pending:
             future = pending.pop()
             future.remove_done_callback(callback)
             future.cancel()
             done.add(future)
-        
+
         if state is PENDING:
             self._loop._schedule_callbacks(self)
             self._state = CANCELLED
@@ -6074,22 +6442,22 @@ class WaitContinuously(WaitTillFirst):
             if __debug__:
                 if state is FINISHED:
                     self._state = RETRIEVED
-            
+
         return 1
-    
+
     # `cancelled` is same as ``Future.cancelled``
     # `done` is same as ``Future.done``
     # `pending` is same as ``Future.pending``
-    
+
     def result(self):
         """
         Returns the last done future.
-        
+
         Returns
         -------
         last_done : `None` or ``Future`` instance.
             The last future, what finished. Defaults to `None`.
-        
+
         Raises
         ------
         CancelledError
@@ -6102,35 +6470,35 @@ class WaitContinuously(WaitTillFirst):
             The future's set exception.
         """
         state = self._state
-        
+
         if state is FINISHED:
             if __debug__:
                 self._state = RETRIEVED
-            
+
             exception = self._exception
-            if (exception is not None):
+            if exception is not None:
                 raise exception
-            
+
             return self._last_done
-        
+
         if __debug__:
             if state is RETRIEVED:
                 exception = self._exception
-                if (exception is not None):
+                if exception is not None:
                     raise exception
-                
+
                 return self._last_done
-        
+
         if state is CANCELLED:
             raise CancelledError
-        
+
         # still pending
         raise InvalidStateError(self, 'result')
-    
+
     def reset(self):
         """
         Resets the future if applicable enabling it to yield the next done future.
-        
+
         Returns
         -------
         reset : `int` (`0`, `1`, `2`, `3`)
@@ -6142,77 +6510,77 @@ class WaitContinuously(WaitTillFirst):
         """
         state = self._state
         if state is FINISHED:
-            if (self._exception is not None):
+            if self._exception is not None:
                 return 0
-            
+
             done, pending = self._result
             if done:
                 last_done = self._last_done
-                if (last_done is not None):
+                if last_done is not None:
                     try:
                         done.remove(last_done)
                     except KeyError:
                         pass
-            
+
             if done:
                 self._last_done = done.pop()
                 return 3
-            
+
             if pending:
                 self._state = PENDING
                 return 2
-            
+
             return 1
-        
+
         if __debug__:
             if state is RETRIEVED:
-                if (self._exception is not None):
+                if self._exception is not None:
                     return 0
-                
+
                 done, pending = self._result
                 last_done = self._last_done
-                if (last_done is not None):
+                if last_done is not None:
                     try:
                         done.remove(last_done)
                     except KeyError:
                         pass
-                
+
                 if done:
                     self._state = FINISHED
                     self._last_done = done.pop()
                     return 3
-                
+
                 if pending:
                     self._state = PENDING
                     return 2
-                
+
                 return 1
-        
+
         if state is PENDING:
             if self._result[1]:
                 return 2
-            
+
             return 1
-        
+
         # cancelled
         return 0
-    
+
     # `exception` is same as ``Future.exception``
     # `add_done_callback` is same as ``Future.add_done_callback``
     # `remove_done_callback` is same as ``Future.remove_done_callback``
     # `set_result` is same as ``WaitTillFirst.set_result``
     # `set_result_if_pending` is same as ``WaitTillFirst.set_result_if_pending``
-    
+
     def set_exception(self, exception):
         """
         Marks the future as done and set's it's exception. If the exception is `TimeoutError`, then will not cancel it,
         but it will yield it's next result as `None` instead.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the future's exception.
-        
+
         Raises
         ------
         InvalidStateError
@@ -6221,15 +6589,19 @@ class WaitContinuously(WaitTillFirst):
             If `StopIteration` is given as `exception`.
         """
         state = self._state
-        if (state is CANCELLED) or ((state is FINISHED or state is RETRIEVED) and self._exception is not None):
+        if (state is CANCELLED) or (
+            (state is FINISHED or state is RETRIEVED) and self._exception is not None
+        ):
             raise InvalidStateError(self, 'set_exception')
-        
+
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+            )
+
         if type(exception) is TimeoutError:
             self._state = FINISHED
             self._last_done = None
@@ -6237,49 +6609,53 @@ class WaitContinuously(WaitTillFirst):
         else:
             self._mark_as_finished()
             self._exception = exception
-    
+
     def set_exception_if_pending(self, exception):
         """
         Marks the future as done and set's it's exception. If the exception is `TimeoutError`, then will not cancel it,
         but it will yield it's next result as `None` instead. Not like ``.set_exception``, this method will not raise
         ``InvalidStateError`` if the future is already done.
-        
+
         Parameters
         ----------
         exception : `BaseException`
             The exception to set as the future's exception.
-        
+
         Returns
         ------
         set_result : `int` (`0`, `1`, `2`)
             If the future is already done, returns `0`. If `exception` is given as `TimeoutError`, returns `2`, else
             `1`.
-        
+
         Raises
         ------
         TypeError
             If `StopIteration` is given as `exception`.
         """
         state = self._state
-        if (state is CANCELLED) or ((state is FINISHED or state is RETRIEVED) and self._exception is not None):
+        if (state is CANCELLED) or (
+            (state is FINISHED or state is RETRIEVED) and self._exception is not None
+        ):
             return 0
-        
+
         if isinstance(exception, type):
             exception = exception()
-        
+
         if type(exception) is StopIteration:
-             raise TypeError(f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}')
-        
+            raise TypeError(
+                f'{exception} cannot be raised to a {self.__class__.__name__}: {self!r}'
+            )
+
         if type(exception) is TimeoutError:
             self._state = FINISHED
             self._last_done = None
             self._loop._schedule_callbacks(self)
             return 2
-        
+
         self._mark_as_finished()
         self._exception = exception
         return 1
-    
+
     # `__iter__` is same as ``Future.__iter__``
     # `__await__` is same as ``Future.__await__``
     # if __debug__:

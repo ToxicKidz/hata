@@ -1,4 +1,4 @@
-__all__ = ('Slasher', )
+__all__ = ('Slasher',)
 
 from threading import current_thread
 
@@ -12,19 +12,32 @@ from ...discord.exceptions import DiscordException, ERROR_CODES
 from ...discord.client import Client
 from ...discord.interaction import ApplicationCommand, InteractionEvent, InteractionType
 
-from .utils import UNLOADING_BEHAVIOUR_DELETE, UNLOADING_BEHAVIOUR_KEEP, SYNC_ID_GLOBAL, SYNC_ID_MAIN, \
-    SYNC_ID_NON_GLOBAL, RUNTIME_SYNC_HOOKS
+from .utils import (
+    UNLOADING_BEHAVIOUR_DELETE,
+    UNLOADING_BEHAVIOUR_KEEP,
+    SYNC_ID_GLOBAL,
+    SYNC_ID_MAIN,
+    SYNC_ID_NON_GLOBAL,
+    RUNTIME_SYNC_HOOKS,
+)
 from .slash_command import SlashCommand
 from .component_command import ComponentCommand
-from .exceptions import handle_command_exception, test_exception_handler, default_slasher_exception_handler
+from .exceptions import (
+    handle_command_exception,
+    test_exception_handler,
+    default_slasher_exception_handler,
+)
 
 INTERACTION_TYPE_APPLICATION_COMMAND = InteractionType.application_command
 INTERACTION_TYPE_MESSAGE_COMPONENT = InteractionType.message_component
 
-def match_application_commands_to_commands(application_commands, commands, match_schema):
+
+def match_application_commands_to_commands(
+    application_commands, commands, match_schema
+):
     """
     Matches the given application commands to slash commands.
-    
+
     Parameters
     ----------
     application_commands : `list` of ``ApplicationCommand``
@@ -33,7 +46,7 @@ def match_application_commands_to_commands(application_commands, commands, match
         A list of slash commands if any.
     match_schema : `bool`
         Whether schema or just name should be matched.
-    
+
     Returns
     -------
     commands : `None` or `list` of ``SlashCommand``
@@ -42,33 +55,33 @@ def match_application_commands_to_commands(application_commands, commands, match
         The matched commands in pairs.
     """
     matched = None
-    
-    if (commands is not None):
+
+    if commands is not None:
         for application_command_index in reversed(range(len(application_commands))):
             application_command = application_commands[application_command_index]
             application_command_name = application_command.name
-            
+
             for command_index in reversed(range(len(commands))):
                 command = commands[command_index]
-                
+
                 if command.name != application_command_name:
                     continue
-                
+
                 if match_schema:
-                    if (command.get_schema() != application_command):
+                    if command.get_schema() != application_command:
                         continue
-                
+
                 del application_commands[application_command_index]
                 del commands[command_index]
-                
+
                 if matched is None:
                     matched = []
-                
+
                 matched.append((application_command, command))
-        
+
         if not commands:
             commands = None
-    
+
     return commands, matched
 
 
@@ -79,10 +92,11 @@ COMMAND_STATE_IDENTIFIER_ACTIVE = 3
 COMMAND_STATE_IDENTIFIER_KEPT = 4
 COMMAND_STATE_IDENTIFIER_NON_GLOBAL = 5
 
+
 class CommandChange:
     """
     Represents an added or removed command inside of ``CommandState._changes``
-    
+
     Attributes
     ----------
     added : `bool`
@@ -90,11 +104,13 @@ class CommandChange:
     command : ``SlashCommand``
         The command itself.
     """
+
     __slots__ = ('added', 'command')
+
     def __init__(self, added, command):
         """
         Creates a new command change instance.
-        
+
         Parameters
         ----------
         added : `bool`
@@ -104,24 +120,27 @@ class CommandChange:
         """
         self.added = added
         self.command = command
-    
+
     def __repr__(self):
         """returns the command change's representation."""
-        return f'{self.__class__.__name__}(added={self.added!r}, command={self.command!r})'
-    
+        return (
+            f'{self.__class__.__name__}(added={self.added!r}, command={self.command!r})'
+        )
+
     def __iter__(self):
         """Unpacks the command change."""
         yield self.added
         yield self.command
-    
+
     def __len__(self):
         """Helper for unpacking."""
         return 2
 
+
 class CommandState:
     """
     Represents command's state inside of a guild.
-    
+
     Attributes
     ----------
     _active : `None` or `list` of ``SlashCommand``
@@ -133,7 +152,14 @@ class CommandState:
     _kept : `None` or `list` of ``SlashCommand``
         Slash commands, which are removed, but should not be deleted.
     """
-    __slots__ = ('_active', '_changes', '_is_non_global', '_kept', )
+
+    __slots__ = (
+        '_active',
+        '_changes',
+        '_is_non_global',
+        '_kept',
+    )
+
     def __init__(self, is_non_global):
         """
         Creates a new ``CommandState`` instance.
@@ -142,165 +168,165 @@ class CommandState:
         self._active = None
         self._kept = None
         self._is_non_global = is_non_global
-    
+
     def __repr__(self):
         """Returns the command state's representation."""
         result = ['<', self.__class__.__name__]
         if self._is_non_global:
             result.append(' (non global)')
-        
+
         active = self._active
         if (active is not None) and active:
             result.append(' active=[')
-            
+
             for command in active:
                 result.append(command.name)
                 result.append(', ')
-            
+
             result[-1] = ']'
-            
+
             should_add_comma = True
         else:
             should_add_comma = False
-            
+
         kept = self._kept
         if (kept is not None) and kept:
             if should_add_comma:
                 result.append(',')
             else:
                 should_add_comma = True
-            
+
             result.append(' kept=[')
-            
+
             for command in kept:
                 result.append(command.name)
                 result.append(', ')
-            
+
             result[-1] = ']'
-        
+
         changes = self._changes
-        if (changes is not None):
+        if changes is not None:
             if should_add_comma:
                 result.append(',')
-            
+
             result.append(' changes=')
             result.append(repr(changes))
-        
+
         result.append('>')
-        
+
         return ''.join(result)
-    
+
     def get_should_add_slash_commands(self):
         """
         Returns the commands, which should be added.
-        
+
         Returns
         -------
         commands : `list` of ``SlashCommand``
         """
         commands = []
         active = self._active
-        if (active is not None):
+        if active is not None:
             commands.extend(active)
-        
+
         changes = self._changes
-        if (changes is not None):
+        if changes is not None:
             for added, command in changes:
                 command_name = command.name
-                
+
                 for index in range(len(commands)):
                     if commands[index].name != command_name:
                         continue
-                    
+
                     if added:
                         commands[index] = command
                     else:
                         del commands[index]
-                    
+
                     break
-                
+
                 else:
                     if added:
                         commands.append(command)
-        
+
         return commands
-    
+
     def get_should_keep_commands(self):
         """
         Returns the commands, which should be kept.
-        
+
         Returns
         -------
         commands : `list` of ``SlashCommand``
         """
         commands = []
         kept = self._kept
-        if (kept is not None):
+        if kept is not None:
             commands.extend(kept)
-        
+
         changes = self._changes
-        if (changes is not None):
+        if changes is not None:
             for command_change_state in changes:
                 command_name = command_change_state.command.name
-                
+
                 for index in range(len(commands)):
                     if commands[index].name != command_name:
                         continue
-                    
+
                     del commands[index]
                     break
-        
+
         return commands
-    
+
     def get_should_remove_slash_commands(self):
         """
         Returns the commands, which should be removed.
-        
+
         Returns
         -------
         commands : `list` of ``SlashCommand``
         """
         commands = []
-        
+
         changes = self._changes
-        if (changes is not None):
+        if changes is not None:
             for added, command in changes:
                 command_name = command.name
-                
+
                 for index in range(len(commands)):
                     if commands[index].name != command_name:
                         continue
-                
+
                     if added:
                         del commands[index]
                     else:
                         commands[index] = command
-                    
+
                     break
                 else:
                     if not added:
                         commands.append(command)
-        
+
         return commands
-    
+
     def _try_purge_from_changes(self, name):
         """
         Purges the commands with the given names from the changed ones.
-        
+
         Parameters
         ----------
         name : `str`
             The command's name.
-        
+
         Returns
         -------
         command : `None` or ``SlashCommand``
             The purged command if any.
         purged_from_identifier : `int`
             From which internal container was the command purged from.
-            
+
             Can be any of the following values:
-            
+
             +-----------------------------------+-------+
             | Respective name                   | Value |
             +===================================+=======+
@@ -312,44 +338,44 @@ class CommandState:
             +-----------------------------------+-------+
         """
         changes = self._changes
-        if (changes is not None):
+        if changes is not None:
             for index in range(len(changes)):
                 command_change_state = changes[index]
                 command = command_change_state.command
                 if command.name != name:
                     continue
-                
+
                 del changes[index]
                 if not changes:
                     self._changes = None
-                
+
                 if command_change_state.added:
                     purged_from_identifier = COMMAND_STATE_IDENTIFIER_ADDED
                 else:
                     purged_from_identifier = COMMAND_STATE_IDENTIFIER_REMOVED
-                
+
                 return purged_from_identifier, command
-        
+
         return None, COMMAND_STATE_IDENTIFIER_NONE
-    
+
     def _try_purge(self, name):
         """
         Tries to purge the commands from the given name from the command state.
-        
+
         Parameters
         ----------
         name : `str`
             The respective command's name.
-        
+
         Returns
         -------
         command : `None` or ``SlashCommand``
             The purged command if any.
         purged_from_identifier : `int`
             From which internal container was the command purged from.
-            
+
             Can be any of the following values:
-            
+
             +-----------------------------------+-------+
             | Respective name                   | Value |
             +===================================+=======+
@@ -365,35 +391,35 @@ class CommandState:
             +-----------------------------------+-------+
         """
         from_changes_result = self._try_purge_from_changes(name)
-        
+
         active = self._active
-        if (active is not None):
+        if active is not None:
             for index in range(len(active)):
                 command = active[index]
                 if command.name == name:
                     del active[index]
                     if not active:
                         self._active = None
-                    
+
                     return command, COMMAND_STATE_IDENTIFIER_ACTIVE
-        
+
         kept = self._kept
-        if (kept is not None):
+        if kept is not None:
             for index in range(len(kept)):
                 command = kept[index]
                 if command.name == name:
                     del kept[index]
                     if not kept:
                         self._kept = None
-                    
+
                     return command, COMMAND_STATE_IDENTIFIER_KEPT
-        
+
         return from_changes_result
-    
+
     def activate(self, command):
         """
         Adds the command to the ``CommandState`` as active.
-        
+
         Parameters
         ----------
         command : ``SlashCommand``
@@ -401,18 +427,18 @@ class CommandState:
         """
         if self._is_non_global:
             return
-        
+
         self._try_purge(command.name)
         active = self._active
         if active is None:
             self._active = active = []
-        
+
         active.append(command)
-    
+
     def keep(self, command):
         """
         Marks the command, as it should be kept.
-        
+
         Parameters
         ----------
         command : ``SlashCommand``
@@ -420,18 +446,18 @@ class CommandState:
         """
         if self._is_non_global:
             return
-        
+
         self._try_purge(command.name)
         kept = self._kept
         if kept is None:
             self._kept = kept = []
-        
+
         kept.append(command)
-    
+
     def delete(self, command):
         """
         Deletes the command from the command state.
-        
+
         Parameters
         ----------
         command : ``SlashCommand``
@@ -439,28 +465,28 @@ class CommandState:
         """
         if self._is_non_global:
             return
-        
+
         self._try_purge(command.name)
-    
+
     def add(self, command):
         """
         Adds a command to the ``CommandState``.
-        
+
         Parameters
         ----------
         command : ``SlashCommand``
             The command to add.
-        
+
         Returns
         -------
         command : ``SlashCommand``
             The existing command or the given one.
-        
+
         action_identifier : `int`
             The action what took place.
-            
+
             It's value can be any of the following:
-            
+
             +---------------------------------------+-------+
             | Respective name                       | Value |
             +=======================================+=======+
@@ -478,69 +504,69 @@ class CommandState:
             active = self._active
             if active is None:
                 self._active = active = []
-            
+
             active.append(command)
             return existing_command, COMMAND_STATE_IDENTIFIER_NON_GLOBAL
-        
+
         kept = self._kept
-        if (kept is not None):
+        if kept is not None:
             command_name = command.name
-            
+
             for index in range(len(kept)):
                 kept_command = kept[index]
                 if kept_command.name != command_name:
                     continue
-                
+
                 if kept_command != command:
                     continue
-                
+
                 del kept[index]
                 if not kept:
                     self._kept = None
-                
+
                 self._try_purge_from_changes(command_name)
                 return kept_command, COMMAND_STATE_IDENTIFIER_KEPT
-        
+
         active = self._active
-        if (active is not None):
+        if active is not None:
             command_name = command.name
-            
+
             for index in range(len(active)):
                 active_command = active[index]
                 if active_command.name != command_name:
                     continue
-                
+
                 if active_command != command:
                     continue
-                
+
                 del active[index]
                 if not active:
                     self._active = None
-                
+
                 self._try_purge_from_changes(command_name)
                 return active_command, COMMAND_STATE_IDENTIFIER_ACTIVE
-        
+
         changes = self._changes
         if changes is None:
             self._changes = changes = []
-        
+
         change = CommandChange(True, command)
         changes.append(change)
         return command, COMMAND_STATE_IDENTIFIER_ADDED
-    
+
     def remove(self, command, slasher_unloading_behaviour):
         """
         Removes the command from the ``CommandState``.
-        
+
         Parameters
         ----------
         command : ``SlashCommand``
             The command to add.
         slasher_unloading_behaviour : `int`
             The parent slasher's unload behaviour.
-            
+
             Can be any of the following:
-            
+
             +-------------------------------+-------+
             | Respective name               | Value |
             +-------------------------------+-------+
@@ -548,16 +574,16 @@ class CommandState:
             +-------------------------------+-------+
             | UNLOADING_BEHAVIOUR_KEEP      | 1     |
             +-------------------------------+-------+
-        
+
         Returns
         -------
         command : ``SlashCommand``
             The existing command or the given one.
         action_identifier : `int`
             The action what took place.
-            
+
             It's value can be any of the following:
-            
+
             +---------------------------------------+-------+
             | Respective name                       | Value |
             +=======================================+=======+
@@ -575,90 +601,90 @@ class CommandState:
             should_keep = False
         elif unloading_behaviour == UNLOADING_BEHAVIOUR_KEEP:
             should_keep = True
-        else: # if unloading_behaviour == UNLOADING_BEHAVIOUR_INHERIT:
+        else:  # if unloading_behaviour == UNLOADING_BEHAVIOUR_INHERIT:
             if slasher_unloading_behaviour == UNLOADING_BEHAVIOUR_DELETE:
                 should_keep = False
-            else: # if slasher_unloading_behaviour == UNLOADING_BEHAVIOUR_KEEP:
+            else:  # if slasher_unloading_behaviour == UNLOADING_BEHAVIOUR_KEEP:
                 should_keep = True
-        
+
         if self._is_non_global:
             existing_command, purge_identifier = self._try_purge(command.name)
             if should_keep:
                 kept = self._kept
                 if kept is None:
                     self._kept = kept = []
-                
+
                 kept.append(command)
-            
+
             return existing_command, COMMAND_STATE_IDENTIFIER_NON_GLOBAL
-        
+
         if should_keep:
             self._try_purge_from_changes(command.name)
-            
+
             kept = self._kept
-            if (kept is not None):
+            if kept is not None:
                 command_name = command.name
-                
+
                 for index in range(len(kept)):
                     kept_command = kept[index]
                     if kept_command.name != command_name:
                         continue
-                    
+
                     if kept_command != command:
                         continue
-                    
+
                     return kept_command, COMMAND_STATE_IDENTIFIER_KEPT
-            
+
             active = self._active
-            if (active is not None):
+            if active is not None:
                 command_name = command.name
-                
+
                 for index in range(len(active)):
                     active_command = active[index]
                     if active_command.name != command_name:
                         continue
-                    
+
                     if active_command != command:
                         continue
-                    
+
                     del active[index]
                     if not active:
                         self._active = None
-                    
+
                     kept = self._kept
                     if kept is None:
                         self._kept = kept = []
-                    
+
                     kept.append(active_command)
                     return active_command, COMMAND_STATE_IDENTIFIER_ACTIVE
-            
+
             kept = self._kept
             if kept is None:
                 self._kept = kept = []
-            
+
             kept.append(command)
             return command, COMMAND_STATE_IDENTIFIER_KEPT
-        
+
         # We do not purge active
         kept = self._kept
-        if (kept is not None):
+        if kept is not None:
             command_name = command.name
-            
+
             for index in range(len(kept)):
                 kept_command = kept[index]
                 if kept_command.name != command_name:
                     continue
-                
+
                 if kept_command != command:
                     continue
-                
+
                 del kept[index]
                 break
-        
+
         changes = self._changes
         if changes is None:
             self._changes = changes = []
-        
+
         change = CommandChange(False, command)
         changes.append(change)
         return command, COMMAND_STATE_IDENTIFIER_REMOVED
@@ -667,7 +693,7 @@ class CommandState:
 class Slasher(EventHandlerBase):
     """
     Slash command processor.
-    
+
     Attributes
     ----------
     _call_later : `None` or `list` of `tuple` (`bool`, `Any`)
@@ -678,9 +704,9 @@ class Slasher(EventHandlerBase):
         The slasher's commands's states.
     _command_unloading_behaviour : `int`
         Behaviour to describe what should happen when a command is unloaded.
-        
+
         Can be any of the following:
-        
+
         +-------------------------------+-------+
         | Respective name               | Value |
         +-------------------------------+-------+
@@ -695,9 +721,9 @@ class Slasher(EventHandlerBase):
         a ``Task``.
     _exception_handlers : `None` or `list` of `CoroutineFunction`
         Error handlers added with `.error` to the interaction handler.
-    
+
         The following parameters are passed to it:
-        
+
         +-------------------+-------------------------------------------+
         | Name              | Type                                      |
         +===================+===========================================+
@@ -709,15 +735,15 @@ class Slasher(EventHandlerBase):
         +-------------------+-------------------------------------------+
         | exception         | `BaseException`                           |
         +-------------------+-------------------------------------------+
-        
+
         Should return the following parameters:
-        
+
         +-------------------+-----------+
         | Name              | Type      |
         +===================+===========+
         | handled           | `bool`    |
         +-------------------+-----------+
-    
+
     _sync_done : `set` of `int`
         A set of guild id-s which are synced.
     _sync_permission_tasks : `dict` of (`int`, ``Task``) items
@@ -734,31 +760,48 @@ class Slasher(EventHandlerBase):
         A dictionary which contains component commands based on regex patterns.
     string_custom_id_to_component_command : `dict` of (`str`, ``ComponentCommand``) items
         A dictionary which contains component commands for `custom_id`-s.
-    
+
     Class Attributes
     ----------------
     __event_name__ : `str` = 'interaction_create'
         Tells for the ``EventHandlerManager`` that ``Slasher`` is a `interaction_create` event handler.
     SUPPORTED_TYPES : `tuple` (``SlashCommand``, ``ComponentCommand``)
         Tells to ``eventlist`` what exact types the ``Slasher`` accepts.
-    
+
     Notes
     -----
     ``Slasher`` instances are weakreferable.
     """
-    __slots__ = ('__weakref__', '_call_later', '_client_reference', '_component_commands', '_command_states',
-        '_command_unloading_behaviour', '_component_interaction_waiters', '_exception_handlers', '_sync_done',
-        '_sync_permission_tasks', '_sync_should', '_sync_tasks', '_synced_permissions', 'command_id_to_command',
-        'regex_custom_id_to_component_command', 'string_custom_id_to_component_command')
-    
+
+    __slots__ = (
+        '__weakref__',
+        '_call_later',
+        '_client_reference',
+        '_component_commands',
+        '_command_states',
+        '_command_unloading_behaviour',
+        '_component_interaction_waiters',
+        '_exception_handlers',
+        '_sync_done',
+        '_sync_permission_tasks',
+        '_sync_should',
+        '_sync_tasks',
+        '_synced_permissions',
+        'command_id_to_command',
+        'regex_custom_id_to_component_command',
+        'string_custom_id_to_component_command',
+    )
+
     __event_name__ = 'interaction_create'
-    
+
     SUPPORTED_TYPES = (SlashCommand, ComponentCommand)
-    
-    def __new__(cls, client, delete_commands_on_unload=False, use_default_exception_handler=True):
+
+    def __new__(
+        cls, client, delete_commands_on_unload=False, use_default_exception_handler=True
+    ):
         """
         Creates a new interaction event handler.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -767,7 +810,7 @@ class Slasher(EventHandlerBase):
             Whether commands should be deleted when unloaded.
         use_default_exception_handler : `bool`, Optional
             Whether the default slash exception handler should be added as an exception handler.
-        
+
         Raises
         ------
         TypeError
@@ -776,39 +819,42 @@ class Slasher(EventHandlerBase):
             - If `client` was not given as ``Client`` instance.
         """
         if not isinstance(client, Client):
-            raise TypeError(f'`client` can be given as `{Client.__name__}` instance, got {client.__class__.__name__}.')
-        
+            raise TypeError(
+                f'`client` can be given as `{Client.__name__}` instance, got {client.__class__.__name__}.'
+            )
+
         client_reference = WeakReferer(client)
-        
+
         if type(delete_commands_on_unload) is bool:
             pass
         elif isinstance(delete_commands_on_unload, bool):
             delete_commands_on_unload = bool(delete_commands_on_unload)
         else:
-            raise TypeError(f'`delete_commands_on_unload` can be given as `bool` instance, got '
-                f'{delete_commands_on_unload.__class__.__name__}.')
-        
+            raise TypeError(
+                f'`delete_commands_on_unload` can be given as `bool` instance, got '
+                f'{delete_commands_on_unload.__class__.__name__}.'
+            )
+
         if type(use_default_exception_handler) is bool:
             pass
         elif isinstance(use_default_exception_handler, bool):
             use_default_exception_handler = bool(use_default_exception_handler)
         else:
-            raise TypeError(f'`use_default_exception_handler` can be given as `bool` instance, got '
-                f'{use_default_exception_handler.__class__.__name__}.')
-        
-        
+            raise TypeError(
+                f'`use_default_exception_handler` can be given as `bool` instance, got '
+                f'{use_default_exception_handler.__class__.__name__}.'
+            )
+
         if delete_commands_on_unload:
             command_unloading_behaviour = UNLOADING_BEHAVIOUR_DELETE
         else:
             command_unloading_behaviour = UNLOADING_BEHAVIOUR_KEEP
-        
-        
+
         if use_default_exception_handler:
             exception_handlers = [default_slasher_exception_handler]
         else:
             exception_handlers = None
-        
-        
+
         self = object.__new__(cls)
         self._call_later = None
         self._client_reference = client_reference
@@ -822,19 +868,19 @@ class Slasher(EventHandlerBase):
         self._component_interaction_waiters = WeakKeyDictionary()
         self._exception_handlers = exception_handlers
         self._component_commands = set()
-        
+
         self.command_id_to_command = {}
         self.string_custom_id_to_component_command = {}
         self.regex_custom_id_to_component_command = {}
-        
+
         return self
-    
+
     async def __call__(self, client, interaction_event):
         """
         Calls the slasher, processing a received interaction event.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -845,17 +891,16 @@ class Slasher(EventHandlerBase):
         interaction_event_type = interaction_event.type
         if interaction_event_type is INTERACTION_TYPE_APPLICATION_COMMAND:
             await self._dispatch_command_event(client, interaction_event)
-        
+
         elif interaction_event_type is INTERACTION_TYPE_MESSAGE_COMPONENT:
             await self._dispatch_component_event(client, interaction_event)
-    
-    
+
     async def _dispatch_command_event(self, client, interaction_event):
         """
         Dispatches an application command interaction event.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -870,19 +915,24 @@ class Slasher(EventHandlerBase):
         except BaseException as err:
             await client.events.error(client, f'{self!r}.__call__', err)
         else:
-            if (command is not None):
+            if command is not None:
                 try:
                     await command(client, interaction_event)
                 except BaseException as err:
-                    await handle_command_exception(self._exception_handlers, client, interaction_event, command, err)
-    
-    
+                    await handle_command_exception(
+                        self._exception_handlers,
+                        client,
+                        interaction_event,
+                        command,
+                        err,
+                    )
+
     async def _dispatch_component_event(self, client, interaction_event):
         """
         Dispatches a component interaction event.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -900,36 +950,42 @@ class Slasher(EventHandlerBase):
                     Task(waiter(interaction_event), KOKORO)
             else:
                 Task(waiter(interaction_event), KOKORO)
-            
+
             return
-        
+
         custom_id = interaction_event.interaction.custom_id
         try:
             component_command = self.string_custom_id_to_component_command[custom_id]
         except KeyError:
             for regex_matcher in self.regex_custom_id_to_component_command:
                 regex_match = regex_matcher(custom_id)
-                if (regex_match is None):
+                if regex_match is None:
                     continue
-                
-                component_command = self.regex_custom_id_to_component_command[regex_matcher]
+
+                component_command = self.regex_custom_id_to_component_command[
+                    regex_matcher
+                ]
                 break
             else:
                 return
         else:
             regex_match = None
-        
+
         try:
             await component_command(client, interaction_event, regex_match)
         except BaseException as err:
-            await handle_command_exception(self._exception_handlers, client, interaction_event, component_command,
-                err)
-    
-    
+            await handle_command_exception(
+                self._exception_handlers,
+                client,
+                interaction_event,
+                component_command,
+                err,
+            )
+
     def add_component_interaction_waiter(self, message, waiter):
         """
         Adds an component interaction waiter for the given message.
-        
+
         Parameters
         ----------
         message : ``Message``
@@ -950,12 +1006,11 @@ class Slasher(EventHandlerBase):
                 list.append(new_waiter, waiter)
                 list.append(new_waiter, actual_waiter)
                 component_interaction_waiters[message] = new_waiter
-    
-    
+
     def remove_component_interaction_waiter(self, message, waiter):
         """
         Removes a component interaction waiter for the given message.
-        
+
         Parameters
         ----------
         message : ``Message``
@@ -968,10 +1023,10 @@ class Slasher(EventHandlerBase):
             actual_waiter = component_interaction_waiters.pop(message)
         except KeyError:
             return
-        
+
         if type(actual_waiter) is not asynclist:
             return
-        
+
         try:
             list.remove(actual_waiter, waiter)
         except ValueError:
@@ -980,10 +1035,9 @@ class Slasher(EventHandlerBase):
             if len(actual_waiter) == 1:
                 self._component_interaction_waiters[message] = actual_waiter[0]
                 return
-        
+
         self._component_interaction_waiters[message] = actual_waiter
-    
-    
+
     def create_event(self, func, *args, **kwargs):
         """
         Adds a slash command.
@@ -1027,44 +1081,44 @@ class Slasher(EventHandlerBase):
         """
         if isinstance(func, Router):
             func = func[0]
-        
+
         if isinstance(func, SlashCommand):
             self._add_slash_command(func)
             return func
-        
+
         if isinstance(func, ComponentCommand):
             self._add_component_command(func)
             return func
-        
+
         if 'custom_id' in kwargs:
             command = ComponentCommand(func, *args, **kwargs)
         else:
             command = SlashCommand(func, *args, **kwargs)
-        
+
         if isinstance(command, Router):
             command = command[0]
-        
+
         if isinstance(command, SlashCommand):
             self._add_slash_command(command)
         else:
             self._add_component_command(command)
-        
+
         return command
-    
+
     def create_event_from_class(self, klass):
         """
         Breaks down the given class to it's class attributes and tries to add it as a slash command.
-        
+
         Parameters
         ----------
         klass : `type`
             The class, from what's attributes the command will be created.
-        
+
         Returns
         -------
         func : ``SlashCommand``, ``ComponentCommand``
              The created or added command.
-        
+
         Raises
         ------
         TypeError
@@ -1076,22 +1130,21 @@ class Slasher(EventHandlerBase):
             command = ComponentCommand.from_class(klass)
         else:
             command = SlashCommand.from_class(klass)
-        
+
         if isinstance(command, Router):
             command = command[0]
-        
+
         if isinstance(command, SlashCommand):
             self._add_slash_command(command)
         else:
             self._add_component_command(command)
-        
+
         return command
-    
-    
+
     def _add_slash_command(self, command):
         """
         Adds a slash command to the ``Slasher`` if applicable.
-        
+
         Parameters
         ---------
         command : ``SlashCommand``
@@ -1099,16 +1152,15 @@ class Slasher(EventHandlerBase):
         """
         if self._check_late_register(command, True):
             return
-        
+
         self._register_slash_command(command)
-        
+
         self._maybe_sync()
-    
-    
+
     def _register_slash_command(self, command):
         """
         Registers the given slash command.
-        
+
         Parameters
         ---------
         command : ``SlashCommand``
@@ -1119,34 +1171,35 @@ class Slasher(EventHandlerBase):
                 is_non_global = True
             else:
                 is_non_global = False
-            
+
             try:
                 command_state = self._command_states[sync_id]
             except KeyError:
-                command_state = self._command_states[sync_id] = CommandState(is_non_global)
-            
+                command_state = self._command_states[sync_id] = CommandState(
+                    is_non_global
+                )
+
             command, change_identifier = command_state.add(command)
             if change_identifier == COMMAND_STATE_IDENTIFIER_ADDED:
                 self._sync_done.discard(sync_id)
                 self._sync_should.add(sync_id)
                 continue
-            
+
             if change_identifier == COMMAND_STATE_IDENTIFIER_ACTIVE:
                 continue
-            
+
             if change_identifier == COMMAND_STATE_IDENTIFIER_KEPT:
                 for application_command_id in command._iter_application_command_ids():
                     self.command_id_to_command[application_command_id] = command
                 continue
-            
+
             if change_identifier == COMMAND_STATE_IDENTIFIER_NON_GLOBAL:
                 continue
-    
-    
+
     def _remove_slash_command(self, command):
         """
         Tries to remove the given command from the ``Slasher``.
-        
+
         Parameters
         ----------
         command : ``Command``
@@ -1154,35 +1207,38 @@ class Slasher(EventHandlerBase):
         """
         if self._check_late_register(command, False):
             return
-        
+
         self._unregister_slash_command(command)
-        
+
         self._maybe_sync()
-    
-    
+
     def _unregister_slash_command(self, command):
         """
         Unregisters the given slash command.
-        
+
         Parameters
         ----------
         command : ``Command``
             The command to remove.
         """
         for sync_id in command._iter_sync_ids():
-            
+
             if sync_id == SYNC_ID_NON_GLOBAL:
                 is_non_global = True
             else:
                 is_non_global = False
-            
+
             try:
                 command_state = self._command_states[sync_id]
             except KeyError:
-                command_state = self._command_states[sync_id] = CommandState(is_non_global)
-            
-            removed_command, change_identifier = command_state.remove(command, self._command_unloading_behaviour)
-            
+                command_state = self._command_states[sync_id] = CommandState(
+                    is_non_global
+                )
+
+            removed_command, change_identifier = command_state.remove(
+                command, self._command_unloading_behaviour
+            )
+
             if change_identifier == COMMAND_STATE_IDENTIFIER_REMOVED:
                 if sync_id == SYNC_ID_NON_GLOBAL:
                     for guild_id in removed_command._iter_guild_ids():
@@ -1191,36 +1247,38 @@ class Slasher(EventHandlerBase):
                 else:
                     self._sync_should.add(sync_id)
                     self._sync_done.discard(sync_id)
-                
+
                 continue
-            
+
             if change_identifier == COMMAND_STATE_IDENTIFIER_ACTIVE:
-                for application_command_id in removed_command._iter_application_command_ids():
+                for (
+                    application_command_id
+                ) in removed_command._iter_application_command_ids():
                     try:
                         del self.command_id_to_command[application_command_id]
                     except KeyError:
                         pass
                 continue
-            
+
             if change_identifier == COMMAND_STATE_IDENTIFIER_KEPT:
                 continue
-            
+
             if change_identifier == COMMAND_STATE_IDENTIFIER_NON_GLOBAL:
-                if (removed_command is not None):
+                if removed_command is not None:
                     for guild_id in removed_command._iter_guild_ids():
                         self._sync_done.discard(guild_id)
                         self._sync_should.add(guild_id)
                 continue
-    
+
     def _check_late_register(self, command, add):
         """
         Checks whether the given command should be registered only later.
-        
+
         command : ``Command``
             The command to register or unregister later.
         add : `bool`
             Whether the command should be registered or unregistered.
-        
+
         Returns
         -------
         later : `bool`
@@ -1230,19 +1288,19 @@ class Slasher(EventHandlerBase):
             call_later = self._call_later
             if call_later is None:
                 call_later = self._call_later = []
-            
+
             call_later.append((add, command))
-            
+
             later = True
         else:
             later = False
-        
+
         return later
-    
+
     def _late_register(self):
         """
         Register late-registered commands.
-        
+
         Returns
         -------
         registered_any : `bool`
@@ -1258,23 +1316,23 @@ class Slasher(EventHandlerBase):
                     self._register_slash_command(command)
                 else:
                     self._unregister_slash_command(command)
-            
+
             self._call_later = None
             registered_any = True
-        
+
         return registered_any
-    
+
     def delete_event(self, func, name=None):
         """
         A method to remove a command by itself, or by it's function and name combination if defined.
-        
+
         Parameters
         ----------
         func : ``SlashCommand``, ``Router`` of ``SlashCommand``
             The command to remove.
         name : `None` or `str`, Optional
             The command's name to remove.
-        
+
         Raises
         ------
         TypeError
@@ -1283,24 +1341,28 @@ class Slasher(EventHandlerBase):
         if isinstance(func, Router):
             for sub_func in func:
                 if not isinstance(sub_func, SlashCommand):
-                    raise TypeError(f'`func` was not given neither as `{SlashCommand.__name__}`, or '
-                        f'`{Router.__name__}` of `{SlashCommand.__name__}` instances, got {func!r}.')
-            
+                    raise TypeError(
+                        f'`func` was not given neither as `{SlashCommand.__name__}`, or '
+                        f'`{Router.__name__}` of `{SlashCommand.__name__}` instances, got {func!r}.'
+                    )
+
             for sub_func in func:
                 self._remove_slash_command(sub_func)
-                
+
         elif isinstance(func, SlashCommand):
             self._remove_slash_command(func)
         else:
-            raise TypeError(f'`func` was not given neither as `{SlashCommand.__name__}`, or `{Router.__name__}` of '
-                f'`{SlashCommand.__name__}` instances, got {func!r}.')
-    
+            raise TypeError(
+                f'`func` was not given neither as `{SlashCommand.__name__}`, or `{Router.__name__}` of '
+                f'`{SlashCommand.__name__}` instances, got {func!r}.'
+            )
+
     async def _try_get_command_by_id(self, client, interaction_event):
         """
         Tries to get the command by id. If found it, returns it, if not, returns `None`.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -1315,44 +1377,44 @@ class Slasher(EventHandlerBase):
             pass
         else:
             return command
-        
+
         # First request guild commands
         guild = interaction_event.guild
-        if (guild is not None):
+        if guild is not None:
             guild_id = guild.id
             if not await self._sync_guild(client, guild_id):
                 return None
-            
+
             try:
                 command = self.command_id_to_command[interaction_id]
             except KeyError:
                 pass
             else:
                 return command
-        
+
         if not await self._sync_global(client):
             return None
-        
+
         try:
             command = self.command_id_to_command[interaction_id]
         except KeyError:
             pass
         else:
             return command
-    
+
     async def _sync_guild(self, client, guild_id):
         """
         Syncs the respective guild's commands if not yet synced.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
             The respective client.
         guild_id : `int`
             The guild's id to sync.
-        
+
         Returns
         -------
         success : `bool`
@@ -1360,25 +1422,27 @@ class Slasher(EventHandlerBase):
         """
         if guild_id in self._sync_done:
             return True
-        
+
         try:
             task = self._sync_tasks[guild_id]
         except KeyError:
-            task = self._sync_tasks[guild_id] = Task(self._sync_guild_task(client, guild_id), KOKORO)
-        
+            task = self._sync_tasks[guild_id] = Task(
+                self._sync_guild_task(client, guild_id), KOKORO
+            )
+
         return await task
-    
+
     async def _sync_global(self, client):
         """
         Syncs the not yet synced global commands.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
             The respective client.
-        
+
         Returns
         -------
         success : `bool`
@@ -1386,18 +1450,20 @@ class Slasher(EventHandlerBase):
         """
         if SYNC_ID_GLOBAL in self._sync_done:
             return True
-        
+
         try:
             task = self._sync_tasks[SYNC_ID_GLOBAL]
         except KeyError:
-            task = self._sync_tasks[SYNC_ID_GLOBAL] = Task(self._sync_global_task(client), KOKORO)
-        
+            task = self._sync_tasks[SYNC_ID_GLOBAL] = Task(
+                self._sync_global_task(client), KOKORO
+            )
+
         return await task
-    
+
     def _unregister_helper(self, command, command_state, guild_id):
         """
         Unregisters all the call relations of the given command.
-        
+
         Parameters
         ----------
         command : `None` or ``SlashCommand``
@@ -1407,21 +1473,23 @@ class Slasher(EventHandlerBase):
         guild_id : `int`
             The respective guild's id.
         """
-        if (command is not None):
+        if command is not None:
             command_id = command._pop_command_id_for(guild_id)
             if command_id:
                 try:
                     del self.command_id_to_command[command_id]
                 except KeyError:
                     pass
-            
-            if (command_state is not None):
+
+            if command_state is not None:
                 command_state.delete(command)
-    
-    def _register_helper(self, command, command_state, guild_id, application_command_id):
+
+    def _register_helper(
+        self, command, command_state, guild_id, application_command_id
+    ):
         """
         Registers the given command, guild id, application command relationship.
-        
+
         Parameters
         ----------
         command : `None` or ``SlashCommand``
@@ -1433,16 +1501,18 @@ class Slasher(EventHandlerBase):
         application_command_id : `int`
             The respective command's identifier.
         """
-        if (command is not None):
+        if command is not None:
             self.command_id_to_command[application_command_id] = command
-            command._register_guild_and_application_command_id(guild_id, application_command_id)
-            if (command_state is not None):
+            command._register_guild_and_application_command_id(
+                guild_id, application_command_id
+            )
+            if command_state is not None:
                 command_state.activate(command)
-    
+
     def _keep_helper(self, command, command_state, guild_id):
         """
         Marks the given command to be kept at the given guild.
-        
+
         Parameters
         ----------
         command : `None` or ``SlashCommand``
@@ -1452,39 +1522,41 @@ class Slasher(EventHandlerBase):
         guild_id : `int`
             The respective guild's id.
         """
-        if (command is not None):
+        if command is not None:
             command_id = command._pop_command_id_for(guild_id)
             if command_id:
                 try:
                     del self.command_id_to_command[command_id]
                 except KeyError:
                     pass
-            
-            if (command_state is not None):
+
+            if command_state is not None:
                 command_state.keep(command)
-    
+
     async def _sync_guild_task(self, client, guild_id):
         """
         Syncs the respective guild's commands.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
             The respective client.
         guild_id : `int`
             The guild's id to sync.
-        
+
         Returns
         -------
         success : `bool`
             Whether syncing was successful.
         """
         success = False
-        
+
         try:
-            application_commands = await client.application_command_guild_get_all(guild_id)
+            application_commands = await client.application_command_guild_get_all(
+                guild_id
+            )
         except BaseException as err:
             # No internet connection
             if not isinstance(err, ConnectionError):
@@ -1496,154 +1568,229 @@ class Slasher(EventHandlerBase):
                 guild_keep_commands = None
                 guild_removed_commands = None
             else:
-                guild_added_commands = guild_command_state.get_should_add_slash_commands()
+                guild_added_commands = (
+                    guild_command_state.get_should_add_slash_commands()
+                )
                 if not guild_added_commands:
                     guild_added_commands = None
-                
+
                 guild_keep_commands = guild_command_state.get_should_keep_commands()
                 if not guild_keep_commands:
                     guild_keep_commands = None
-                
-                guild_removed_commands = guild_command_state.get_should_remove_slash_commands()
+
+                guild_removed_commands = (
+                    guild_command_state.get_should_remove_slash_commands()
+                )
                 if not guild_removed_commands:
                     guild_removed_commands = None
-            
-            non_global_command_state = self._command_states.get(SYNC_ID_NON_GLOBAL, None)
+
+            non_global_command_state = self._command_states.get(
+                SYNC_ID_NON_GLOBAL, None
+            )
             if non_global_command_state is None:
                 non_global_added_commands = None
                 non_global_keep_commands = None
             else:
-                non_global_added_commands = non_global_command_state.get_should_add_slash_commands()
+                non_global_added_commands = (
+                    non_global_command_state.get_should_add_slash_commands()
+                )
                 if not non_global_added_commands:
                     non_global_added_commands = None
-                
-                non_global_keep_commands = non_global_command_state.get_should_keep_commands()
+
+                non_global_keep_commands = (
+                    non_global_command_state.get_should_keep_commands()
+                )
                 if not non_global_keep_commands:
                     non_global_keep_commands = None
-            
+
             command_create_callbacks = None
             command_edit_callbacks = None
             command_delete_callbacks = None
             command_register_callbacks = None
-            
-            guild_added_commands, matched = match_application_commands_to_commands(application_commands,
-                guild_added_commands, True)
-            if (matched is not None):
+
+            guild_added_commands, matched = match_application_commands_to_commands(
+                application_commands, guild_added_commands, True
+            )
+            if matched is not None:
                 for application_command, command in matched:
-                    callback = (type(self)._register_command, self, client, command, guild_command_state, guild_id,
-                        application_command)
-                    
+                    callback = (
+                        type(self)._register_command,
+                        self,
+                        client,
+                        command,
+                        guild_command_state,
+                        guild_id,
+                        application_command,
+                    )
+
                     if command_register_callbacks is None:
                         command_register_callbacks = []
                     command_register_callbacks.append(callback)
-            
-            non_global_added_commands, matched = match_application_commands_to_commands(application_commands,
-                non_global_added_commands, True)
-            if (matched is not None):
+
+            non_global_added_commands, matched = match_application_commands_to_commands(
+                application_commands, non_global_added_commands, True
+            )
+            if matched is not None:
                 for application_command, command in matched:
-                    callback = (type(self)._register_command, self, client, command, non_global_command_state, guild_id,
-                        application_command)
-                    
+                    callback = (
+                        type(self)._register_command,
+                        self,
+                        client,
+                        command,
+                        non_global_command_state,
+                        guild_id,
+                        application_command,
+                    )
+
                     if command_register_callbacks is None:
                         command_register_callbacks = []
                     command_register_callbacks.append(callback)
-            
-            guild_added_commands, matched = match_application_commands_to_commands(application_commands,
-                guild_added_commands, False)
-            if (matched is not None):
+
+            guild_added_commands, matched = match_application_commands_to_commands(
+                application_commands, guild_added_commands, False
+            )
+            if matched is not None:
                 for application_command, command in matched:
-                    callback = (type(self)._edit_command, self, client, command, guild_command_state, guild_id,
-                        application_command,)
-                    
+                    callback = (
+                        type(self)._edit_command,
+                        self,
+                        client,
+                        command,
+                        guild_command_state,
+                        guild_id,
+                        application_command,
+                    )
+
                     if command_edit_callbacks is None:
                         command_edit_callbacks = []
                     command_edit_callbacks.append(callback)
-            
-            non_global_added_commands, matched = match_application_commands_to_commands(application_commands,
-                non_global_added_commands, False)
-            if (matched is not None):
+
+            non_global_added_commands, matched = match_application_commands_to_commands(
+                application_commands, non_global_added_commands, False
+            )
+            if matched is not None:
                 for application_command, command in matched:
-                    callback = (type(self)._edit_guild_command_to_non_global, self, client, command,
-                        non_global_command_state, guild_id, application_command)
+                    callback = (
+                        type(self)._edit_guild_command_to_non_global,
+                        self,
+                        client,
+                        command,
+                        non_global_command_state,
+                        guild_id,
+                        application_command,
+                    )
                     if command_edit_callbacks is None:
                         command_edit_callbacks = []
                     command_edit_callbacks.append(callback)
-            
-            guild_keep_commands, matched = match_application_commands_to_commands(application_commands,
-                guild_keep_commands, True)
-            if (matched is not None):
+
+            guild_keep_commands, matched = match_application_commands_to_commands(
+                application_commands, guild_keep_commands, True
+            )
+            if matched is not None:
                 for application_command, command in matched:
                     self._keep_helper(command, guild_command_state, guild_id)
-            
-            non_global_keep_commands, matched = match_application_commands_to_commands(application_commands,
-                non_global_keep_commands, True)
-            if (matched is not None):
+
+            non_global_keep_commands, matched = match_application_commands_to_commands(
+                application_commands, non_global_keep_commands, True
+            )
+            if matched is not None:
                 for application_command, command in matched:
                     self._keep_helper(command, non_global_command_state, guild_id)
-            
-            guild_removed_commands, matched = match_application_commands_to_commands(application_commands,
-                guild_removed_commands, True)
-            if (matched is not None):
+
+            guild_removed_commands, matched = match_application_commands_to_commands(
+                application_commands, guild_removed_commands, True
+            )
+            if matched is not None:
                 for application_command, command in matched:
-                    callback = (type(self)._delete_command, self, client, command, guild_command_state, guild_id,
-                        application_command)
+                    callback = (
+                        type(self)._delete_command,
+                        self,
+                        client,
+                        command,
+                        guild_command_state,
+                        guild_id,
+                        application_command,
+                    )
                     if command_delete_callbacks is None:
                         command_delete_callbacks = []
                     command_delete_callbacks.append(callback)
-            
-            if (guild_added_commands is not None):
+
+            if guild_added_commands is not None:
                 while guild_added_commands:
                     command = guild_added_commands.pop()
-                    
-                    callback = (type(self)._create_command, self, client, command, guild_command_state, guild_id)
+
+                    callback = (
+                        type(self)._create_command,
+                        self,
+                        client,
+                        command,
+                        guild_command_state,
+                        guild_id,
+                    )
                     if command_create_callbacks is None:
                         command_create_callbacks = []
                     command_create_callbacks.append(callback)
                     continue
-            
+
             while application_commands:
                 application_command = application_commands.pop()
-                
-                callback = (type(self)._delete_command, self, client, None, None, guild_id, application_command)
+
+                callback = (
+                    type(self)._delete_command,
+                    self,
+                    client,
+                    None,
+                    None,
+                    guild_id,
+                    application_command,
+                )
                 if command_delete_callbacks is None:
                     command_delete_callbacks = []
                 command_delete_callbacks.append(callback)
-            
+
             success = True
-            for callbacks in (command_register_callbacks, command_delete_callbacks, command_edit_callbacks, \
-                    command_create_callbacks):
-                if (callbacks is not None):
+            for callbacks in (
+                command_register_callbacks,
+                command_delete_callbacks,
+                command_edit_callbacks,
+                command_create_callbacks,
+            ):
+                if callbacks is not None:
                     done, pending = await WaitTillAll(
-                        [Task(callback[0](*callback[1:]), KOKORO) for callback in callbacks],
-                        KOKORO)
-                    
+                        [
+                            Task(callback[0](*callback[1:]), KOKORO)
+                            for callback in callbacks
+                        ],
+                        KOKORO,
+                    )
+
                     for future in done:
                         if not future.result():
                             success = False
-        
+
         finally:
             try:
                 del self._sync_tasks[guild_id]
             except KeyError:
                 pass
-        
+
         if success:
             self._sync_should.discard(guild_id)
             self._sync_done.add(guild_id)
-        
+
         return success
-    
+
     async def _sync_global_task(self, client):
         """
         Syncs the global commands off the ``Slasher``.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
             The respective client.
-        
+
         Returns
         -------
         success : `bool`
@@ -1655,8 +1802,10 @@ class Slasher(EventHandlerBase):
         except BaseException as err:
             # No internet connection
             if not isinstance(err, ConnectionError):
-                await client.events.error(client, f'{self!r}._sync_global_commands', err)
-            
+                await client.events.error(
+                    client, f'{self!r}._sync_global_commands', err
+                )
+
         else:
             global_command_state = self._command_states.get(SYNC_ID_GLOBAL, None)
             if global_command_state is None:
@@ -1664,97 +1813,143 @@ class Slasher(EventHandlerBase):
                 global_keep_commands = None
                 global_removed_commands = None
             else:
-                global_added_commands = global_command_state.get_should_add_slash_commands()
+                global_added_commands = (
+                    global_command_state.get_should_add_slash_commands()
+                )
                 if not global_added_commands:
                     global_added_commands = None
-                
+
                 global_keep_commands = global_command_state.get_should_keep_commands()
                 if not global_keep_commands:
                     global_keep_commands = None
-                
-                global_removed_commands = global_command_state.get_should_remove_slash_commands()
+
+                global_removed_commands = (
+                    global_command_state.get_should_remove_slash_commands()
+                )
                 if not global_removed_commands:
                     global_removed_commands = None
-            
+
             command_create_callbacks = None
             command_edit_callbacks = None
             command_delete_callbacks = None
             command_register_callbacks = None
-            
-            global_added_commands, matched = match_application_commands_to_commands(application_commands,
-                global_added_commands, True)
-            if (matched is not None):
+
+            global_added_commands, matched = match_application_commands_to_commands(
+                application_commands, global_added_commands, True
+            )
+            if matched is not None:
                 for application_command, command in matched:
-                    callback = (type(self)._register_command, self, client, command, global_command_state,
-                        SYNC_ID_GLOBAL, application_command)
-                    
+                    callback = (
+                        type(self)._register_command,
+                        self,
+                        client,
+                        command,
+                        global_command_state,
+                        SYNC_ID_GLOBAL,
+                        application_command,
+                    )
+
                     if command_register_callbacks is None:
                         command_register_callbacks = []
                     command_register_callbacks.append(callback)
-            
-            global_keep_commands, matched = match_application_commands_to_commands(application_commands,
-                global_keep_commands, True)
-            if (matched is not None):
+
+            global_keep_commands, matched = match_application_commands_to_commands(
+                application_commands, global_keep_commands, True
+            )
+            if matched is not None:
                 for application_command, command in matched:
                     self._keep_helper(command, global_command_state, SYNC_ID_GLOBAL)
-            
-            global_removed_commands, matched = match_application_commands_to_commands(application_commands,
-                global_removed_commands, True)
-            if (matched is not None):
+
+            global_removed_commands, matched = match_application_commands_to_commands(
+                application_commands, global_removed_commands, True
+            )
+            if matched is not None:
                 for application_command, command in matched:
-                    callback = (type(self)._delete_command, self, client, command, global_command_state, SYNC_ID_GLOBAL,
-                        application_command)
+                    callback = (
+                        type(self)._delete_command,
+                        self,
+                        client,
+                        command,
+                        global_command_state,
+                        SYNC_ID_GLOBAL,
+                        application_command,
+                    )
                     if command_delete_callbacks is None:
                         command_delete_callbacks = []
                     command_delete_callbacks.append(callback)
-            
-            if (global_added_commands is not None):
+
+            if global_added_commands is not None:
                 while global_added_commands:
                     command = global_added_commands.pop()
-                    
-                    callback = (type(self)._create_command, self, client, command, global_command_state, SYNC_ID_GLOBAL)
+
+                    callback = (
+                        type(self)._create_command,
+                        self,
+                        client,
+                        command,
+                        global_command_state,
+                        SYNC_ID_GLOBAL,
+                    )
                     if command_create_callbacks is None:
                         command_create_callbacks = []
                     command_create_callbacks.append(callback)
-            
+
             while application_commands:
                 application_command = application_commands.pop()
-                
-                callback = (type(self)._delete_command, self, client, None, None, SYNC_ID_GLOBAL, application_command)
+
+                callback = (
+                    type(self)._delete_command,
+                    self,
+                    client,
+                    None,
+                    None,
+                    SYNC_ID_GLOBAL,
+                    application_command,
+                )
                 if command_delete_callbacks is None:
                     command_delete_callbacks = []
                 command_delete_callbacks.append(callback)
-            
+
             success = True
-            for callbacks in (command_register_callbacks, command_delete_callbacks, command_edit_callbacks,
-                    command_create_callbacks):
-                if (callbacks is not None):
+            for callbacks in (
+                command_register_callbacks,
+                command_delete_callbacks,
+                command_edit_callbacks,
+                command_create_callbacks,
+            ):
+                if callbacks is not None:
                     done, pending = await WaitTillAll(
-                        [Task(callback[0](*callback[1:]), KOKORO) for callback in callbacks],
-                        KOKORO)
-                    
+                        [
+                            Task(callback[0](*callback[1:]), KOKORO)
+                            for callback in callbacks
+                        ],
+                        KOKORO,
+                    )
+
                     for future in done:
                         if not future.result():
                             success = False
-        
+
         finally:
             try:
                 del self._sync_tasks[SYNC_ID_GLOBAL]
             except KeyError:
                 pass
-        
+
         if success:
             self._sync_should.discard(SYNC_ID_GLOBAL)
             self._sync_done.add(SYNC_ID_GLOBAL)
-        
+
         return success
-    
-    async def _register_command(self, client, command, command_state, guild_id, application_command):
+
+    async def _register_command(
+        self, client, command, command_state, guild_id, application_command
+    ):
         """
         Finishes registering the command.
-        
+
         This method is a coroutine.
-        
+
         Attributes
         ----------
         client : ``Client``
@@ -1767,7 +1962,7 @@ class Slasher(EventHandlerBase):
             The respective guild's identifier where the command is.
         application_command : ``ApplicationCommand``
             The respective application command.
-        
+
         Returns
         -------
         success : `bool`
@@ -1776,32 +1971,40 @@ class Slasher(EventHandlerBase):
         if guild_id == SYNC_ID_GLOBAL:
             tasks = []
             for permission_guild_id in command._get_sync_permission_ids():
-                task = Task(self._register_command_task(client, command, permission_guild_id, application_command),
-                    KOKORO)
+                task = Task(
+                    self._register_command_task(
+                        client, command, permission_guild_id, application_command
+                    ),
+                    KOKORO,
+                )
                 task.append(task)
-            
+
             if tasks:
                 await WaitTillAll(tasks, KOKORO)
-                
+
                 success = True
                 for future in tasks:
                     if not future.result():
                         success = False
-                
+
                 if not success:
                     return False
         else:
-            await self._register_command_task(client, command, guild_id, application_command)
-        
+            await self._register_command_task(
+                client, command, guild_id, application_command
+            )
+
         self._register_helper(command, command_state, guild_id, application_command.id)
         return True
-    
-    async def _register_command_task(self, client, command, guild_id, application_command):
+
+    async def _register_command_task(
+        self, client, command, guild_id, application_command
+    ):
         """
         Syncs a command's permissions inside of a guild.
-        
+
         This method is a coroutine.
-        
+
         Attributes
         ----------
         client : ``Client``
@@ -1812,46 +2015,54 @@ class Slasher(EventHandlerBase):
             The respective guild's identifier where the command is.
         application_command : ``ApplicationCommand``
             The respective application command.
-        
+
         Returns
         -------
         success : `bool`
             Whether the command was registered successfully.
         """
-        success, permission = await self._get_permission_for(client, guild_id, application_command.id)
+        success, permission = await self._get_permission_for(
+            client, guild_id, application_command.id
+        )
         if not success:
             return False
-        
+
         overwrites = command.get_overwrites_for(guild_id)
-        
+
         if permission is None:
             current_overwrites = None
         else:
             current_overwrites = permission.overwrites
-        
+
         if overwrites != current_overwrites:
             try:
-                permission = await client.application_command_permission_edit(guild_id, application_command, overwrites)
+                permission = await client.application_command_permission_edit(
+                    guild_id, application_command, overwrites
+                )
             except BaseException as err:
                 if not isinstance(err, ConnectionError):
-                    await client.events.error(client, f'{self!r}._register_command', err)
+                    await client.events.error(
+                        client, f'{self!r}._register_command', err
+                    )
                 return False
-            
+
             try:
                 per_guild = self._synced_permissions[guild_id]
             except KeyError:
                 per_guild = self._synced_permissions[guild_id] = {}
-            
+
             per_guild[permission.application_command_id] = permission
-        
+
         return True
-    
-    async def _edit_guild_command_to_non_global(self, client, command, command_state, guild_id, application_command):
+
+    async def _edit_guild_command_to_non_global(
+        self, client, command, command_state, guild_id, application_command
+    ):
         """
         Edits the given guild command to a non local one.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -1864,34 +2075,43 @@ class Slasher(EventHandlerBase):
             The respective guild's identifier where the command is.
         application_command : ``ApplicationCommand``
             The respective application command.
-        
+
         Returns
         -------
         success : `bool`
             Whether the command was updated successfully.
         """
         try:
-            application_command = await client.application_command_guild_edit(guild_id, application_command,
-                command.get_schema())
+            application_command = await client.application_command_guild_edit(
+                guild_id, application_command, command.get_schema()
+            )
         except BaseException as err:
             if isinstance(err, ConnectionError):
                 return False
-            
-            if isinstance(err, DiscordException) and (err.code == ERROR_CODES.unknown_application_command):
+
+            if isinstance(err, DiscordException) and (
+                err.code == ERROR_CODES.unknown_application_command
+            ):
                 # no command, no problem, lol
                 return True
-            
-            await client.events.error(client, f'{self!r}._edit_guild_command_to_non_global', err)
+
+            await client.events.error(
+                client, f'{self!r}._edit_guild_command_to_non_global', err
+            )
             return False
-        
-        return await self._register_command(client, command, command_state, guild_id, application_command)
-    
-    async def _edit_command(self, client, command, command_state, guild_id, application_command):
+
+        return await self._register_command(
+            client, command, command_state, guild_id, application_command
+        )
+
+    async def _edit_command(
+        self, client, command, command_state, guild_id, application_command
+    ):
         """
         Updates the given guild bound application command.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -1904,7 +2124,7 @@ class Slasher(EventHandlerBase):
             The respective guild's identifier where the command is.
         application_command : ``ApplicationCommand``
             The respective application command.
-        
+
         Returns
         -------
         success : `bool`
@@ -1913,31 +2133,44 @@ class Slasher(EventHandlerBase):
         try:
             schema = command.get_schema()
             if guild_id == SYNC_ID_GLOBAL:
-                coroutine = client.application_command_global_edit(application_command, schema)
+                coroutine = client.application_command_global_edit(
+                    application_command, schema
+                )
             else:
-                coroutine = client.application_command_guild_edit(guild_id, application_command, schema)
+                coroutine = client.application_command_guild_edit(
+                    guild_id, application_command, schema
+                )
             await coroutine
         except BaseException as err:
             if isinstance(err, ConnectionError):
                 # No internet connection
                 return False
-            
-            if isinstance(err, DiscordException) and err.code == ERROR_CODES.unknown_application_command:
+
+            if (
+                isinstance(err, DiscordException)
+                and err.code == ERROR_CODES.unknown_application_command
+            ):
                 # Already deleted, lul, add it back!
                 self._unregister_helper(command, command_state, guild_id)
-                return await self._create_command(client, command, command_state, guild_id)
-            
+                return await self._create_command(
+                    client, command, command_state, guild_id
+                )
+
             await client.events.error(client, f'{self!r}._edit_command', err)
             return False
-        
-        return await self._register_command(client, command, command_state, guild_id, application_command)
-    
-    async def _delete_command(self, client, command, command_state, guild_id, application_command):
+
+        return await self._register_command(
+            client, command, command_state, guild_id, application_command
+        )
+
+    async def _delete_command(
+        self, client, command, command_state, guild_id, application_command
+    ):
         """
         Deletes the given guild bound command.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -1950,7 +2183,7 @@ class Slasher(EventHandlerBase):
             The respective guild's identifier where the command is.
         application_command : ``ApplicationCommand``
             The respective application command.
-        
+
         Returns
         -------
         success : `bool`
@@ -1958,31 +2191,38 @@ class Slasher(EventHandlerBase):
         """
         try:
             if guild_id == SYNC_ID_GLOBAL:
-                coroutine = client.application_command_global_delete(application_command)
+                coroutine = client.application_command_global_delete(
+                    application_command
+                )
             else:
-                coroutine = client.application_command_guild_delete(guild_id, application_command)
+                coroutine = client.application_command_guild_delete(
+                    guild_id, application_command
+                )
             await coroutine
         except BaseException as err:
             if isinstance(err, ConnectionError):
                 # No internet connection
                 return False
-            
-            if isinstance(err, DiscordException) and err.code == ERROR_CODES.unknown_application_command:
+
+            if (
+                isinstance(err, DiscordException)
+                and err.code == ERROR_CODES.unknown_application_command
+            ):
                 # Already deleted, lul, ok, I guess.
                 pass
             else:
                 await client.events.error(client, f'{self!r}._delete_command', err)
                 return False
-        
+
         self._unregister_helper(command, command_state, guild_id)
         return True
-    
+
     async def _create_command(self, client, command, command_state, guild_id):
         """
         Creates a given guild bound command.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -1993,7 +2233,7 @@ class Slasher(EventHandlerBase):
             The command's command state.
         guild_id : `int`
             The respective guild's identifier where the command is.
-        
+
         Returns
         -------
         success : `bool`
@@ -2010,18 +2250,20 @@ class Slasher(EventHandlerBase):
             if isinstance(err, ConnectionError):
                 # No internet connection
                 return False
-            
+
             await client.events.error(client, f'{self!r}._create_command', err)
             return False
-        
-        return await self._register_command(client, command, command_state, guild_id, application_command)
-    
+
+        return await self._register_command(
+            client, command, command_state, guild_id, application_command
+        )
+
     def sync(self):
         """
         Syncs the slash commands with the client.
-        
+
         The return of the method depends on the thread, from which it was called from.
-        
+
         Returns
         -------
         task : `bool`, ``Task`` or ``FutureAsyncWrapper``
@@ -2031,7 +2273,7 @@ class Slasher(EventHandlerBase):
                 ``FutureAsyncWrapper``. The task will return `True`, if syncing was successful.
             - If the method was called from any other thread, then waits for the syncing task to finish and returns
                 `True`, if it was successful.
-        
+
         Raises
         ------
         RuntimeError
@@ -2040,31 +2282,31 @@ class Slasher(EventHandlerBase):
         client = self._client_reference()
         if client is None:
             raise RuntimeError('The slasher\'s client was already garbage collected.')
-        
+
         task = Task(self._do_main_sync(client), KOKORO)
-        
+
         thread = current_thread()
         if thread is KOKORO:
             return task
-        
+
         if isinstance(thread, EventThread):
             # `.async_wrap` wakes up KOKORO
             return task.async_wrap(thread)
-        
+
         KOKORO.wake_up()
         return task.sync_wrap().wait()
-    
+
     async def _do_main_sync(self, client):
         """
         Syncs the slash commands with the client. This method is the internal method of ``.sync``.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
             The respective client.
-        
+
         Returns
         -------
         success : `bool`
@@ -2072,27 +2314,28 @@ class Slasher(EventHandlerBase):
         """
         if not self._sync_should:
             return True
-        
+
         try:
             task = self._sync_tasks[SYNC_ID_MAIN]
         except KeyError:
-            task = self._sync_tasks[SYNC_ID_MAIN] = Task(self._do_main_sync_task(client), KOKORO)
-        
+            task = self._sync_tasks[SYNC_ID_MAIN] = Task(
+                self._do_main_sync_task(client), KOKORO
+            )
+
         return await task
-    
-    
+
     async def _do_main_sync_task(self, client):
         """
         Syncs the slash commands with the client. This method is the internal coroutine of the ``._do_main_sync``
         method.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
             The respective client.
-        
+
         Returns
         -------
         success : `bool`
@@ -2107,13 +2350,13 @@ class Slasher(EventHandlerBase):
                             coro = self._sync_global(client)
                         else:
                             coro = self._sync_guild(client, guild_id)
-                        
+
                         task = Task(coro, KOKORO)
                         tasks.append(task)
-                    
+
                     if tasks:
                         done, pending = await WaitTillAll(tasks, KOKORO)
-                        
+
                         success = True
                         for future in done:
                             if not future.result():
@@ -2124,22 +2367,22 @@ class Slasher(EventHandlerBase):
                     self._late_register()
                     raise
                 else:
-                    if self._late_register(): # Make sure this is called
+                    if self._late_register():  # Make sure this is called
                         if success:
                             continue
-                    
+
                     return success
-        
+
         finally:
             try:
                 del self._sync_tasks[SYNC_ID_MAIN]
             except KeyError:
                 pass
-    
+
     def _maybe_register_guild_command(self, application_command, guild_id):
         """
         Tries to register the given non-global application command to the slasher.
-        
+
         Parameters
         ----------
         application_command : ``ApplicationCommand``
@@ -2151,16 +2394,18 @@ class Slasher(EventHandlerBase):
             non_global_command_state = self._command_states[SYNC_ID_NON_GLOBAL]
         except KeyError:
             return
-        
+
         for command in non_global_command_state.get_should_add_slash_commands():
             if command.get_schema() == application_command:
-                self._register_helper(command, non_global_command_state, guild_id, application_command.id)
+                self._register_helper(
+                    command, non_global_command_state, guild_id, application_command.id
+                )
                 break
-    
+
     def _maybe_unregister_guild_command(self, application_command, guild_id):
         """
         Tries to unregister the given non-global application command from the slasher.
-        
+
         Parameters
         ----------
         application_command : ``ApplicationCommand``
@@ -2172,21 +2417,21 @@ class Slasher(EventHandlerBase):
             non_global_command_state = self._command_states[SYNC_ID_NON_GLOBAL]
         except KeyError:
             return
-        
+
         for command in non_global_command_state.get_should_add_slash_commands():
             if command.get_schema() == application_command:
                 self._unregister_helper(command, non_global_command_state, guild_id)
                 break
-    
+
     def __repr__(self):
         """Returns the slasher's representation."""
         return f'<{self.__class__.__name__} sync_should={len(self._sync_should)}, sync_done={len(self._sync_done)}>'
-    
+
     @property
     def delete_commands_on_unload(self):
         """
         A get-set property for changing the slasher's command unloading behaviour.
-        
+
         Accepts and returns any `bool` instance.
         """
         command_unloading_behaviour = self._command_unloading_behaviour
@@ -2194,9 +2439,9 @@ class Slasher(EventHandlerBase):
             delete_commands_on_unload = True
         else:
             delete_commands_on_unload = False
-        
+
         return delete_commands_on_unload
-    
+
     @delete_commands_on_unload.setter
     def delete_commands_on_unload(self, delete_commands_on_unload):
         if type(delete_commands_on_unload) is bool:
@@ -2204,21 +2449,22 @@ class Slasher(EventHandlerBase):
         elif isinstance(delete_commands_on_unload, bool):
             delete_commands_on_unload = bool(delete_commands_on_unload)
         else:
-            raise TypeError(f'`delete_commands_on_unload` can be given as `bool` instance, got '
-                f'{delete_commands_on_unload.__class__.__name__}.')
-        
+            raise TypeError(
+                f'`delete_commands_on_unload` can be given as `bool` instance, got '
+                f'{delete_commands_on_unload.__class__.__name__}.'
+            )
+
         if delete_commands_on_unload:
             command_unloading_behaviour = UNLOADING_BEHAVIOUR_DELETE
         else:
             command_unloading_behaviour = UNLOADING_BEHAVIOUR_KEEP
-        
+
         self._command_unloading_behaviour = command_unloading_behaviour
-    
-    
+
     def _maybe_store_application_command_permission(self, permission):
         """
         Stores an application command's new permissions if needed.
-        
+
         Parameters
         ----------
         permission : ``ApplicationCommandPermission``
@@ -2228,15 +2474,15 @@ class Slasher(EventHandlerBase):
             tracked_guild = self._synced_permissions[permission.guild_id]
         except KeyError:
             return
-        
+
         tracked_guild[permission.application_command_id] = permission
-    
+
     async def _get_permission_for(self, client, guild_id, application_command_id):
         """
         Gets the permissions for the given application command in the the respective guild.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -2252,34 +2498,36 @@ class Slasher(EventHandlerBase):
             pass
         else:
             return True, per_guild.get(application_command_id, None)
-        
+
         try:
             sync_permission_task = self._sync_permission_tasks[guild_id]
         except KeyError:
-            sync_permission_task = Task(self._sync_permission_task(client, guild_id), KOKORO)
+            sync_permission_task = Task(
+                self._sync_permission_task(client, guild_id), KOKORO
+            )
             self._sync_permission_tasks[guild_id] = sync_permission_task
-        
+
         success, per_guild = await sync_permission_task
         if success:
             permission = per_guild.get(application_command_id, None)
         else:
             permission = None
-        
+
         return success, permission
-    
+
     async def _sync_permission_task(self, client, guild_id):
         """
         Syncs the respective guild's permissions.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
             The respective client.
         guild_id : `int`
             The guild's id to sync.
-        
+
         Returns
         -------
         success : `bool`
@@ -2290,28 +2538,32 @@ class Slasher(EventHandlerBase):
         """
         try:
             try:
-                permissions = await client.application_command_permission_get_all_guild(guild_id)
+                permissions = await client.application_command_permission_get_all_guild(
+                    guild_id
+                )
             except BaseException as err:
                 if not isinstance(err, ConnectionError):
-                    await client.events.error(client, f'{self!r}._sync_permission_task', err)
-                
+                    await client.events.error(
+                        client, f'{self!r}._sync_permission_task', err
+                    )
+
                 return False, None
             else:
                 try:
                     per_guild = self._synced_permissions[guild_id]
                 except KeyError:
                     per_guild = self._synced_permissions[guild_id] = {}
-                
+
                 for permission in permissions:
                     per_guild[permission.application_command_id] = permission
-                
+
                 return True, per_guild
         finally:
             try:
                 del self._sync_permission_tasks[guild_id]
             except KeyError:
                 pass
-    
+
     def _maybe_sync(self):
         """
         Syncs the slasher runtime if required.
@@ -2319,119 +2571,131 @@ class Slasher(EventHandlerBase):
         client = self._client_reference()
         if client is None:
             raise RuntimeError('The slasher\'s client was already garbage collected.')
-        
+
         for sync_hook in RUNTIME_SYNC_HOOKS:
             if not sync_hook(client):
                 return
-        
+
         Task(self._do_main_sync(client), KOKORO)
-    
-    
+
     def error(self, exception_handler):
         """
         Registers an exception handler to the slasher.
-        
+
         Parameters
         ----------
         exception_handler : `CoroutineFunction`
-        
+
         Returns
         -------
         exception_handler : `CoroutineFunction`
         """
         test_exception_handler(exception_handler)
-        
+
         exception_handlers = self._exception_handlers
         if exception_handlers is None:
             self._exception_handlers = exception_handlers = []
-        
+
         exception_handlers.append(exception_handler)
-    
-    
+
     def _add_component_command(self, component_command):
         """
         Adds a slash command to the ``Slasher`` if applicable.
-        
+
         Parameters
         ---------
         component_command : ``ComponentCommand``
             The command to add.
-        
+
         Raises
         ------
         RuntimeError
             If `command` would only partially overwrite an other commands.
         """
-        string_custom_id_to_component_command = self.string_custom_id_to_component_command
+        string_custom_id_to_component_command = (
+            self.string_custom_id_to_component_command
+        )
         regex_custom_id_to_component_command = self.regex_custom_id_to_component_command
-        
+
         overwrite_commands = None
-        
+
         string_custom_ids = component_command._string_custom_ids
-        if (string_custom_ids is not None):
+        if string_custom_ids is not None:
             for string_custom_id in string_custom_ids:
                 try:
-                    maybe_overwrite_command = string_custom_id_to_component_command[string_custom_id]
+                    maybe_overwrite_command = string_custom_id_to_component_command[
+                        string_custom_id
+                    ]
                 except KeyError:
                     continue
-                
+
                 if overwrite_commands is None:
                     overwrite_commands = set()
-                
+
                 overwrite_commands.add(maybe_overwrite_command)
                 continue
-        
+
         regex_custom_ids = component_command._regex_custom_ids
-        if (regex_custom_ids is not None):
+        if regex_custom_ids is not None:
             for regex_custom_id in regex_custom_ids:
                 try:
-                    maybe_overwrite_command = regex_custom_id_to_component_command[regex_custom_id]
+                    maybe_overwrite_command = regex_custom_id_to_component_command[
+                        regex_custom_id
+                    ]
                 except KeyError:
                     continue
-                
+
                 if overwrite_commands is None:
                     overwrite_commands = set()
-                
+
                 overwrite_commands.add(maybe_overwrite_command)
                 continue
-        
-        if (overwrite_commands is not None):
+
+        if overwrite_commands is not None:
             would_overwrite_custom_ids = set()
             for overwrite_command in overwrite_commands:
                 overwrite_string_custom_ids = overwrite_command._string_custom_ids
-                if (overwrite_string_custom_ids is not None):
+                if overwrite_string_custom_ids is not None:
                     would_overwrite_custom_ids.update(overwrite_string_custom_ids)
-            
+
                 overwrite_regex_custom_ids = overwrite_command._regex_custom_ids
-                if (overwrite_regex_custom_ids is not None):
+                if overwrite_regex_custom_ids is not None:
                     would_overwrite_custom_ids.update(overwrite_regex_custom_ids)
-            
+
             component_command_string_custom_ids = component_command._string_custom_ids
-            if (component_command_string_custom_ids is not None) and \
-                    (not would_overwrite_custom_ids.issuperset(component_command_string_custom_ids)):
-                raise RuntimeError(f'Command: {component_command!r} would only partially overwrite the following '
-                    f'commands: {", ".join(overwrite_commands)}.')
-            
+            if (component_command_string_custom_ids is not None) and (
+                not would_overwrite_custom_ids.issuperset(
+                    component_command_string_custom_ids
+                )
+            ):
+                raise RuntimeError(
+                    f'Command: {component_command!r} would only partially overwrite the following '
+                    f'commands: {", ".join(overwrite_commands)}.'
+                )
+
             for overwrite_command in overwrite_commands:
                 self._component_commands.discard(overwrite_command)
-        
+
         string_custom_ids = component_command._string_custom_ids
-        if (string_custom_ids is not None):
+        if string_custom_ids is not None:
             for string_custom_id in string_custom_ids:
-                string_custom_id_to_component_command[string_custom_id] = component_command
-        
+                string_custom_id_to_component_command[
+                    string_custom_id
+                ] = component_command
+
         regex_custom_ids = component_command._regex_custom_ids
-        if (regex_custom_ids is not None):
+        if regex_custom_ids is not None:
             for regex_custom_id in regex_custom_ids:
-                regex_custom_id_to_component_command[regex_custom_id] = component_command
-        
+                regex_custom_id_to_component_command[
+                    regex_custom_id
+                ] = component_command
+
         self._component_commands.add(component_command)
-    
-    
+
     def _remove_component_command(self, component_command):
         """
         Removes the given component command from the slasher.
-        
+
         Parameters
         ----------
         component_command : ``ComponentCommand``
@@ -2442,18 +2706,28 @@ class Slasher(EventHandlerBase):
         except KeyError:
             pass
         else:
-            string_custom_id_to_component_command = self.string_custom_id_to_component_command
-            
+            string_custom_id_to_component_command = (
+                self.string_custom_id_to_component_command
+            )
+
             string_custom_ids = component_command._string_custom_ids
-            if (string_custom_ids is not None):
+            if string_custom_ids is not None:
                 for string_custom_id in string_custom_ids:
-                    if string_custom_id_to_component_command[string_custom_id] is component_command:
+                    if (
+                        string_custom_id_to_component_command[string_custom_id]
+                        is component_command
+                    ):
                         del string_custom_id_to_component_command[string_custom_id]
-            
-            regex_custom_id_to_component_command = self.regex_custom_id_to_component_command
-            
+
+            regex_custom_id_to_component_command = (
+                self.regex_custom_id_to_component_command
+            )
+
             regex_custom_ids = component_command._regex_custom_ids
-            if (regex_custom_ids is not None):
+            if regex_custom_ids is not None:
                 for regex_custom_id in regex_custom_ids:
-                    if regex_custom_id_to_component_command[regex_custom_id] is component_command:
+                    if (
+                        regex_custom_id_to_component_command[regex_custom_id]
+                        is component_command
+                    ):
                         del regex_custom_id_to_component_command[regex_custom_id]

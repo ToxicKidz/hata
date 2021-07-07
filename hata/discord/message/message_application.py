@@ -1,12 +1,13 @@
-__all__ = ('MessageApplication', )
+__all__ = ('MessageApplication',)
 
 from ..bases import IconSlot, DiscordEntity
 from ..http import urls as module_urls
 
+
 class MessageApplication(DiscordEntity):
     """
     Might be sent with a ``Message``, if it has rich presence-related chat embeds.
-    
+
     Attributes
     ----------
     id : `int`
@@ -25,15 +26,31 @@ class MessageApplication(DiscordEntity):
     name : `str`
         The respective application's name.
     """
-    __slots__ = ('description', 'name',)
-    
-    cover = IconSlot('cover', 'cover_image', module_urls.application_cover_url, module_urls.application_cover_url_as, add_updater=False)
-    icon = IconSlot('icon', 'icon', module_urls.application_icon_url, module_urls.application_icon_url_as, add_updater=False)
-    
+
+    __slots__ = (
+        'description',
+        'name',
+    )
+
+    cover = IconSlot(
+        'cover',
+        'cover_image',
+        module_urls.application_cover_url,
+        module_urls.application_cover_url_as,
+        add_updater=False,
+    )
+    icon = IconSlot(
+        'icon',
+        'icon',
+        module_urls.application_icon_url,
+        module_urls.application_icon_url_as,
+        add_updater=False,
+    )
+
     def __init__(self, data):
         """
         Creates a new ``MessageApplication`` from message application data included inside of a ``Message``'s data.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -44,8 +61,7 @@ class MessageApplication(DiscordEntity):
         self._set_icon(data)
         self.id = int(data['id'])
         self.name = data['name']
-    
-    
+
     def __repr__(self):
         """Returns the representation of the message application."""
         return f'<{self.__class__.__name__} name={self.name!r}, id={self.id}>'

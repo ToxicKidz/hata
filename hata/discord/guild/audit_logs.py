@@ -1,4 +1,9 @@
-__all__ = ('AuditLog', 'AuditLogEntry', 'AuditLogIterator', 'AuditLogChange', )
+__all__ = (
+    'AuditLog',
+    'AuditLogEntry',
+    'AuditLogIterator',
+    'AuditLogChange',
+)
 
 from ...env import API_VERSION
 
@@ -15,15 +20,21 @@ from ..channel import VideoQualityMode
 
 from .utils import create_partial_guild_from_id
 from .guild import SystemChannelFlag, Guild
-from .preinstanced import AuditLogEvent, VerificationLevel, ContentFilterLevel, MessageNotificationLevel, VoiceRegion, \
-    MFA
+from .preinstanced import (
+    AuditLogEvent,
+    VerificationLevel,
+    ContentFilterLevel,
+    MessageNotificationLevel,
+    VoiceRegion,
+    MFA,
+)
 
 
 class AuditLog:
     """
     Whenever an admin action is performed on the API, an audit log entry is added to the respective guild's audit
     logs. This class represents a requested  collections of these entries.
-    
+
     Attributes
     ----------
     guild : ``Guild``
@@ -40,11 +51,19 @@ class AuditLog:
         A dictionary what contains the mentioned integrations by the audit log's entries. The keys are the `id`-s of
         the integrations, meanwhile the values are the integrations themselves.
     """
-    __slots__ = ('guild', 'entries', 'users', 'webhooks', 'integrations', )
+
+    __slots__ = (
+        'guild',
+        'entries',
+        'users',
+        'webhooks',
+        'integrations',
+    )
+
     def __init__(self, data, guild):
         """
         Creates an ``AuditLog`` instance from the data received from Discord.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -53,7 +72,7 @@ class AuditLog:
             The respective guild of the audit logs.
         """
         self.guild = guild
-        
+
         self.users = users = {}
         try:
             user_datas = data['users']
@@ -63,7 +82,7 @@ class AuditLog:
             for user_data in user_datas:
                 user = User(user_data)
                 users[user.id] = user
-        
+
         self.webhooks = webhooks = {}
         try:
             webhook_datas = data['webhook']
@@ -73,7 +92,7 @@ class AuditLog:
             for webhook_data in webhook_datas:
                 webhook = Webhook(webhook_data)
                 webhooks[webhook.id] = webhook
-        
+
         self.integrations = integrations = {}
         try:
             integration_datas = data['integrations']
@@ -83,7 +102,7 @@ class AuditLog:
             for integration_data in integration_datas:
                 integration = Integration(integration_data)
                 integrations[integration.id] = integration
-        
+
         self.entries = entries = []
         try:
             entry_datas = data['audit_log_entries']
@@ -92,31 +111,32 @@ class AuditLog:
         else:
             for entry_data in entry_datas:
                 entries.append(AuditLogEntry(entry_data, self))
-    
+
     def __iter__(self):
         """Iterates over the audit log's entries."""
         return iter(self.entries)
-    
+
     def __reversed__(self):
         """Reversed iterator over the audit log's entries."""
         return reversed(self.entries)
-    
+
     def __len__(self):
         """Returns the amount of entries, what the audit lgo contain."""
         return len(self.entries)
-    
-    def __getitem__(self,index):
+
+    def __getitem__(self, index):
         """Returns the specific audit log entry at the given index."""
         return self.entries.__getitem__(index)
-    
+
     def __repr__(self):
         """Returns the representation of the Audit log."""
         return f'<{self.__class__.__name__} of {self.guild.name}, length={len(self.entries)}>'
 
+
 class AuditLogIterator:
     """
     An async iterator over a guild's audit logs.
-    
+
     Attributes
     ----------
     guild : ``Guild``
@@ -140,14 +160,24 @@ class AuditLogIterator:
     client : ``Client``
         The client, who will execute the api requests.
     """
-    __slots__ = ('guild',  'entries', 'users', 'webhooks', 'integrations', '_data', '_index', 'client', )
-    
+
+    __slots__ = (
+        'guild',
+        'entries',
+        'users',
+        'webhooks',
+        'integrations',
+        '_data',
+        '_index',
+        'client',
+    )
+
     async def __new__(cls, client, guild, user=None, event=None):
         """
         Creates an audit log iterator with the given parameters.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -158,7 +188,7 @@ class AuditLogIterator:
             Whether the audit logs should be filtered only to those, which were created by the given user.
         event : `None`, ``AuditLogEvent`` or `int` instance, Optional
             Whether the audit logs should be filtered only on the given event.
-        
+
         Raises
         ------
         TypeError
@@ -171,50 +201,56 @@ class AuditLogIterator:
             If any exception was received from the Discord API.
         """
         data = {
-            'limit' : 100,
+            'limit': 100,
             'before': now_as_id(),
         }
-        
+
         if isinstance(guild, Guild):
             guild_id = guild.id
         else:
             guild_id = maybe_snowflake(guild)
             if guild_id is None:
-                raise TypeError(f'`guild_or_discovery` can be `{Guild.__name__}` or `int` instance, got '
-                    f'{guild.__class__.__name__}.')
-            
+                raise TypeError(
+                    f'`guild_or_discovery` can be `{Guild.__name__}` or `int` instance, got '
+                    f'{guild.__class__.__name__}.'
+                )
+
             guild = None
-        
-        if (user is not None):
+
+        if user is not None:
             if isinstance(user, ClientUserBase):
                 user_id = user.id
-            
+
             else:
                 user_id = maybe_snowflake(user)
                 if user_id is None:
-                    raise TypeError(f'`user` can be given as `{ClientUserBase.__name__}` or `int` instance, '
-                        f'got {user.__class__.__name__}.')
-            
+                    raise TypeError(
+                        f'`user` can be given as `{ClientUserBase.__name__}` or `int` instance, '
+                        f'got {user.__class__.__name__}.'
+                    )
+
             data['user_id'] = user_id
-        
-        if (event is not None):
+
+        if event is not None:
             if isinstance(event, AuditLogEvent):
                 event_value = event.value
             elif isinstance(event, int):
                 event_value = event
             else:
-                raise TypeError(f'`event` can be given as `None`, `{AuditLogEvent.__name__}` or `int` instance, got '
-                    f'{event.__class__.__name__}.')
-            
+                raise TypeError(
+                    f'`event` can be given as `None`, `{AuditLogEvent.__name__}` or `int` instance, got '
+                    f'{event.__class__.__name__}.'
+                )
+
             data['action_type'] = event_value
-        
+
         if guild is None:
             log_data = await client.http.audit_log_get_chunk(guild_id, data)
             if guild is None:
                 guild = create_partial_guild_from_id(guild_id)
         else:
             log_data = None
-        
+
         self = object.__new__(cls)
         self._data = data
         self._index = 0
@@ -224,41 +260,41 @@ class AuditLogIterator:
         self.users = {}
         self.webhooks = {}
         self.integrations = {}
-        
-        if (log_data is not None):
+
+        if log_data is not None:
             self._process_data(log_data)
-        
+
         return self
-    
+
     async def load_all(self):
         """
         Loads all not yet loaded audit logs of the audit log iterator's guild.
-        
+
         This method is a coroutine.
         """
         entries = self.entries
         client = self.client
         http = client.http
         data = self._data
-        
+
         while True:
             if entries:
                 data['before'] = entries[-1].id
-            
+
             log_data = await http.audit_log_get_chunk(self.guild.id, data)
-            
+
             try:
                 self._process_data(log_data)
             except StopAsyncIteration:
                 return
-            
-            if len(entries)%100:
+
+            if len(entries) % 100:
                 return
-    
+
     def transform(self):
         """
         Converts the audit log iterator to an audit log object.
-        
+
         Returns
         -------
         audit_log : ``AuditLog``
@@ -270,32 +306,32 @@ class AuditLogIterator:
         result.webhooks = self.webhooks
         result.integrations = self.integrations
         return result
-    
+
     def __aiter__(self):
         """Returns self and resets the `.index`."""
         self._index = 0
         return self
-    
+
     async def __anext__(self):
         """
         Yields the next entry of the audit log iterator.
-        
+
         This method is a coroutine.
         """
         ln = len(self.entries)
         index = self._index
-        
+
         if index < ln:
             self._index += 1
             return self.entries[index]
-        
-        if index%100:
+
+        if index % 100:
             raise StopAsyncIteration
-        
+
         data = self._data
         if ln:
-            data['before'] = self.entries[ln-1].id
-        
+            data['before'] = self.entries[ln - 1].id
+
         log_data = await self.client.http.audit_log_get_chunk(self.guild.id, data)
         self._process_data(log_data)
         self._index += 1
@@ -304,11 +340,11 @@ class AuditLogIterator:
     def __repr__(self):
         """Returns the representation of the audit log iterator."""
         return f'<{self.__class__.__name__} of {self.client.full_name} at {self.guild.name}>'
-    
+
     def _process_data(self, data):
         """
         Processes a batch of audit log data received from Discord.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -318,10 +354,10 @@ class AuditLogIterator:
             entry_datas = data['audit_log_entries']
         except KeyError:
             raise StopAsyncIteration from None
-        
+
         if not entry_datas:
             raise StopAsyncIteration
-        
+
         users = self.users
         try:
             users_data = data['users']
@@ -331,7 +367,7 @@ class AuditLogIterator:
             for user_data in users_data:
                 user = User(user_data)
                 users[user.id] = user
-        
+
         webhooks = self.webhooks
         try:
             webhooks_data = data['webhook']
@@ -341,7 +377,7 @@ class AuditLogIterator:
             for webhook_data in webhooks_data:
                 webhook = Webhook(webhook_data)
                 webhooks[webhook.id] = webhook
-        
+
         integrations = self.integrations
         try:
             integration_datas = data['integrations']
@@ -351,8 +387,8 @@ class AuditLogIterator:
             for integration_data in integration_datas:
                 integration = Integration(integration_data)
                 integrations[integration.id] = integration
-        
-        entries=self.entries
+
+        entries = self.entries
         for entry_data in entry_datas:
             entries.append(AuditLogEntry(entry_data, self))
 
@@ -360,8 +396,10 @@ class AuditLogIterator:
 def convert_detail_days(key, value, all_):
     return 'days', int(value)
 
+
 def convert_detail_users_removed(key, value, all_):
     return 'users_removed', int(value)
+
 
 def convert_detail_channel(key, value, all_):
     channel_id = int(value)
@@ -371,32 +409,35 @@ def convert_detail_channel(key, value, all_):
         channel = Unknown('Channel', channel_id)
     return 'channel', channel
 
+
 def convert_detail_message(key, value, all_):
     message_id = int(value)
     try:
         message = MESSAGES[message_id]
     except KeyError:
         message = Unknown('Message', message_id)
-    
+
     return 'message', message
+
 
 def convert_detail_amount(key, value, all_):
     return 'amount', int(value)
 
+
 def convert_detail_perm_ow_target(key, value, all_):
-    id_=int(value)
+    id_ = int(value)
     try:
         type_name = all_['type']
     except KeyError:
         # broken data
         return None
-    
+
     if type_name == 'member':
         try:
             target = USERS[id_]
         except KeyError:
             target = Unknown('User', id_)
-    
+
     elif type_name == 'role':
         try:
             target = ROLES[id_]
@@ -407,8 +448,10 @@ def convert_detail_perm_ow_target(key, value, all_):
         # the data is broken again
         return None
 
+
 def convert_detail_perm_ow_processed(key, value, all_):
     return None
+
 
 DETAIL_CONVERSIONS = {
     'delete_member_days': convert_detail_days,
@@ -429,12 +472,14 @@ del convert_detail_amount
 del convert_detail_perm_ow_target
 del convert_detail_perm_ow_processed
 
+
 def DETAIL_CONVERTER_DEFAULT(key, value, all_):
     return key, value
 
 
 def convert_guild(entry, parent, target_id):
     return parent.guild
+
 
 def convert_channel(entry, parent, target_id):
     if target_id is None:
@@ -445,8 +490,9 @@ def convert_channel(entry, parent, target_id):
             target = parent.guild.channels[target_id]
         except KeyError:
             target = Unknown('Channel', target_id)
-    
+
     return target
+
 
 def convert_user(entry, parent, target_id):
     # target_id can be None for any reason
@@ -458,8 +504,9 @@ def convert_user(entry, parent, target_id):
             target = parent.users[target_id]
         except KeyError:
             target = Unknown('User', target_id)
-    
+
     return target
+
 
 def convert_role(entry, parent, target_id):
     if target_id is None:
@@ -470,26 +517,28 @@ def convert_role(entry, parent, target_id):
             target = parent.guild.roles[target_id]
         except KeyError:
             target = Unknown('Role', target_id)
-    
+
     return target
 
+
 def convert_invite(entry, parent, target_id):
-    #every other data is at #change
+    # every other data is at #change
     for change in entry.changes:
-        if change.attr!='code':
+        if change.attr != 'code':
             continue
-        
+
         if entry.type is AuditLogEvent.invite_delete:
             code = change.before
         else:
             code = change.after
         break
-    
+
     else:
-        code = '' #malformed ?
-    
+        code = ''  # malformed ?
+
     return Unknown('Invite', code)
-    
+
+
 def convert_webhook(entry, parent, target_id):
     if target_id is None:
         target = None
@@ -499,8 +548,9 @@ def convert_webhook(entry, parent, target_id):
             target = parent.webhooks[target_id]
         except KeyError:
             target = Unknown('Webhook', target_id)
-    
+
     return target
+
 
 def convert_emoji(entry, parent, target_id):
     if target_id is None:
@@ -511,8 +561,9 @@ def convert_emoji(entry, parent, target_id):
             target = parent.guild.emojis[target_id]
         except KeyError:
             target = Unknown('Emoji', target_id)
-    
+
     return target
+
 
 def convert_message(entry, parent, target_id):
     if target_id is None:
@@ -523,10 +574,11 @@ def convert_message(entry, parent, target_id):
             target = MESSAGES[target_id]
         except KeyError:
             target = Unknown('Message', target_id)
-    
+
     return target
 
-def convert_integration(entry, parent,target_id):
+
+def convert_integration(entry, parent, target_id):
     if target_id is None:
         target = None
     else:
@@ -535,8 +587,9 @@ def convert_integration(entry, parent,target_id):
             target = parent.integrations[target_id]
         except KeyError:
             target = Unknown('Integration', target_id)
-    
+
     return target
+
 
 def convert_sticker(entry, parent, target_id):
     if target_id is None:
@@ -547,8 +600,9 @@ def convert_sticker(entry, parent, target_id):
             target = parent.guild.stickers[target_id]
         except KeyError:
             target = Unknown('Sticker', target_id)
-    
+
     return target
+
 
 CONVERSIONS = {
     0: convert_guild,
@@ -574,10 +628,11 @@ del convert_message
 del convert_integration
 del convert_sticker
 
+
 class AuditLogEntry:
     """
     Represents an entry of an ``AuditLog``.
-    
+
     Attributes
     ----------
     changes : `list` of ``AuditLogChange``
@@ -597,12 +652,21 @@ class AuditLogEntry:
     user : `None`, ``ClientUserBase``
         The user, who executed the logged action. If no user is provided then can be `None` as well.
     """
-    __slots__ = ('changes', 'details', 'id', 'reason', 'target', 'type', 'user',)
-    
+
+    __slots__ = (
+        'changes',
+        'details',
+        'id',
+        'reason',
+        'target',
+        'type',
+        'user',
+    )
+
     def __init__(self, data, parent):
         """
         Creates an audit log entry, from entry data sent inside of an ``AuditLog``'s data and from the audit itself.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -613,81 +677,86 @@ class AuditLogEntry:
         """
         self.id = int(data['id'])
         self.type = AuditLogEvent.get(int(data['action_type']))
-        
+
         options = data.get('options', None)
-        if (options is None):
+        if options is None:
             details = None
         else:
             details = {}
             for key, value in options.items():
-                result = DETAIL_CONVERSIONS.get(key, DETAIL_CONVERTER_DEFAULT)(key, value, options)
+                result = DETAIL_CONVERSIONS.get(key, DETAIL_CONVERTER_DEFAULT)(
+                    key, value, options
+                )
                 if result is None:
                     continue
-                
+
                 key, value = result
                 details[key] = value
-            
+
             if not details:
                 details = None
-        
+
         self.details = details
-        
+
         user_id = data.get('user_id', None)
         if user_id is None:
             user = None
         else:
             user = parent.users.get(int(user_id), None)
         self.user = user
-        
+
         self.reason = data.get('reason', None)
-        
+
         change_datas = data.get('changes', None)
-        if (change_datas is None):
+        if change_datas is None:
             changes = None
         else:
             changes = []
             for change_data in change_datas:
                 try:
                     key = change_data['key']
-                except KeyError: #malformed?
+                except KeyError:  # malformed?
                     continue
-                
+
                 change = TRANSFORMERS.get(key, transform_nothing)(key, change_data)
-                if (change is not None):
+                if change is not None:
                     changes.append(change)
-            
+
             if not changes:
                 changes = None
-        
+
         self.changes = changes
-        
+
         try:
-            conversion = CONVERSIONS[self.type.value//10]
+            conversion = CONVERSIONS[self.type.value // 10]
         except KeyError:
             target = None
         else:
             target = conversion(self, parent, data.get('target_id', None))
         self.target = target
-    
+
     @property
     def created_at(self):
         """
         When the audit log entry was created.
-        
+
         Returns
         -------
         created_at : `datetime`
         """
         return id_to_time(self.id)
-    
+
     def __repr__(self):
         """Returns the representation of the audit log entry."""
         repr_parts = [
-            '<', self.__class__.__name__,
-            ' id=', repr(self.id),
-            ', type=', self.type.name,
+            '<',
+            self.__class__.__name__,
+            ' id=',
+            repr(self.id),
+            ', type=',
+            self.type.name,
         ]
-        
+
         repr_parts.append(', user=')
         user = self.user
         if user is None:
@@ -695,10 +764,10 @@ class AuditLogEntry:
         else:
             user_repr = user.full_name
         repr_parts.append(user_repr)
-        
+
         repr_parts.append(', target=')
         repr_parts.append(repr(self.target))
-        
+
         repr_parts.append(', change count=')
         changes = self.changes
         if changes is None:
@@ -706,20 +775,20 @@ class AuditLogEntry:
         else:
             change_amount_repr = repr(len(self.changes))
         repr_parts.append(change_amount_repr)
-        
+
         reason = self.reason
         if reason is not None:
             repr_parts.append(', reason=')
             # use repr to escape special inserted characters
             repr_parts.append(repr(reason))
-        
+
         details = self.details
         if details is not None:
             repr_parts.append(', details=')
             repr_parts.append(repr(details))
-        
+
         repr_parts.append('>')
-        
+
         return ''.join(repr_parts)
 
 
@@ -730,8 +799,10 @@ def transform_nothing(name, data):
     change.after = data.get('new_value', None)
     return change
 
+
 def transform_deprecated(name, data):
     return None
+
 
 def transform_icon(name, data):
     change = AuditLogChange()
@@ -740,12 +811,13 @@ def transform_icon(name, data):
     else:
         name = name[:-5]
     change.attr = name
-    
+
     change.before = Icon.from_base16_hash(data.get('old_value', None))
-    
+
     change.after = Icon.from_base16_hash(data.get('new_value', None))
-    
+
     return change
+
 
 def transform_bool__separated(name, data):
     change = AuditLogChange()
@@ -754,10 +826,11 @@ def transform_bool__separated(name, data):
     change.after = data.get('new_value', None)
     return change
 
+
 def transform_channel(name, data):
     change = AuditLogChange()
     change.attr = name[:-3]
-    
+
     value = data.get('old_value', None)
     if value is None:
         change.before = None
@@ -768,7 +841,7 @@ def transform_channel(name, data):
         except KeyError:
             before = Unknown('Channel', value)
         change.before = before
-    
+
     value = data.get('new_value', None)
     if value is None:
         change.after = None
@@ -779,8 +852,9 @@ def transform_channel(name, data):
         except KeyError:
             after = Unknown('Channel', value)
         change.after = after
-    
+
     return change
+
 
 def transform_color(name, data):
     change = AuditLogChange()
@@ -791,6 +865,7 @@ def transform_color(name, data):
     change.after = None if value is None else Color(value)
     return change
 
+
 def transform_content_filter(name, data):
     change = AuditLogChange()
     change.attr = 'content_filter'
@@ -799,6 +874,7 @@ def transform_content_filter(name, data):
     value = data.get('new_value', None)
     change.after = None if value is None else ContentFilterLevel.get(value)
     return change
+
 
 def transform_video_quality_mode(name, data):
     change = AuditLogChange()
@@ -809,6 +885,7 @@ def transform_video_quality_mode(name, data):
     change.after = None if value is None else VideoQualityMode.get(value)
     return change
 
+
 def transform_int__days(name, data):
     change = AuditLogChange()
     change.attr = 'days'
@@ -816,12 +893,14 @@ def transform_int__days(name, data):
     change.after = data.get('new_value', None)
     return change
 
+
 def transform_int__slowmode(name, data):
     change = AuditLogChange()
     change.attr = 'slowmode'
     change.before = data.get('old_value', None)
     change.after = data.get('new_value', None)
     return change
+
 
 def transform_message_notification(name, data):
     change = AuditLogChange()
@@ -832,6 +911,7 @@ def transform_message_notification(name, data):
     change.after = None if before is None else MessageNotificationLevel.get(after)
     return change
 
+
 def transform_mfa(name, data):
     change = AuditLogChange()
     change.attr = 'mfa'
@@ -841,27 +921,34 @@ def transform_mfa(name, data):
     change.after = None if before is None else MFA.get(after)
     return change
 
+
 def transform_overwrites(name, data):
     change = AuditLogChange()
     change.attr = 'overwrites'
     value = data.get('old_value', None)
-    change.before = None if value is None else [PermissionOverwrite(ow_data) for ow_data in value]
+    change.before = (
+        None if value is None else [PermissionOverwrite(ow_data) for ow_data in value]
+    )
     value = data.get('new_value', None)
-    change.after = None if value is None else [PermissionOverwrite(ow_data) for ow_data in value]
+    change.after = (
+        None if value is None else [PermissionOverwrite(ow_data) for ow_data in value]
+    )
     return change
+
 
 def transform_permission(name, data):
     change = AuditLogChange()
-    
+
     if name.endswith('_new'):
         name = name[:-4]
-    
+
     change.attr = name
     value = data.get('old_value', None)
     change.before = None if value is None else Permission(value)
     value = data.get('new_value', None)
     change.after = None if value is None else Permission(value)
     return change
+
 
 def transform_region(name, data):
     change = AuditLogChange()
@@ -871,6 +958,7 @@ def transform_region(name, data):
     after = data.get('new_value', None)
     change.after = None if before is None else VoiceRegion.get(after)
     return change
+
 
 def transform_role(name, data):
     change = AuditLogChange()
@@ -882,10 +970,10 @@ def transform_role(name, data):
     else:
         before = roles
         after = None
-    
+
     change.before = before
     change.after = after
-    
+
     for element in data['new_value']:
         role_id = int(element['id'])
         try:
@@ -896,6 +984,7 @@ def transform_role(name, data):
 
     return change
 
+
 def transform_snowflake(name, data):
     change = AuditLogChange()
     change.attr = name
@@ -905,12 +994,14 @@ def transform_snowflake(name, data):
     change.after = None if value is None else int(value)
     return change
 
+
 def transform_str__vanity_code(name, data):
     change = AuditLogChange()
     change.attr = 'vanity_code'
     change.before = data.get('old_value', None)
     change.after = data.get('new_value', None)
     return change
+
 
 def transform_system_channel_flags(name, data):
     change = AuditLogChange()
@@ -921,21 +1012,23 @@ def transform_system_channel_flags(name, data):
     change.after = None if before is None else SystemChannelFlag(after)
     return change
 
+
 def transform_type(name, data):
     # If we talk about permission overwrite, type can be `str` too, what we ignore
     before = data.get('old_value', None)
     if type(before) is str:
         return
-    
+
     after = data.get('new_value', None)
     if type(after) is str:
         return
-    
+
     change = AuditLogChange()
     change.attr = 'type'
     change.before = before
     change.after = after
     return change
+
 
 def transform_user(name, data):
     change = AuditLogChange()
@@ -950,7 +1043,7 @@ def transform_user(name, data):
         except KeyError:
             before = Unknown('User', value)
     change.before = before
-    
+
     value = data.get('new_value', None)
     if value is None:
         after = None
@@ -961,8 +1054,9 @@ def transform_user(name, data):
         except KeyError:
             after = Unknown('User', value)
     change.after = after
-    
+
     return change
+
 
 def transform_verification_level(name, data):
     change = AuditLogChange()
@@ -972,6 +1066,7 @@ def transform_verification_level(name, data):
     value = data.get('new_value', None)
     change.after = None if value is None else VerificationLevel.value[value]
     return change
+
 
 def transform_tags(name, data):
     change = AuditLogChange()
@@ -989,7 +1084,9 @@ TRANSFORMERS = {
     'account_id': transform_snowflake,
     'afk_channel_id': transform_channel,
     'allow': transform_deprecated if API_VERSION in (6, 7) else transform_permission,
-    'allow_new': transform_permission if API_VERSION in (6, 7) else transform_deprecated,
+    'allow_new': transform_permission
+    if API_VERSION in (6, 7)
+    else transform_deprecated,
     'application_id': transform_snowflake,
     'avatar_hash': transform_icon,
     'banner_hash': transform_icon,
@@ -999,14 +1096,14 @@ TRANSFORMERS = {
     'color': transform_color,
     # deaf (bool)
     # description (None or str)
-    'default_message_notifications':transform_message_notification,
+    'default_message_notifications': transform_message_notification,
     'deny': transform_deprecated if API_VERSION in (6, 7) else transform_permission,
     'deny_new': transform_permission if API_VERSION in (6, 7) else transform_deprecated,
-    'discovery_splash_hash' : transform_icon,
+    'discovery_splash_hash': transform_icon,
     # enable_emoticons (bool)
     # expire_behavior (int)
     # expire_grace_period (int)
-    'explicit_content_filter':transform_content_filter,
+    'explicit_content_filter': transform_content_filter,
     'hoist': transform_bool__separated,
     'icon_hash': transform_icon,
     'id': transform_snowflake,
@@ -1022,10 +1119,14 @@ TRANSFORMERS = {
     'owner_id': transform_user,
     # position (int)
     'prune_delete_days': transform_int__days,
-    'permission_overwrites' : transform_overwrites,
-    'permissions': transform_deprecated if API_VERSION in (6, 7) else transform_permission,
-    'permissions_new': transform_permission if API_VERSION in (6, 7) else transform_deprecated,
-    'public_updates_channel_id' : transform_channel,
+    'permission_overwrites': transform_overwrites,
+    'permissions': transform_deprecated
+    if API_VERSION in (6, 7)
+    else transform_permission,
+    'permissions_new': transform_permission
+    if API_VERSION in (6, 7)
+    else transform_deprecated,
+    'public_updates_channel_id': transform_channel,
     'rate_limit_per_user': transform_int__slowmode,
     'region': transform_region,
     'rules_channel_id': transform_channel,
@@ -1067,10 +1168,11 @@ del transform_verification_level
 del transform_video_quality_mode
 del transform_tags
 
+
 class AuditLogChange:
     """
     A change of an ``AuditLogEntry``.
-    
+
     Attributes
     ----------
     attr : `str`
@@ -1079,11 +1181,11 @@ class AuditLogChange:
         The changed attribute's original value. Defaults to `None`.
     after : `Any`
         The changed attribute's new value. Defaults to `None`.
-    
+
     Notes
     -----
     The value of `before` and `after` depending on the value of `attr`. These are:
-    
+
     +---------------------------+-----------------------------------------------+
     | attr                      | before / after                                |
     +===========================+===============================================+
@@ -1194,8 +1296,13 @@ class AuditLogChange:
     | widget_enabled            | `None` or `bool`                              |
     +---------------------------+-----------------------------------------------+
     """
-    __slots__ = ('attr', 'before', 'after', )
-    
+
+    __slots__ = (
+        'attr',
+        'before',
+        'after',
+    )
+
     def __repr__(self):
         """Returns the representation of the audit log change."""
         return f'{self.__class__.__name__}(attr={self.attr!r}, before={self.before!r}, after={self.after!r})'

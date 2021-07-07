@@ -1,4 +1,10 @@
-__all__ = ('ClientWrapper', 'BanEntry', 'Typer', 'start_clients', 'stop_clients',)
+__all__ = (
+    'ClientWrapper',
+    'BanEntry',
+    'Typer',
+    'start_clients',
+    'stop_clients',
+)
 
 from threading import current_thread
 
@@ -11,39 +17,41 @@ from ..permission.utils import PERMISSION_KEY
 
 Client = include('Client')
 
+
 def start_clients():
     """
     Starts up all the not running clients.
-    
+
     Can be called from any thread.
     """
     for client in CLIENTS.values():
         if client.running:
             continue
-        
+
         Task(client.connect(), KOKORO)
-    
-    if (current_thread() is not KOKORO):
+
+    if current_thread() is not KOKORO:
         KOKORO.wake_up()
+
 
 def stop_clients():
     """
     Stops all the running clients.
-    
+
     Can be called from any thread.
     """
     for client in CLIENTS.values():
         if client.running:
             Task(client.disconnect(), KOKORO)
-    
-    if (current_thread() is not KOKORO):
+
+    if current_thread() is not KOKORO:
         KOKORO.wake_up()
 
 
 class BanEntry:
     """
     A ban entry.
-    
+
     Attributes
     ----------
     user : ``ClientUserBase``
@@ -51,11 +59,13 @@ class BanEntry:
     reason : `None` or `str`
         The ban reason if applicable.
     """
+
     __slots__ = ('user', 'reason')
+
     def __init__(self, user, reason):
         """
         Creates a new ban entry instance.
-        
+
         Parameters
         ----------
         user : ``ClientUserBase``
@@ -65,15 +75,15 @@ class BanEntry:
         """
         self.user = user
         self.reason = reason
-    
+
     def __repr__(self):
         """Returns the ban entry's representation."""
         return f'<{self.__class__.__name__} user={self.user!r}, reason={self.reason!r}>'
-    
+
     def __len__(self):
         """Helper for unpacking."""
         return 2
-    
+
     def __iter__(self):
         """Unpacks the ban entry."""
         yield self.user
@@ -83,7 +93,7 @@ class BanEntry:
 class UserGuildPermission:
     """
     Represents a user's permissions inside of a guild. Returned by ``Client.user_guild_get_all``.
-    
+
     Attributes
     ----------
     owner : `bool`
@@ -91,22 +101,27 @@ class UserGuildPermission:
     permission : ``Permission``
         The user's permissions at the guild.
     """
-    __slots__ = ('owner', 'permission', )
+
+    __slots__ = (
+        'owner',
+        'permission',
+    )
+
     def __init__(self, data):
         """
         Creates a ``GuildPermission`` object form user guild data.
         """
         self.owner = data['owner']
         self.permission = Permission(data[PERMISSION_KEY])
-    
+
     def __repr__(self):
         """Returns the user guild permission's representation."""
         return f'<{self.__class__.__name__}  owner={self.owner}, permissions={int.__repr__(self.permission)}>'
-    
+
     def __len__(self):
         """Helper for unpacking if needed."""
         return 2
-    
+
     def __iter__(self):
         """Unpacks the user guild permission."""
         yield self.owner
@@ -117,9 +132,9 @@ class Typer:
     """
     A typer what will keep sending typing events to the given channel with the client. Can be used as a context
     manager.
-    
+
     After entered as a context manager sends a typing event each `8` seconds to the given channel.
-    
+
     Attributes
     ----------
     client : ``Client``
@@ -132,8 +147,15 @@ class Typer:
     waiter : ``Future`` or `None`
         The sleeping future what will wake_up ``.run``.
     """
-    __slots__ = ('channel_id', 'client', 'timeout', 'waiter',)
-    def __init__(self, client, channel_id, timeout=300.):
+
+    __slots__ = (
+        'channel_id',
+        'client',
+        'timeout',
+        'waiter',
+    )
+
+    def __init__(self, client, channel_id, timeout=300.0):
         """
         Parameters
         ----------
@@ -148,60 +170,60 @@ class Typer:
         self.channel_id = channel_id
         self.waiter = None
         self.timeout = timeout
-    
+
     def __enter__(self):
         """Enters the typer's context block by ensuring it's ``.run`` method."""
         Task(self.run(), KOKORO)
         return self
-    
+
     async def run(self):
         """
         The coroutine what keeps sending the typing requests.
-        
+
         This method is a coroutine.
         """
         # js client's typing is 8s
-        while self.timeout > 0.:
+        while self.timeout > 0.0:
             self.timeout -= 8.0
-            self.waiter = waiter = sleep(8., KOKORO)
+            self.waiter = waiter = sleep(8.0, KOKORO)
             await self.client.http.typing(self.channel_id)
             await waiter
-        
+
         self.waiter = None
-    
+
     def __await__(self):
         """Keeps typing till timeout occurs."""
         while True:
             timeout = self.timeout
             if timeout <= 0.0:
                 break
-            
-            self.timeout = new_timeout = timeout -8.0
+
+            self.timeout = new_timeout = timeout - 8.0
             if new_timeout < 0.0:
-                sleep_duration = 8.0+new_timeout
+                sleep_duration = 8.0 + new_timeout
             else:
                 sleep_duration = 8.0
-            
+
             self.waiter = waiter = sleep(sleep_duration, KOKORO)
             yield from self.client.http.typing(self.channel_id).__await__()
-            
+
             try:
                 yield from waiter
             except CancelledError:
                 # Reraise if cancelled from outside
-                if (self.waiter is not None):
+                if self.waiter is not None:
                     raise
-    
+
     def cancel(self):
         """
         If the context manager is still active, cancels it.
         """
         self.timeout = 0.0
         waiter = self.waiter
-        if (waiter is not None):
+        if waiter is not None:
             self.waiter = None
             waiter.cancel()
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exits the typer's context block by cancelling it."""
         self.cancel()
@@ -211,24 +233,25 @@ class ClientWrapper:
     """
     Wraps together more clients enabling to add the same event handlers or commands to them. Tho for that feature, you
     need first import it's respective extension.
-    
+
     Attributes
     ----------
     clients : ``Clients``
         The clients to wrap together.
     """
+
     __slots__ = ('clients',)
-    
+
     def __new__(cls, *clients):
         """
         Creates a new ``ClientWrapper`` instance with the given clients. If no clients are given, then will wrap
         all the clients.
-        
+
         Parameters
         ----------
         *clients : ``Client``
             The clients to wrap together.
-        
+
         Raises
         ------
         TypeError
@@ -237,19 +260,21 @@ class ClientWrapper:
         if clients:
             for client in clients:
                 if not isinstance(client, Client):
-                    raise TypeError(f'{cls.__name__} expects only `{Client.__name__}` instances to be given, got '
-                        f'{client.__class__.__name__}: {client!r}.')
+                    raise TypeError(
+                        f'{cls.__name__} expects only `{Client.__name__}` instances to be given, got '
+                        f'{client.__class__.__name__}: {client!r}.'
+                    )
         else:
             clients = tuple(CLIENTS.values())
-        
+
         self = object.__new__(cls)
         object.__setattr__(self, 'clients', clients)
         return self
-    
+
     def __repr__(self):
         """Returns the client wrapper's representation."""
         result = [self.__class__.__name__, '(']
-        
+
         clients = self.clients
         limit = len(clients)
         if limit:
@@ -257,35 +282,35 @@ class ClientWrapper:
             while True:
                 client = clients[index]
                 result.append(client.full_name)
-                
+
                 index += 1
                 if index == limit:
                     break
-                
+
                 result.append(', ')
                 continue
-        
+
         result.append(')')
-        
+
         return ''.join(result)
-    
+
     def events(self, func=None, name=None, overwrite=False):
         """
         Adds the given `func` as event handler to the contained clients's with the given parameters.
-        
+
         If `func` parameter is not given, returns an ``._events_wrapper`` instance, what allows using this method
         as a decorator with passing additional keyword parameters at the same time.
-        
+
         Parameters
         ----------
         func : `callable`
             The event handler to add to the respective clients.
-        
+
         Returns
         -------
         func : `callable`
             The given `func`, or ``._events_wrapper`` instance if `func` was not given.
-        
+
         Raises
         ------
         AttributeError
@@ -300,18 +325,18 @@ class ClientWrapper:
 
         if func is None:
             return self._events_wrapper(self, (name, overwrite))
-        
+
         for client in self.clients:
             client.events(func, name=name, overwrite=overwrite)
-        
+
         return func
-    
+
     class _events_wrapper:
         """
         When the parent ``ClientWrapper``'s `.events` is called without giving the `func` parameter to it an instance
         of this class is created for allowing using it as a decorator with passing additional keyword parameters at the
         same time.
-        
+
         Attributes
         ----------
         parent : ``ClientWrapper``
@@ -319,11 +344,16 @@ class ClientWrapper:
         args: `tuple` of `Any`
             Additional keyword parameters (in order) passed when the wrapper was created.
         """
-        __slots__ = ('parent', 'args',)
+
+        __slots__ = (
+            'parent',
+            'args',
+        )
+
         def __init__(self, parent, args):
             """
             Creates an instance from the given parameters.
-            
+
             Parameters
             ----------
             parent : ``EventHandlerManager``
@@ -333,21 +363,21 @@ class ClientWrapper:
             """
             self.parent = parent
             self.args = args
-        
+
         def __call__(self, func):
             """
             Adds the given `func` as event handler to the parent's clients's with the stored up parameters.
-            
+
             Parameters
             ----------
             func : `callable`
                 The event handler to add to the respective clients.
-            
+
             Returns
             -------
             func : `callable`
                 The added callable.
-            
+
             Raises
             ------
             AttributeError
@@ -361,21 +391,21 @@ class ClientWrapper:
             """
             if func is None:
                 raise TypeError('`func` is given as `None`.')
-            
+
             return self.parent.events(func, *self.args)
-    
+
     def __setattr__(self, attribute_name, attribute_value):
         """
         Sets the given event handler for the respective clients under the specified event name. Updates the respective
         event's parser(s) if needed.
-        
+
         Parameters
         ----------
         attribute_name : `str`
             The name of the event.
         attribute_value : `callable`
             The event handler.
-        
+
         Raises
         ------
         AttributeError
@@ -383,16 +413,16 @@ class ClientWrapper:
         """
         for client in self.clients:
             client.events.__setattr__(attribute_name, attribute_value)
-    
+
     def __delattr__(self, attribute_name):
         """
         Removes the event handler with the given name from the respective client's events.
-        
+
         Parameters
         ----------
         attribute_name : `str`
             The name of the event.
-        
+
         Raises
         ------
         AttributeError

@@ -9,13 +9,14 @@ from .core import PARSERS
 
 SYNC_REQUESTS = {}
 
+
 async def sync_task(queue_id, coro, queue):
     """
     Syncer task ensured if a guild related dispatch event fails, when any expected entity mentioned by it was not
     found.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     queue_id : `int`
@@ -24,12 +25,12 @@ async def sync_task(queue_id, coro, queue):
         ``Client.guild_sync`` coroutine.
     queue : `list` of `tuple` (``Client``, `Any`, (`str` or `tuple` (`str`, `function`, `Any`)))
         A queue of events to call with the specified parameters.
-        
+
         First element of the queue is always the respective client of the received dispatch event. The second is the
         payload of the dispatch event, meanwhile the third can be the name of it (parser name case), or a `tuple` of
         3 elements (checker case), where the first is the name of the parser, the second is a checker and the third is
         an additional value to check with.
-        
+
         At the parser name case, the parser will be called at every case, meanwhile at the checker case, the checker
         will be called with the synced guild and with the passed value, and then the parser will be called only, if the
         the checker returned `True`.
@@ -45,7 +46,7 @@ async def sync_task(queue_id, coro, queue):
             if type(parser_and_checker) is str:
                 PARSERS[parser_and_checker](client, data)
                 continue
-            
+
             parser_name, checker, value = parser_and_checker
             if checker(guild, value):
                 PARSERS[parser_name](client, data)
@@ -56,25 +57,25 @@ async def sync_task(queue_id, coro, queue):
 def check_channel(guild, channel_id):
     """
     Checks whether the given guild has a channel with the specified id.
-    
+
     This function is a checker used at guild syncing.
-    
+
     Parameters
     ----------
     guild : ``Guild``
     channel_id : `int`
     """
-    return (channel_id in guild.channels)
+    return channel_id in guild.channels
 
 
 def guild_sync(client, data, parser_and_checker):
     """
     Syncer function what is called when any expected entity mentioned by a dispatch event's parser was not found.
-    
+
     Looks up whether the given guild has already a syncer task, if it has not, then creates a new ``sync_task`` for it.
     If `parser_and_checker` is given as not `None`, then the respective failed parser will be called when the syncer
     finished.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -92,14 +93,16 @@ def guild_sync(client, data, parser_and_checker):
         guild_id = int(data['guild_id'])
     except KeyError:
         return
-    
+
     try:
         queue = SYNC_REQUESTS[guild_id]
     except KeyError:
         queue = []
         Task(sync_task(guild_id, client.guild_sync(guild_id), queue), KOKORO)
         SYNC_REQUESTS[guild_id] = queue
-    
+
     if parser_and_checker is None:
         return
-    queue.append((client, data, parser_and_checker),)
+    queue.append(
+        (client, data, parser_and_checker),
+    )

@@ -11,28 +11,36 @@ from ...discord.client import Client
 from ...discord.user import UserBase, User
 from ...discord.role import Role
 from ...discord.channel import ChannelBase
-from ...discord.interaction import ApplicationCommandOption, ApplicationCommandOptionChoice, \
-    ApplicationCommandOptionType, InteractionEvent
-from ...discord.interaction.application_command import APPLICATION_COMMAND_OPTIONS_MAX, \
-    APPLICATION_COMMAND_DESCRIPTION_LENGTH_MIN, APPLICATION_COMMAND_DESCRIPTION_LENGTH_MAX
+from ...discord.interaction import (
+    ApplicationCommandOption,
+    ApplicationCommandOptionChoice,
+    ApplicationCommandOptionType,
+    InteractionEvent,
+)
+from ...discord.interaction.application_command import (
+    APPLICATION_COMMAND_OPTIONS_MAX,
+    APPLICATION_COMMAND_DESCRIPTION_LENGTH_MIN,
+    APPLICATION_COMMAND_DESCRIPTION_LENGTH_MAX,
+)
 
 from .utils import raw_name_to_display, normalize_description
 from .exceptions import SlashCommandParameterConversionError
 from .expression_parser import evaluate_text
 
+
 async def converter_self_client(client, interaction_event):
     """
     Internal converter for returning the client who received an interaction event.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
         The client who received the respective ``InteractionEvent``.
     interaction_event : ``InteractionEvent``
         The received application command interaction.
-    
+
     Returns
     -------
     client : ``Client``
@@ -43,16 +51,16 @@ async def converter_self_client(client, interaction_event):
 async def converter_self_interaction_event(client, interaction_event):
     """
     Internal converter for returning the  received interaction event.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
         The client who received the respective ``InteractionEvent``.
     interaction_event : ``InteractionEvent``
         The received application command interaction.
-    
+
     Returns
     -------
     interaction_event : ``ApplicationCommandInteraction``
@@ -63,9 +71,9 @@ async def converter_self_interaction_event(client, interaction_event):
 async def converter_int(client, interaction_event, value):
     """
     Converter for ``ApplicationCommandInteractionOption`` value to `int`.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -74,7 +82,7 @@ async def converter_int(client, interaction_event, value):
         The received application command interaction.
     value : `str`
         ``ApplicationCommandInteractionOption.value``.
-    
+
     Returns
     -------
     value : `None` or `int`
@@ -84,16 +92,16 @@ async def converter_int(client, interaction_event, value):
         value = int(value)
     except ValueError:
         value = None
-    
+
     return value
 
 
 async def converter_str(client, interaction_event, value):
     """
     Converter for ``ApplicationCommandInteractionOption`` value to `str`.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -102,7 +110,7 @@ async def converter_str(client, interaction_event, value):
         The received application command interaction.
     value : `str`
         ``ApplicationCommandInteractionOption.value``.
-    
+
     Returns
     -------
     value : `None` or `str`
@@ -110,17 +118,19 @@ async def converter_str(client, interaction_event, value):
     """
     return value
 
+
 BOOL_TABLE = {
     str(True): True,
     str(False): False,
 }
 
+
 async def converter_bool(client, interaction_event, value):
     """
     Converter for ``ApplicationCommandInteractionOption`` value to `bool`.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -129,7 +139,7 @@ async def converter_bool(client, interaction_event, value):
         The received application command interaction.
     value : `str`
         ``ApplicationCommandInteractionOption.value``.
-    
+
     Returns
     -------
     value : `None` or `bool`
@@ -141,9 +151,9 @@ async def converter_bool(client, interaction_event, value):
 async def converter_snowflake(client, interaction_event, value):
     """
     Converter for ``ApplicationCommandInteractionOption`` value to a snowflake.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -152,7 +162,7 @@ async def converter_snowflake(client, interaction_event, value):
         The received application command interaction.
     value : `str`
         ``ApplicationCommandInteractionOption.value``.
-    
+
     Returns
     -------
     snowflake : `None` or ``int``
@@ -163,18 +173,18 @@ async def converter_snowflake(client, interaction_event, value):
     except ValueError:
         snowflake = None
     else:
-        if (snowflake < (1<<22)) or (snowflake > ((1<<64)-1)):
+        if (snowflake < (1 << 22)) or (snowflake > ((1 << 64) - 1)):
             snowflake = None
-    
+
     return snowflake
 
 
 async def converter_user(client, interaction_event, value):
     """
     Converter for ``ApplicationCommandInteractionOption`` value to ``UserBase`` instance.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -183,14 +193,14 @@ async def converter_user(client, interaction_event, value):
         The received application command interaction.
     value : `str`
         ``ApplicationCommandInteractionOption.value``.
-    
+
     Returns
     -------
     user : `None`, ``User`` or ``Client``
         If conversion fails, then returns `None`.
     """
     user_id = await converter_snowflake(client, interaction_event, value)
-    
+
     if user_id is None:
         user = None
     else:
@@ -199,7 +209,7 @@ async def converter_user(client, interaction_event, value):
             user = None
         else:
             user = resolved_users.get(user_id, None)
-        
+
         if user is None:
             try:
                 user = await client.user_get(user_id)
@@ -216,9 +226,9 @@ async def converter_user(client, interaction_event, value):
 async def converter_role(client, interaction_event, value):
     """
     Converter for ``ApplicationCommandInteractionOption`` value to ``Role`` instance.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -227,14 +237,14 @@ async def converter_role(client, interaction_event, value):
         The received application command interaction.
     value : `str`
         ``ApplicationCommandInteractionOption.value``.
-    
+
     Returns
     -------
     value : `None` or ``Role``
         If conversion fails, then returns `None`.
     """
     role_id = await converter_snowflake(client, interaction_event, value)
-    
+
     if role_id is None:
         role = None
     else:
@@ -243,19 +253,19 @@ async def converter_role(client, interaction_event, value):
             role = None
         else:
             role = resolved_roles.get(role_id, None)
-        
+
         if role is None:
             role = ROLES.get(role_id, None)
-    
+
     return role
 
 
 async def converter_channel(client, interaction_event, value):
     """
     Converter for ``ApplicationCommandInteractionOption`` value to ``ChannelBase`` instance.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -264,14 +274,14 @@ async def converter_channel(client, interaction_event, value):
         The received application command interaction.
     value : `str`
         ``ApplicationCommandInteractionOption.value``.
-    
+
     Returns
     -------
     value : `None` or ``ChannelBase`` instance
         If conversion fails, then returns `None`.
     """
     channel_id = await converter_snowflake(client, interaction_event, value)
-    
+
     if channel_id is None:
         channel = None
     else:
@@ -280,19 +290,19 @@ async def converter_channel(client, interaction_event, value):
             channel = None
         else:
             channel = resolved_channels.get(channel_id, None)
-        
+
         if channel is None:
             channel = CHANNELS.get(channel_id, None)
-    
+
     return channel
 
 
 async def converter_mentionable(client, interaction_event, value):
     """
     Converter for ``ApplicationCommandInteractionOption`` value to mentionable ``DiscordEntity`` instance.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -301,50 +311,50 @@ async def converter_mentionable(client, interaction_event, value):
         The received application command interaction.
     value : `str`
         ``ApplicationCommandInteractionOption.value``.
-    
+
     Returns
     -------
     value : `None` or ``DiscordEntity`` instance
         If conversion fails, then returns `None`.
     """
     entity_id = await converter_snowflake(client, interaction_event, value)
-    
+
     # Use goto
     while True:
         if entity_id is None:
             entity = None
             break
-        
+
         resolved_users = interaction_event.interaction.resolved_users
-        if (resolved_users is not None):
+        if resolved_users is not None:
             try:
                 entity = resolved_users[entity_id]
             except KeyError:
                 pass
             else:
                 break
-        
+
         resolved_roles = interaction_event.interaction.resolved_roles
-        if (resolved_roles is not None):
+        if resolved_roles is not None:
             try:
                 entity = resolved_roles[entity_id]
             except KeyError:
                 pass
             else:
                 break
-        
+
         entity = None
         break
-    
+
     return entity
 
 
 async def converter_expression(client, interaction_event, value):
     """
     Converter for ``ApplicationCommandInteractionOption`` value to evaluable expression to an integer or to a float.
-    
+
     This function is a coroutine.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -353,11 +363,11 @@ async def converter_expression(client, interaction_event, value):
         The received application command interaction.
     value : `str`
         ``ApplicationCommandInteractionOption.value``.
-    
+
     Returns
     -------
     value : `int` or `float`
-    
+
     Raises
     ------
     EvaluationError
@@ -382,16 +392,20 @@ ANNOTATION_TYPE_SELF_CLIENT = 13
 ANNOTATION_TYPE_SELF_INTERACTION_EVENT = 14
 ANNOTATION_TYPE_EXPRESSION = 15
 
-CLIENT_ANNOTATION_NAMES = frozenset((
-    'c',
-    'client',
-))
+CLIENT_ANNOTATION_NAMES = frozenset(
+    (
+        'c',
+        'client',
+    )
+)
 
-INTERACTION_EVENT_ANNOTATION_NAMES = frozenset((
-    'e',
-    'event',
-    'interaction_event',
-))
+INTERACTION_EVENT_ANNOTATION_NAMES = frozenset(
+    (
+        'e',
+        'event',
+        'interaction_event',
+    )
+)
 
 STR_ANNOTATION_TO_ANNOTATION_TYPE = {
     'str': ANNOTATION_TYPE_STR,
@@ -407,9 +421,13 @@ STR_ANNOTATION_TO_ANNOTATION_TYPE = {
     'mentionable': ANNOTATION_TYPE_MENTIONABLE,
     'mentionable_id': ANNOTATION_TYPE_MENTIONABLE_ID,
     'expression': ANNOTATION_TYPE_EXPRESSION,
-    
-    **un_map_pack((name, ANNOTATION_TYPE_SELF_CLIENT) for name in CLIENT_ANNOTATION_NAMES),
-    **un_map_pack((name, ANNOTATION_TYPE_SELF_INTERACTION_EVENT) for name in CLIENT_ANNOTATION_NAMES),
+    **un_map_pack(
+        (name, ANNOTATION_TYPE_SELF_CLIENT) for name in CLIENT_ANNOTATION_NAMES
+    ),
+    **un_map_pack(
+        (name, ANNOTATION_TYPE_SELF_INTERACTION_EVENT)
+        for name in CLIENT_ANNOTATION_NAMES
+    ),
 }
 
 # Used at repr
@@ -425,9 +443,8 @@ ANNOTATION_TYPE_TO_STR_ANNOTATION = {
     ANNOTATION_TYPE_CHANNEL_ID: 'channel_id',
     ANNOTATION_TYPE_NUMBER: 'number',
     ANNOTATION_TYPE_MENTIONABLE: 'mentionable',
-    ANNOTATION_TYPE_MENTIONABLE_ID : 'mentionable_id',
+    ANNOTATION_TYPE_MENTIONABLE_ID: 'mentionable_id',
     ANNOTATION_TYPE_EXPRESSION: 'expression',
-    
     ANNOTATION_TYPE_SELF_CLIENT: 'client',
     ANNOTATION_TYPE_SELF_INTERACTION_EVENT: 'interaction_event',
 }
@@ -440,7 +457,6 @@ TYPE_ANNOTATION_TO_ANNOTATION_TYPE = {
     User: ANNOTATION_TYPE_USER,
     Role: ANNOTATION_TYPE_ROLE,
     ChannelBase: ANNOTATION_TYPE_CHANNEL,
-    
     Client: ANNOTATION_TYPE_SELF_CLIENT,
     InteractionEvent: ANNOTATION_TYPE_SELF_INTERACTION_EVENT,
 }
@@ -454,20 +470,21 @@ ANNOTATION_TYPE_TO_CONVERTER = {
     ANNOTATION_TYPE_ROLE: (converter_role, False),
     ANNOTATION_TYPE_ROLE_ID: (converter_snowflake, False),
     ANNOTATION_TYPE_CHANNEL: (converter_channel, False),
-    ANNOTATION_TYPE_CHANNEL_ID : (converter_snowflake, False),
+    ANNOTATION_TYPE_CHANNEL_ID: (converter_snowflake, False),
     ANNOTATION_TYPE_NUMBER: (converter_int, False),
     ANNOTATION_TYPE_MENTIONABLE: (converter_mentionable, False),
     ANNOTATION_TYPE_MENTIONABLE_ID: (converter_snowflake, False),
     ANNOTATION_TYPE_EXPRESSION: (converter_expression, False),
-    
     ANNOTATION_TYPE_SELF_CLIENT: (converter_self_client, True),
     ANNOTATION_TYPE_SELF_INTERACTION_EVENT: (converter_self_interaction_event, True),
 }
 
-INTERNAL_ANNOTATION_TYPES = frozenset((
-    ANNOTATION_TYPE_SELF_CLIENT,
-    ANNOTATION_TYPE_SELF_INTERACTION_EVENT,
-))
+INTERNAL_ANNOTATION_TYPES = frozenset(
+    (
+        ANNOTATION_TYPE_SELF_CLIENT,
+        ANNOTATION_TYPE_SELF_INTERACTION_EVENT,
+    )
+)
 
 # `int` Discord fields are broken and they are refusing to fix it, use string instead.
 # Reference: https://github.com/discord/discord-api-docs/issues/2448
@@ -485,7 +502,6 @@ ANNOTATION_TYPE_TO_OPTION_TYPE = {
     ANNOTATION_TYPE_MENTIONABLE: ApplicationCommandOptionType.mentionable,
     ANNOTATION_TYPE_MENTIONABLE_ID: ApplicationCommandOptionType.mentionable,
     ANNOTATION_TYPE_EXPRESSION: ApplicationCommandOptionType.string,
-    
     ANNOTATION_TYPE_SELF_CLIENT: ApplicationCommandOptionType.none,
     ANNOTATION_TYPE_SELF_INTERACTION_EVENT: ApplicationCommandOptionType.none,
 }
@@ -502,7 +518,7 @@ ANNOTATION_TYPE_TO_REPRESENTATION = {
     ANNOTATION_TYPE_CHANNEL_ID: 'channel',
     ANNOTATION_TYPE_NUMBER: 'integer',
     ANNOTATION_TYPE_MENTIONABLE: 'mentionable',
-    ANNOTATION_TYPE_MENTIONABLE_ID : 'mentionable',
+    ANNOTATION_TYPE_MENTIONABLE_ID: 'mentionable',
     ANNOTATION_TYPE_EXPRESSION: 'expression',
 }
 
@@ -510,7 +526,7 @@ ANNOTATION_TYPE_TO_REPRESENTATION = {
 class RegexMatcher:
     """
     `custom_id` matcher for component commands.
-    
+
     Attributes
     ----------
     pattern : `Re.Pattern`
@@ -518,17 +534,18 @@ class RegexMatcher:
     is_group_dict_pattern : `bool`
         Whether the regex pattern is group dict based.
     """
+
     __slots__ = ('pattern', 'is_group_dict_pattern')
-    
+
     def __new__(cls, regex_pattern):
         """
         Creates a ``RegexMatcher`` instance from the given parameters.
-        
+
         Parameters
         ----------
         regex_pattern : `re.Pattern`
             Regex pattern to get details of.
-        
+
         Raises
         ------
         ValueError
@@ -537,31 +554,32 @@ class RegexMatcher:
         group_count = regex_pattern.groups
         group_dict = regex_pattern.groupindex
         group_dict_length = len(group_dict)
-        
+
         if group_dict_length and (group_dict_length != group_count):
-            raise ValueError(f'Regex patterns with mixed dict groups and non-dict groups are disallowed, got '
-                f'{regex_pattern!r}.')
-        
+            raise ValueError(
+                f'Regex patterns with mixed dict groups and non-dict groups are disallowed, got '
+                f'{regex_pattern!r}.'
+            )
+
         if group_dict_length:
             is_group_dict_pattern = True
         else:
             is_group_dict_pattern = False
-        
+
         self = object.__new__(cls)
         self.pattern = regex_pattern
         self.is_group_dict_pattern = is_group_dict_pattern
         return self
-    
-    
+
     def __call__(self, string):
         """
         Tries to math the string.
-        
+
         Parameters
         ----------
         string : `str`
             The string to match.
-        
+
         Returns
         -------
         regex_match : `None`, ``RegexMatch``
@@ -570,46 +588,43 @@ class RegexMatcher:
         matched = self.pattern.fullmatch(string)
         if matched is None:
             return None
-        
+
         is_group_dict_pattern = self.is_group_dict_pattern
         if is_group_dict_pattern:
             groups = matched.groupdict()
         else:
             groups = matched.groups()
-        
+
         return RegexMatch(groups, is_group_dict_pattern)
-    
-    
+
     def __repr__(self):
         """Returns the pattern's representation."""
         return f'<{self.__class__.__name__} pattern={self.pattern.pattern}>'
-    
-    
+
     def __hash__(self):
         """Returns the regex matcher's hash value."""
         return hash(self.pattern)
-    
-    
+
     def __eq__(self, other):
         """Returns whether the two regex matchers are equal."""
         if type(self) is not type(other):
             return NotImplemented
-        
+
         if self.pattern == other.pattern:
             return True
-        
+
         return False
 
 
 def check_component_converters_satisfy_string(parameter_converters):
     """
     Checks whether the given parameter converters satisfy string.
-    
+
     Parameters
     ----------
     parameter_converters : `tuple` of ``ParameterConverter`` instances
         Parameter converters to check.
-    
+
     Raises
     -------
     ValueError
@@ -618,26 +633,28 @@ def check_component_converters_satisfy_string(parameter_converters):
     for parameter_converter in parameter_converters:
         if isinstance(parameter_converter, InternalParameterConverter):
             continue
-        
+
         if not parameter_converter.required:
             continue
-        
-        raise ValueError(f'Parameter {parameter_converter.name!r} is not satisfied by string `custom_id`-s.')
-    
+
+        raise ValueError(
+            f'Parameter {parameter_converter.name!r} is not satisfied by string `custom_id`-s.'
+        )
+
     return True
 
 
 def check_component_converters_satisfy_regex(parameter_converters, regex_matcher):
     """
     Checks whether the given parameter converters satisfy a regex matcher.
-    
+
     Parameters
     ----------
     parameter_converters : `tuple` of ``ParameterConverter`` instances
         Parameter converters to check.
     regex_matcher : ``RegexMatcher``
         The matcher to check whether is satisfied.
-    
+
     Raises
     -------
     ValueError
@@ -648,17 +665,17 @@ def check_component_converters_satisfy_regex(parameter_converters, regex_matcher
         for parameter_converter in parameter_converters:
             if isinstance(parameter_converter, InternalParameterConverter):
                 continue
-            
+
             if not parameter_converter.required:
                 continue
-            
+
             try:
                 required_parameters.remove(parameter_converter.name)
             except KeyError:
                 pass
             else:
                 continue
-            
+
             unsatisfied = parameter_converter
             break
         else:
@@ -668,28 +685,30 @@ def check_component_converters_satisfy_regex(parameter_converters, regex_matcher
         for parameter_converter in parameter_converters:
             if isinstance(parameter_converter, InternalParameterConverter):
                 continue
-            
+
             if not parameter_converter.required:
                 continue
-            
+
             if parameters_to_satisfy == 0:
                 unsatisfied = parameter_converter
                 break
-            
+
             parameters_to_satisfy -= 1
             continue
         else:
             unsatisfied = None
-    
-    if (unsatisfied is not None):
-        raise ValueError(f'Parameter {unsatisfied.name!r} is not satisfied by regex pattern: '
-            f'`{regex_matcher.pattern.pattern}`.')
+
+    if unsatisfied is not None:
+        raise ValueError(
+            f'Parameter {unsatisfied.name!r} is not satisfied by regex pattern: '
+            f'`{regex_matcher.pattern.pattern}`.'
+        )
 
 
 class RegexMatch:
     """
     Matched regex pattern by ``RegexMatcher``.
-    
+
     Attributes
     ----------
     is_group_dict : `bool`
@@ -697,12 +716,13 @@ class RegexMatch:
     groups : `tuple` of `str` or `dict` of (`str`, `str`) items
         The matched groups.
     """
+
     __slots__ = ('is_group_dict', 'groups')
-    
+
     def __new__(cls, groups, is_group_dict):
         """
         Creates a new ``RegexMatcher`` instance from the given parameters.
-    
+
         Parameters
         ----------
         is_group_dict : `bool`
@@ -714,7 +734,7 @@ class RegexMatch:
         self.groups = groups
         self.is_group_dict = is_group_dict
         return self
-    
+
     def __repr__(self):
         """Returns the regex match's representation."""
         return f'<{self.__class__.__name__} groups={self.groups!r}>'
@@ -723,12 +743,12 @@ class RegexMatch:
 def create_annotation_choice_from_int(value):
     """
     Creates an annotation choice form an int.
-    
+
     Parameters
     -------
     value : `int`
         The validated annotation choice.
-    
+
     Returns
     -------
     choice : `tuple` (`str`, `str` or `int`)
@@ -740,12 +760,12 @@ def create_annotation_choice_from_int(value):
 def create_annotation_choice_from_str(value):
     """
     Creates an annotation choice form an int.
-    
+
     Parameters
     -------
     value : `str`
         The validated annotation choice.
-    
+
     Returns
     -------
     choice : `tuple` (`str`, `str` or `int`)
@@ -758,17 +778,17 @@ def create_annotation_choice_from_str(value):
 def parse_annotation_choice_from_tuple(annotation):
     """
     Creates an annotation choice form an int.
-    
+
     Parameters
     -------
     annotation : `tuple`
         Annotation choice.
-    
+
     Returns
     -------
     choice : `tuple` (`str`, `str` or `int`)
         The validated annotation choice.
-    
+
     Raises
     ------
     TypeError
@@ -778,45 +798,53 @@ def parse_annotation_choice_from_tuple(annotation):
         `annotation`'s length is invalid.
     """
     annotation_length = len(annotation)
-    if (annotation_length < 1 or annotation_length > 2):
-        raise ValueError(f'`tuple` annotation length can be in range [1:2], got {annotation_length!r}; {annotation!r}')
-    
+    if annotation_length < 1 or annotation_length > 2:
+        raise ValueError(
+            f'`tuple` annotation length can be in range [1:2], got {annotation_length!r}; {annotation!r}'
+        )
+
     if annotation_length == 1:
         value = annotation[0]
         if isinstance(value, str):
             return create_annotation_choice_from_str(value)
-        
+
         if isinstance(value, int):
             return create_annotation_choice_from_int(value)
-        
-        raise TypeError(f'`annotation-value` can be either `str` or `int`, got {value.__class__.__name__}.')
-    
+
+        raise TypeError(
+            f'`annotation-value` can be either `str` or `int`, got {value.__class__.__name__}.'
+        )
+
     # if annotation_length == 2:
-    
+
     name, value = annotation
     if not isinstance(name, str):
-        raise TypeError(f'`annotation-name` can be `str` instance, got {name.__class__.__name__}.')
-    
+        raise TypeError(
+            f'`annotation-name` can be `str` instance, got {name.__class__.__name__}.'
+        )
+
     if not isinstance(value, (str, int)):
-        raise TypeError(f'`annotation-value` can be either `str` or `int`, got {value.__class__.__name__}.')
-    
+        raise TypeError(
+            f'`annotation-value` can be either `str` or `int`, got {value.__class__.__name__}.'
+        )
+
     return (name, value)
 
 
 def parse_annotation_choice(annotation_choice):
     """
     Parses annotation choice.
-    
+
     Parameters
     ----------
     annotation_choice : `tuple`, `str`, `int`
         A choice.
-    
+
     Returns
     -------
     choice : `tuple` (`str`, `str` or `int`)
         The validated annotation choice.
-    
+
     Raises
     ------
     TypeError
@@ -827,35 +855,37 @@ def parse_annotation_choice(annotation_choice):
     """
     if isinstance(annotation_choice, tuple):
         return parse_annotation_choice_from_tuple(annotation_choice)
-    
+
     if isinstance(annotation_choice, str):
         return create_annotation_choice_from_str(annotation_choice)
-    
+
     if isinstance(annotation_choice, int):
         return create_annotation_choice_from_int(annotation_choice)
-    
-    raise TypeError(f'`annotation-choice` can be either given as `tuple`, `str` or `int` instance, got '
-        f'{annotation_choice.__class__.__name__}.')
+
+    raise TypeError(
+        f'`annotation-choice` can be either given as `tuple`, `str` or `int` instance, got '
+        f'{annotation_choice.__class__.__name__}.'
+    )
 
 
 def parse_annotation_type_and_choice(annotation_value, parameter_name):
     """
     Parses annotation type and choices out from an annotation value.
-    
+
     Parameters
     ----------
     annotation_value : `str`, `type`, `list`, `dict`, `iterable`.
         The annotation's value.
     parameter_name : `str`
         The parameter's name.
-    
+
     Returns
     -------
     annotation_type : `int`
         Internal identifier about the annotation.
     choices : `None` or `dict` of (`int` or `str`, `str`) items
         Choices if applicable.
-    
+
     TypeError
         - If `annotation_value` is `list` instance, but it's elements do not match the `tuple` (`str`, `str` or `int`)
             pattern.
@@ -873,17 +903,21 @@ def parse_annotation_type_and_choice(annotation_value, parameter_name):
         try:
             annotation_type = STR_ANNOTATION_TO_ANNOTATION_TYPE[annotation_value]
         except KeyError:
-            raise ValueError(f'Parameter `{parameter_name}` has annotation not refers to any expected type, '
-                f'got {annotation_value!r}.') from None
-        
+            raise ValueError(
+                f'Parameter `{parameter_name}` has annotation not refers to any expected type, '
+                f'got {annotation_value!r}.'
+            ) from None
+
         choices = None
     elif isinstance(annotation_value, type):
         try:
             annotation_type = TYPE_ANNOTATION_TO_ANNOTATION_TYPE[annotation_value]
         except KeyError:
-            raise ValueError(f'Parameter `{parameter_name}` has annotation not refers to any expected type, '
-                f'got {annotation_value!r}.') from None
-        
+            raise ValueError(
+                f'Parameter `{parameter_name}` has annotation not refers to any expected type, '
+                f'got {annotation_value!r}.'
+            ) from None
+
         choices = None
     else:
         choice_elements = []
@@ -891,28 +925,30 @@ def parse_annotation_type_and_choice(annotation_value, parameter_name):
             for annotation_choice in annotation_value:
                 choice_element = parse_annotation_choice(annotation_choice)
                 choice_elements.append(choice_element)
-        
+
         elif isinstance(annotation_value, set):
             for annotation_choice in annotation_value:
                 choice_element = parse_annotation_choice(annotation_choice)
                 choice_elements.append(choice_element)
-            
+
             choice_elements.sort()
         elif isinstance(annotation_value, dict):
             for annotation_choice in annotation_value.items():
                 choice_element = parse_annotation_choice_from_tuple(annotation_choice)
                 choice_elements.append(choice_element)
-            
+
             choice_elements.sort()
         elif hasattr(type(annotation_value), '__iter__'):
             for annotation_choice in annotation_value:
                 choice_element = parse_annotation_choice(annotation_choice)
                 choice_elements.append(choice_element)
-        
+
         else:
-            raise TypeError(f'Parameter `{parameter_name}` has annotation not set neither as `tuple`, `str`, `type`, '
-                f'`list`, `set` or `dict`, got {annotation_value.__class__.__name__}.')
-        
+            raise TypeError(
+                f'Parameter `{parameter_name}` has annotation not set neither as `tuple`, `str`, `type`, '
+                f'`list`, `set` or `dict`, got {annotation_value.__class__.__name__}.'
+            )
+
         # Filter dupe names
         dupe_checker = set()
         length = 0
@@ -920,10 +956,12 @@ def parse_annotation_type_and_choice(annotation_value, parameter_name):
             dupe_checker.add(name)
             new_length = len(dupe_checker)
             if new_length == length:
-                raise ValueError(f'Duped choice name in annotation: `{parameter_name}`.')
-            
+                raise ValueError(
+                    f'Duped choice name in annotation: `{parameter_name}`.'
+                )
+
             length = new_length
-        
+
         # Check annotation type
         expected_type = None
         for name, value in choice_elements:
@@ -931,39 +969,41 @@ def parse_annotation_type_and_choice(annotation_value, parameter_name):
                 type_ = str
             else:
                 type_ = int
-            
+
             if expected_type is None:
                 expected_type = type_
                 continue
-            
+
             if expected_type is not type_:
-                raise ValueError(f'Mixed choice value types in annotation: `{parameter_name}`.')
-        
+                raise ValueError(
+                    f'Mixed choice value types in annotation: `{parameter_name}`.'
+                )
+
         if expected_type is str:
             annotation_type = ANNOTATION_TYPE_STR
         else:
             annotation_type = ANNOTATION_TYPE_INT
-        
-        choices = {value:name for name, value in choice_elements}
-    
+
+        choices = {value: name for name, value in choice_elements}
+
     return annotation_type, choices
 
 
 def parse_annotation_description(description, parameter_name):
     """
     Parses an annotation's description.
-    
+
     Parameters
     ----------
     description : `str`
         The description of an annotation.
     parameter_name : `str`
         The parameter's name.
-    
+
     Returns
     -------
     description : `str`
-    
+
     Raises
     ------
     TypeError
@@ -976,16 +1016,22 @@ def parse_annotation_description(description, parameter_name):
     elif isinstance(description, str):
         description = str(description)
     else:
-        raise TypeError(f'Parameter `{parameter_name}` has annotation description not as `str` instance, got '
-            f'{description.__class__.__name__}.')
-    
+        raise TypeError(
+            f'Parameter `{parameter_name}` has annotation description not as `str` instance, got '
+            f'{description.__class__.__name__}.'
+        )
+
     description_length = len(description)
-    if description_length < APPLICATION_COMMAND_DESCRIPTION_LENGTH_MIN or \
-            description_length > APPLICATION_COMMAND_DESCRIPTION_LENGTH_MAX:
-        raise ValueError(f'Parameter `{parameter_name}` has annotation description\'s length is out of the expected '
+    if (
+        description_length < APPLICATION_COMMAND_DESCRIPTION_LENGTH_MIN
+        or description_length > APPLICATION_COMMAND_DESCRIPTION_LENGTH_MAX
+    ):
+        raise ValueError(
+            f'Parameter `{parameter_name}` has annotation description\'s length is out of the expected '
             f'range [{APPLICATION_COMMAND_DESCRIPTION_LENGTH_MIN}:'
-            f'{APPLICATION_COMMAND_DESCRIPTION_LENGTH_MAX}], got {description_length}; {description!r}.')
-    
+            f'{APPLICATION_COMMAND_DESCRIPTION_LENGTH_MAX}], got {description_length}; {description!r}.'
+        )
+
     description = normalize_description(description)
     return description
 
@@ -993,18 +1039,18 @@ def parse_annotation_description(description, parameter_name):
 def parse_annotation_name(name, parameter_name):
     """
     Parses an annotation's name.
-    
+
     Parameters
     ----------
     name : `str`
         The name of an annotation.
     parameter_name : `None` or `str`
         The annotation's name.
-    
+
     Returns
     -------
     name : `str`
-    
+
     Raises
     ------
     TypeError
@@ -1017,23 +1063,25 @@ def parse_annotation_name(name, parameter_name):
     elif isinstance(name, str):
         name = str(name)
     else:
-        raise TypeError(f'`Parameter `{parameter_name}` has `name` given as non `str` instance, got '
-            f'{name.__class__.__name__}.')
-    
+        raise TypeError(
+            f'`Parameter `{parameter_name}` has `name` given as non `str` instance, got '
+            f'{name.__class__.__name__}.'
+        )
+
     name = raw_name_to_display(name)
-    
+
     return name
 
 
 def parse_annotation_tuple(parameter):
     """
     Parses an annotated tuple.
-    
+
     Parameters
     ----------
     parameter : ``Parameter``
         The respective parameter's representation.
-    
+
     Returns
     -------
     choices : `None` or `dict` of (`str` or `int`, `str`) items
@@ -1044,7 +1092,7 @@ def parse_annotation_tuple(parameter):
         The parameter's name.
     type_ : `int`
         The parameter's internal type identifier.
-    
+
     Raises
     ------
     ValueError
@@ -1055,29 +1103,35 @@ def parse_annotation_tuple(parameter):
     annotation = parameter.annotation
     annotation_tuple_length = len(annotation)
     if annotation_tuple_length not in (1, 2, 3):
-        raise ValueError(f'Parameter `{parameter_name}` has annotation as `tuple`, but it\'s length is not in '
-            f'range [1:3], got {annotation_tuple_length!r}, {annotation_tuple_length!r}.')
-    
+        raise ValueError(
+            f'Parameter `{parameter_name}` has annotation as `tuple`, but it\'s length is not in '
+            f'range [1:3], got {annotation_tuple_length!r}, {annotation_tuple_length!r}.'
+        )
+
     annotation_value = annotation[0]
-    annotation_type, choices = parse_annotation_type_and_choice(annotation_value, parameter_name)
-    
+    annotation_type, choices = parse_annotation_type_and_choice(
+        annotation_value, parameter_name
+    )
+
     if annotation_type in INTERNAL_ANNOTATION_TYPES:
-        raise ValueError(f'`Internal annotations cannot be given inside of a tuple, got annotation for: '
-            f'{ANNOTATION_TYPE_TO_STR_ANNOTATION[annotation_type]!r}.')
-    
+        raise ValueError(
+            f'`Internal annotations cannot be given inside of a tuple, got annotation for: '
+            f'{ANNOTATION_TYPE_TO_STR_ANNOTATION[annotation_type]!r}.'
+        )
+
     if annotation_tuple_length > 1:
         description = annotation[1]
     else:
         description = None
-    
-    if (description is not None):
+
+    if description is not None:
         description = parse_annotation_description(description, parameter_name)
-    
+
     if annotation_tuple_length > 2:
         name = annotation[2]
     else:
         name = None
-    
+
     name = parse_annotation_name(name, parameter_name)
     return choices, description, name, annotation_type
 
@@ -1085,12 +1139,12 @@ def parse_annotation_tuple(parameter):
 def parse_annotation_internal(annotation):
     """
     Tries to check whether the given annotation refers to an internal type or not.
-    
+
     Parameters
     ----------
     annotation : `str`, `type`
         The annotation to check.
-    
+
     Returns
     -------
     annotation_type : `int` or `None`
@@ -1111,32 +1165,32 @@ def parse_annotation_internal(annotation):
             annotation_type = ANNOTATION_TYPE_SELF_INTERACTION_EVENT
         else:
             annotation_type = None
-    
+
     return annotation_type
 
 
 def parse_annotation(parameter):
     """
     Tries to parse an internal annotation referencing ``Client`` or ``InteractionEvent``.
-    
+
     Parameters
     ----------
     parameter : ``Parameter``
         The respective parameter's representation.
-    
+
     Returns
     -------
     choices : `None` or `dict` of (`str` or `int`, `str`) items
         Parameter's choices.
     description : `str` or `None`
         Parameter's description.
-        
+
         > Returned as `None` for internal parameters or if `description` could nto be detected.
     name : `str`
         The parameter's name.
     type_ : `int`
         The parameter's internal type identifier.
-    
+
     Raises
     ------
     ValueError
@@ -1154,17 +1208,21 @@ def parse_annotation(parameter):
                 return parse_annotation_tuple(parameter)
     else:
         annotation_value = parameter.name
-    
+
     if not isinstance(annotation_value, (str, type)):
-        raise TypeError(f'Parameter `{parameter.name}` is not `tuple`, `str`, nor `str` instance '
-            f'{annotation_value.__class__.__name__}; {annotation_value!r}.')
+        raise TypeError(
+            f'Parameter `{parameter.name}` is not `tuple`, `str`, nor `str` instance '
+            f'{annotation_value.__class__.__name__}; {annotation_value!r}.'
+        )
     else:
         annotation_type = parse_annotation_internal(annotation_value)
         if annotation_type is None:
-            annotation_type, choices = parse_annotation_type_and_choice(annotation_value, parameter.name)
+            annotation_type, choices = parse_annotation_type_and_choice(
+                annotation_value, parameter.name
+            )
         else:
             choices = None
-    
+
     return choices, None, parameter.name, annotation_type
 
 
@@ -1172,21 +1230,21 @@ class ParameterConverter:
     """
     Base class for parameter converters.
     """
+
     __slots__ = ()
-    
+
     def __new__(cls):
         """
         Creates a new parameter converter from the given parameter.
         """
         return object.__new__(cls)
-    
-    
+
     async def __call__(self, client, interaction_event, value):
         """
         Calls the parameter converter to convert the given `value` to it's desired state.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -1195,12 +1253,12 @@ class ParameterConverter:
             The received application command interaction.
         value : `Any`
             ``ApplicationCommandInteractionOption.value``.
-        
+
         Returns
         -------
         converted_value : `None` or ``Any`` instance
             If conversion fails, always returns `None`.
-        
+
         Raises
         ------
         SlashCommandParameterConversionError
@@ -1215,7 +1273,7 @@ class ParameterConverter:
     def as_option(self):
         """
         Converts the parameter to an application command option if applicable.
-        
+
         Returns
         -------
         option : `None` or ``ApplicationCommandOption``
@@ -1226,7 +1284,7 @@ class ParameterConverter:
 class RegexParameterConverter(ParameterConverter):
     """
     Regex parameter parsing for component `custom_id`.
-    
+
     Attributes
     ----------
     default : `Any`
@@ -1238,12 +1296,13 @@ class RegexParameterConverter(ParameterConverter):
     name : `str`
         The parameter's name.
     """
+
     __slots__ = ('default', 'index', 'required', 'name')
-    
+
     def __new__(cls, parameter, index):
         """
         Creates a new parameter converter from the given parameter.
-        
+
         Parameters
         ----------
         parameter : ``Parameter``
@@ -1257,8 +1316,7 @@ class RegexParameterConverter(ParameterConverter):
         self.required = parameter.has_default
         self.default = parameter.default
         return self
-    
-    
+
     @copy_docs(ParameterConverter.__call__)
     async def __call__(self, client, interaction_event, value):
         if value is None:
@@ -1277,13 +1335,12 @@ class RegexParameterConverter(ParameterConverter):
                     converted_value = groups[index]
                 else:
                     converted_value = self.default
-        
+
         return converted_value
-    
-    
+
     @copy_docs(ParameterConverter.__repr__)
     def __repr__(self):
-        repr_parts =[
+        repr_parts = [
             '<',
             self.__class__.__name__,
             ' name=',
@@ -1291,20 +1348,20 @@ class RegexParameterConverter(ParameterConverter):
             ', index=',
             repr(self.index),
         ]
-        
+
         if not self.required:
             repr_parts.append(', default=')
             repr_parts.append(repr(self.default))
-        
+
         repr_parts.append('>')
-        
+
         return ''.join(repr_parts)
 
 
 class InternalParameterConverter(ParameterConverter):
     """
     Internal parameter converter.
-    
+
     Attributes
     ----------
     converter : `func`
@@ -1312,12 +1369,13 @@ class InternalParameterConverter(ParameterConverter):
     type : `int`
         Internal identifier of the converter.
     """
+
     __slots__ = ('converter', 'type')
-    
+
     def __new__(cls, type_, converter):
         """
         Creates a new ``InternalParameterConverter`` instance with the given parameters.
-        
+
         Parameters
         ----------
         type_ : `int`
@@ -1329,28 +1387,28 @@ class InternalParameterConverter(ParameterConverter):
         self.type = self
         self.converter = converter
         return self
-    
-    
+
     @copy_docs(ParameterConverter.__call__)
     async def __call__(self, client, interaction_event, value):
         return await self.converter(client, interaction_event)
-    
-    
+
     @copy_docs(ParameterConverter.__repr__)
     def __repr__(self):
-        return ''.join([
-            '<',
-            self.__class__.__name__,
-            ' type=',
-            ANNOTATION_TYPE_TO_STR_ANNOTATION[self.type],
-            '>',
-        ])
+        return ''.join(
+            [
+                '<',
+                self.__class__.__name__,
+                ' type=',
+                ANNOTATION_TYPE_TO_STR_ANNOTATION[self.type],
+                '>',
+            ]
+        )
 
 
 class SashCommandParameterConverter(ParameterConverter):
     """
     Converter class for slash command options.
-    
+
     Attributes
     ----------
     choices : `None` or `dict` of (`str` or `int`, `str`)
@@ -1368,12 +1426,21 @@ class SashCommandParameterConverter(ParameterConverter):
     name : `str`
         The parameter's name.
     """
-    __slots__ = ('choices', 'converter', 'default', 'description', 'required', 'type', 'name')
-    
+
+    __slots__ = (
+        'choices',
+        'converter',
+        'default',
+        'description',
+        'required',
+        'type',
+        'name',
+    )
+
     def __new__(cls, type_, converter, name, description, default, required, choices):
         """
         Creates a new ``SashCommandParameterConverter`` instance from the given parameters.
-        
+
         Parameters
         ----------
         type_ : `int`
@@ -1400,26 +1467,28 @@ class SashCommandParameterConverter(ParameterConverter):
         self.required = required
         self.type = type_
         return self
-    
+
     @copy_docs(ParameterConverter.__call__)
     async def __call__(self, client, interaction_event, value):
         choices = self.choices
-        
-        if (value is None):
+
+        if value is None:
             if not self.required:
                 return self.default
         else:
             converted_value = await self.converter(client, interaction_event, value)
-            if (converted_value is not None) and ((choices is None) or (converted_value in choices)):
+            if (converted_value is not None) and (
+                (choices is None) or (converted_value in choices)
+            ):
                 return converted_value
-        
+
         raise SlashCommandParameterConversionError(
             self.name,
             value,
             ANNOTATION_TYPE_TO_REPRESENTATION.get(self.type, '???'),
             None if choices is None else list(choices.keys()),
         )
-    
+
     @copy_docs(ParameterConverter.__repr__)
     def __repr__(self):
         repr_parts = [
@@ -1430,51 +1499,59 @@ class SashCommandParameterConverter(ParameterConverter):
             ', type=',
             ANNOTATION_TYPE_TO_STR_ANNOTATION[self.type],
             ', description=',
-            reprlib.repr(self.description)
+            reprlib.repr(self.description),
         ]
-        
+
         if not self.required:
             repr_parts.append(', default=')
             repr_parts.append(repr(self.default))
-        
+
         choices = self.choices
-        if (choices is not None):
+        if choices is not None:
             repr_parts.append(', choices=')
             repr_parts.append(repr(choices))
-        
+
         repr_parts.append('>')
-        
+
         return ''.join(repr_parts)
-    
+
     @copy_docs(ParameterConverter.as_option)
     def as_option(self):
         choices = self.choices
         if choices is None:
             option_choices = None
         else:
-            option_choices = [ApplicationCommandOptionChoice(name, str(value)) for value, name in choices.items()]
-        
+            option_choices = [
+                ApplicationCommandOptionChoice(name, str(value))
+                for value, name in choices.items()
+            ]
+
         option_type = ANNOTATION_TYPE_TO_OPTION_TYPE[self.type]
-        
-        return ApplicationCommandOption(self.name, self.description, option_type, required=self.required,
-            choices=option_choices)
+
+        return ApplicationCommandOption(
+            self.name,
+            self.description,
+            option_type,
+            required=self.required,
+            choices=option_choices,
+        )
 
 
 def create_parameter_converter(parameter, parameter_configurer):
     """
     Creates a new parameter converter from the given parameter.
-    
+
     Parameters
     ----------
     parameter : ``Parameter``
         The parameter to create converter from.
     parameter_configurer : `None` or ``SlashCommandParameterConfigurerWrapper``
         Parameter configurer for the parameter if any.
-    
+
     Returns
     -------
     parameter_converter : ``ParameterConverter``
-    
+
     Raises
     ------
     TypeError
@@ -1501,25 +1578,26 @@ def create_parameter_converter(parameter, parameter_configurer):
         description = parameter_configurer._description
         name = parameter_configurer._name
         annotation_type = parameter_configurer._type
-        
+
     if description is None:
         description = raw_name_to_display(name)
-    
+
     if parameter.has_default:
         default = parameter.default
         required = False
     else:
         default = None
         required = True
-    
+
     converter, is_internal = ANNOTATION_TYPE_TO_CONVERTER[annotation_type]
-    
+
     if is_internal:
         parameter_converter = InternalParameterConverter(annotation_type, converter)
     else:
-        parameter_converter = SashCommandParameterConverter(annotation_type, converter, name, description, default,
-            required, choices)
-    
+        parameter_converter = SashCommandParameterConverter(
+            annotation_type, converter, name, description, default, required, choices
+        )
+
     return parameter_converter
 
 
@@ -1531,7 +1609,7 @@ def create_internal_parameter_converter(parameter):
     ----------
     parameter : ``Parameter``
         The parameter to create converter from.
-    
+
     Returns
     -------
     parameter_converter : ``ParameterConverter``
@@ -1545,11 +1623,11 @@ def create_internal_parameter_converter(parameter):
                 annotation_value = annotation_value[0]
     else:
         annotation_value = parameter.name
-    
+
     annotation_type = parse_annotation_internal(annotation_value)
     if annotation_type is None:
         return None
-    
+
     converter, is_internal = ANNOTATION_TYPE_TO_CONVERTER[annotation_type]
     return InternalParameterConverter(annotation_type, converter)
 
@@ -1557,12 +1635,12 @@ def create_internal_parameter_converter(parameter):
 def check_command_coroutine(func):
     """
     Checks whether the given `func` is a coroutine and whether it accepts only positional only parameters.
-    
+
     Parameters
     ----------
     func : `async-callable`
         Command coroutine.
-    
+
     Returns
     -------
     analyzer : ``CallableAnalyzer``
@@ -1571,7 +1649,7 @@ def check_command_coroutine(func):
         Analyzer called on the real called function.
     should_instance : `bool`
         Whether `func` should be instanced.
-    
+
     Raises
     ------
     TypeError
@@ -1584,50 +1662,60 @@ def check_command_coroutine(func):
     if analyzer.is_async() or analyzer.is_async_generator():
         real_analyzer = analyzer
         should_instance = False
-    
-    elif analyzer.can_instance_to_async_callable() or analyzer.can_instance_to_async_generator():
+
+    elif (
+        analyzer.can_instance_to_async_callable()
+        or analyzer.can_instance_to_async_generator()
+    ):
         real_analyzer = CallableAnalyzer(func.__call__, as_method=True)
         if (not real_analyzer.is_async()) and (not real_analyzer.is_async_generator()):
-            raise TypeError(f'`func` is not `async-callable` and cannot be instanced to `async` either, got '
-                f'{func!r}.')
-        
+            raise TypeError(
+                f'`func` is not `async-callable` and cannot be instanced to `async` either, got '
+                f'{func!r}.'
+            )
+
         should_instance = True
-    
+
     else:
-        raise TypeError(f'`func` is not `async-callable` and cannot be instanced to `async` either, got {func!r}.')
-    
-    
-    keyword_only_parameter_count = real_analyzer.get_non_default_keyword_only_parameter_count()
+        raise TypeError(
+            f'`func` is not `async-callable` and cannot be instanced to `async` either, got {func!r}.'
+        )
+
+    keyword_only_parameter_count = (
+        real_analyzer.get_non_default_keyword_only_parameter_count()
+    )
     if keyword_only_parameter_count:
-        raise TypeError(f'`{real_analyzer.real_function!r}` accepts keyword only parameters.')
-    
+        raise TypeError(
+            f'`{real_analyzer.real_function!r}` accepts keyword only parameters.'
+        )
+
     if real_analyzer.accepts_args():
         raise TypeError(f'`{real_analyzer.real_function!r}` accepts *args.')
-    
+
     if real_analyzer.accepts_kwargs():
         raise TypeError(f'`{real_analyzer.real_function!r}` accepts **kwargs.')
-    
+
     return analyzer, real_analyzer, should_instance
 
 
 def get_slash_command_parameter_converters(func, parameter_configurers):
     """
     Parses the given `func`'s parameters.
-    
+
     Parameters
     ----------
     func : `async-callable`
         The function used by a ``SlashCommand``.
     parameter_configurers : `None` or `dict` of (`str`, ``SlashCommandParameterConfigurerWrapper``) items
         Parameter configurers to overwrite annotations.
-    
+
     Returns
     -------
     func : `async-callable`
         The converted function.
     parameter_converters : `tuple` of ``ParameterConverter``
         Parameter converters for the given `func` in order.
-    
+
     Raises
     ------
     TypeError
@@ -1651,54 +1739,58 @@ def get_slash_command_parameter_converters(func, parameter_configurers):
         - If a parameter's `choice` values are mixed types.
     """
     analyzer, real_analyzer, should_instance = check_command_coroutine(func)
-    
+
     parameters = real_analyzer.get_non_reserved_positional_parameters()
-    
+
     parameter_converters = []
-    
+
     for parameter in parameters:
         if parameter_configurers is None:
             parameter_configurer = None
         else:
             parameter_configurer = parameter_configurers.get(parameter.name, None)
-        
-        parameter_converter = create_parameter_converter(parameter, parameter_configurer)
+
+        parameter_converter = create_parameter_converter(
+            parameter, parameter_configurer
+        )
         parameter_converters.append(parameter_converter)
-    
+
     slash_command_option_count = 0
     for parameter_converter in parameter_converters:
         if isinstance(parameter_converter, SashCommandParameterConverter):
             slash_command_option_count += 1
-        
+
     if slash_command_option_count > APPLICATION_COMMAND_OPTIONS_MAX:
-        raise TypeError(f'`{real_analyzer.real_function!r}` should accept at maximum '
+        raise TypeError(
+            f'`{real_analyzer.real_function!r}` should accept at maximum '
             f'`{APPLICATION_COMMAND_OPTIONS_MAX}` slash command options,  meanwhile it accepts '
-            f'{slash_command_option_count}.')
-    
+            f'{slash_command_option_count}.'
+        )
+
     parameter_converters = tuple(parameter_converters)
-    
+
     if should_instance:
         func = analyzer.insatnce()
-    
+
     return func, parameter_converters
 
 
 def get_component_command_parameter_converters(func):
     """
     Parses the given `func`'s parameters.
-    
+
     Parameters
     ----------
     func : `async-callable`
         The function used by a ``ComponentCommand``.
-    
+
     Returns
     -------
     func : `async-callable`
         The converted function.
     parameter_converters : `tuple` of ``ParameterConverter``
         Parameter converters for the given `func` in order.
-    
+
     Raises
     ------
     TypeError
@@ -1708,29 +1800,29 @@ def get_component_command_parameter_converters(func):
         - If `func` accepts `**kwargs`.
     """
     analyzer, real_analyzer, should_instance = check_command_coroutine(func)
-    
+
     parameters = real_analyzer.get_non_reserved_positional_parameters()
-    
+
     parameter_converters = []
-    
+
     for parameter in parameters:
         parameter_converter = create_internal_parameter_converter(parameter)
         parameter_converters.append(parameter_converter)
-    
+
     parameter_index = 0
     for index in range(len(parameter_converters)):
         parameter_converter = parameter_converters[index]
-        if (parameter_converter is not None):
+        if parameter_converter is not None:
             continue
-        
+
         parameter = parameters[index]
         parameter_converter = RegexParameterConverter(parameter, parameter_index)
         parameter_converters[index] = parameter_converter
         parameter_index += 1
-    
+
     parameter_converters = tuple(parameter_converters)
-    
+
     if should_instance:
         func = analyzer.insatnce()
-    
+
     return func, parameter_converters

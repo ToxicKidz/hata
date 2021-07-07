@@ -1,12 +1,13 @@
-__all__ = ('IntegrationDetail', )
+__all__ = ('IntegrationDetail',)
 
 from ..utils import parse_time, DISCORD_EPOCH_START
 from ..role import create_partial_role_from_id
 
+
 class IntegrationDetail:
     """
     Details about a non discord integration.
-    
+
     expire_behaviour : `int`
         The behavior of expiring subscription. `0` for kick or `1` for remove role. Might be set as `-1`, if not
         applicable.
@@ -22,19 +23,27 @@ class IntegrationDetail:
     syncing : `bool`
         Whether the integration syncing.
     """
-    __slots__ = ('expire_behavior', 'expire_grace_period', 'role', 'subscriber_count', 'synced_at', 'syncing', )
-    
+
+    __slots__ = (
+        'expire_behavior',
+        'expire_grace_period',
+        'role',
+        'subscriber_count',
+        'synced_at',
+        'syncing',
+    )
+
     def __init__(self, data):
         """
         Fills up the integration detail from the respective integration's data.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Received integration data.
         """
         self.syncing = data.get('syncing', False)
-        
+
         try:
             role_id = data['role_id']
         except KeyError:
@@ -42,11 +51,11 @@ class IntegrationDetail:
         else:
             role = create_partial_role_from_id(int(role_id))
         self.role = role
-        
+
         self.expire_behavior = data.get('expire_behavior', -1)
-        
+
         self.expire_grace_period = data.get('expire_grace_period', -1)
-        
+
         try:
             synced_at = data['synced_at']
         except KeyError:
@@ -54,19 +63,19 @@ class IntegrationDetail:
         else:
             synced_at = parse_time(synced_at)
         self.synced_at = synced_at
-        
+
         self.subscriber_count = data.get('subscriber_count', 0)
-    
+
     @classmethod
     def from_role(cls, role):
         """
         Creates a partial integration detail with the given role.
-        
+
         Parameters
         ----------
         role : ``Role``
             The respective role.
-        
+
         Returns
         -------
         self : ``IntegrationDetail``
@@ -80,7 +89,7 @@ class IntegrationDetail:
         self.synced_at = DISCORD_EPOCH_START
         self.subscriber_count = 0
         return self
-    
+
     def __repr__(self):
         """Returns the integration detail's representation."""
         return f'<{self.__class__.__name__} role={self.role!r}>'

@@ -1,4 +1,4 @@
-__all__ = ('GuildPreview', )
+__all__ = ('GuildPreview',)
 
 
 from ..bases import DiscordEntity, IconSlot
@@ -12,7 +12,7 @@ from ..http import urls as module_urls
 class GuildPreview(DiscordEntity):
     """
     A preview of a public guild.
-    
+
     Attributes
     ----------
     description : `str` or `None`
@@ -41,36 +41,50 @@ class GuildPreview(DiscordEntity):
     approximate_user_count : `int`
         Approximate amount of users at the guild.
     """
-    __slots__ = ('description', 'emojis', 'features', 'name', 'approximate_online_count', 'approximate_user_count', )
-    
-    icon = IconSlot('icon', 'icon',
+
+    __slots__ = (
+        'description',
+        'emojis',
+        'features',
+        'name',
+        'approximate_online_count',
+        'approximate_user_count',
+    )
+
+    icon = IconSlot(
+        'icon',
+        'icon',
         module_urls.guild_icon_url,
         module_urls.guild_icon_url_as,
     )
-    
-    invite_splash = IconSlot('invite_splash', 'splash',
+
+    invite_splash = IconSlot(
+        'invite_splash',
+        'splash',
         module_urls.guild_invite_splash_url,
         module_urls.guild_invite_splash_url_as,
     )
-    
-    discovery_splash = IconSlot('discovery_splash', 'discovery_splash',
+
+    discovery_splash = IconSlot(
+        'discovery_splash',
+        'discovery_splash',
         module_urls.guild_discovery_splash_url,
         module_urls.guild_discovery_splash_url_as,
     )
-    
+
     def __init__(self, data):
         """
         Creates a guild preview from the requested guild preview data.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Received guild preview data.
         """
-        self.description = data.get('description',None)
-        
+        self.description = data.get('description', None)
+
         self._set_discovery_splash(data)
-        
+
         emojis = {}
         self.emojis = emojis
         try:
@@ -81,7 +95,7 @@ class GuildPreview(DiscordEntity):
             for emoji_data in emoji_datas:
                 emoji = Emoji(emoji_data, None)
                 emojis[emoji.id] = emoji
-        
+
         features = []
         self.features = features
         try:
@@ -92,47 +106,47 @@ class GuildPreview(DiscordEntity):
             for feature_data in feature_datas:
                 feature = GuildFeature.get(feature_data)
                 features.append(feature)
-            
+
             features.sort()
-        
+
         self._set_icon(data)
-        
+
         self.id = int(data['id'])
-        
+
         self.name = data['name']
-        
+
         self.approximate_online_count = data['approximate_presence_count']
-        
+
         self._set_invite_splash(data)
-        
+
         self.approximate_user_count = data['approximate_member_count']
-    
+
     def __str__(self):
         """Returns the respective guild's name."""
         return self.name
-    
+
     def __repr__(self):
         """Returns the guild preview's representation."""
         return f'<{self.__class__.__name__} name={self.name!r}, id={self.id}>'
-    
-    def __format__(self,code):
+
+    def __format__(self, code):
         """
         Formats the guild preview in a format string.
-        
+
         Parameters
         ----------
         code : `str`
             The option on based the result will be formatted.
-        
+
         Returns
         -------
         channel : `str`
-        
+
         Raises
         ------
         ValueError
             Unknown format code.
-        
+
         Examples
         --------
         ```py
@@ -153,9 +167,10 @@ class GuildPreview(DiscordEntity):
         """
         if not code:
             return self.name
-        
+
         if code == 'c':
             return self.created_at.__format__(DATETIME_FORMAT_CODE)
-        
-        raise ValueError(f'Unknown format code {code!r} for object of type {self.__class__.__name__!r}')
 
+        raise ValueError(
+            f'Unknown format code {code!r} for object of type {self.__class__.__name__!r}'
+        )

@@ -1,11 +1,12 @@
-__all__ = ('Attachment', )
+__all__ = ('Attachment',)
 
 from ..bases import DiscordEntity
+
 
 class Attachment(DiscordEntity):
     """
     Represents an attachment of a ``Message``.
-    
+
     Attributes
     ----------
     id : `int`
@@ -25,12 +26,21 @@ class Attachment(DiscordEntity):
     width : `int`
         The attachment's width if applicable. Defaults to `0`.
     """
-    __slots__ = ('content_type', 'height', 'name', 'proxy_url', 'size', 'url', 'width',)
-    
+
+    __slots__ = (
+        'content_type',
+        'height',
+        'name',
+        'proxy_url',
+        'size',
+        'url',
+        'width',
+    )
+
     def __init__(self, data):
         """
         Creates an attachment object from the attachment data included inside of a ``Message`'s.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -44,15 +54,18 @@ class Attachment(DiscordEntity):
         self.url = data['url']
         self.height = data.get('height', 0)
         self.width = data.get('width', 0)
-    
+
     def __repr__(self):
         """Returns the representation of the attachment."""
         repr_parts = [
-            '<', self.__class__.__name__,
-            ' id=', repr(self.id),
-            ', name=', repr(self.name),
+            '<',
+            self.__class__.__name__,
+            ' id=',
+            repr(self.id),
+            ', name=',
+            repr(self.name),
         ]
-        
+
         x = self.width
         y = self.height
         if x and y:
@@ -60,7 +73,7 @@ class Attachment(DiscordEntity):
             repr_parts.append(repr(x))
             repr_parts.append('x')
             repr_parts.append(repr(y))
-        
+
         repr_parts.append('>')
-        
+
         return ''.join(repr_parts)

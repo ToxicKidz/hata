@@ -1,4 +1,4 @@
-__all__ = ('CommandContext', )
+__all__ = ('CommandContext',)
 
 from ...backend.export import export
 
@@ -11,7 +11,7 @@ from .responding import process_command_coroutine
 class CommandContext(object):
     """
     Represents a command context within the command is invoked.
-    
+
     Attributes
     ----------
     client : ``Client``
@@ -35,13 +35,24 @@ class CommandContext(object):
     prefix : `str`
         The matched prefix or the client's prefix for the given respective message.
     """
-    __slots__ = ('client', 'command', 'command_category_trace', 'command_function', 'command_keyword_parameters',
-        'command_positional_parameters', 'content', 'message', 'parameters', 'prefix')
-    
+
+    __slots__ = (
+        'client',
+        'command',
+        'command_category_trace',
+        'command_function',
+        'command_keyword_parameters',
+        'command_positional_parameters',
+        'content',
+        'message',
+        'parameters',
+        'prefix',
+    )
+
     def __new__(cls, client, message, prefix, content, command):
         """
         Creates a new command context instance.
-        
+
         client : ``Client``
             The client who received the message.
         message : ``Message``
@@ -65,74 +76,71 @@ class CommandContext(object):
         self.command_keyword_parameters = {}
         self.command_positional_parameters = []
         return self
-    
+
     def __repr__(self):
         """Returns the context's representation."""
         return f'<{self.__class__.__name__} client={self.client!r}, message={self.message!r}, command={self.command!r}>'
-    
+
     def __eq__(self, other):
         """Returns whether the two contexts are equal."""
         if type(self) is not type(other):
             return NotImplemented
-        
+
         if self.command != other.command:
             return False
-        
+
         if self.message is not other.message:
             return False
-        
+
         if self.client is not other.client:
             return False
-        
+
         return True
-    
+
     def __hash__(self):
         """Returns the hash value of the context."""
         return hash(self.client) ^ hash(self.message) ^ hash(self.command)
-    
+
     # Properties
-    
+
     @property
     def channel(self):
         """
         Returns the message's channel.
-        
+
         Returns
         -------
         channel : ``ChannelBase``
         """
         return self.message.channel
-    
-    
+
     @property
     def guild(self):
         """
         Returns the message's guild.
-        
+
         Returns
         -------
         guild : `None` or ``Guild``
         """
         return self.message.channel.guild
-    
-    
+
     @property
     def author(self):
         """
         Returns the message's author.
-        
+
         Returns
         -------
         author : ``ClientUserBase``, ``Webhook``, ``WebhookRepr``
         """
         return self.message.author
-    
-    
+
     @property
     def voice_client(self):
         """
         Returns the voice client in the message's guild if there is any.
-        
+
         Returns
         -------
         voice_client : `None` or ``VoiceClient``
@@ -142,11 +150,11 @@ class CommandContext(object):
             voice_client = None
         else:
             voice_client = self.client.voice_clients.get(guild.id, None)
-        
+
         return voice_client
-    
+
     # API methods
-    
+
     async def reply(self, *args, **kwargs):
         """
         Replies to the command's caller.
@@ -212,8 +220,7 @@ class CommandContext(object):
             - If `reply_fail_fallback` was not given as `bool` instance.
         """
         return await self.client.message_create(self.message, *args, **kwargs)
-        
-    
+
     async def send(self, *args, **kwargs):
         """
         Sends a message to the channel.
@@ -277,14 +284,13 @@ class CommandContext(object):
             - If `reply_fail_fallback` was not given as `bool` instance.
         """
         return await self.client.message_create(self.message.channel, *args, **kwargs)
-    
-    
+
     async def typing(self):
         """
         Triggers typing indicator in the channel.
-        
+
         This method is a coroutine.
-        
+
         Raises
         ------
         TypeError
@@ -293,28 +299,27 @@ class CommandContext(object):
             No internet connection.
         DiscordException
             If any exception was received from the Discord API.
-        
+
         Notes
         -----
         The client will be shown up as typing for 8 seconds, or till it sends a message at the respective channel.
         """
         return await self.client.typing(self.channel)
-    
-    
+
     def keep_typing(self, *args, **kwargs):
         """
         Returns a context manager which will keep sending typing events at the channel. Can be used to indicate that
         the bot is working.
-        
+
         Parameters
         ----------
         timeout : `float`, Optional
             The maximal duration for the ``Typer`` to keep typing.
-        
+
         Returns
         -------
         typer : ``Typer``
-        
+
         Examples
         --------
         ```py
@@ -324,39 +329,48 @@ class CommandContext(object):
         ```
         """
         return self.client.keep_typing(self.channel, *args, **kwargs)
-    
-    
+
     async def invoke(self):
         """
         Invokes the command.
-        
+
         This method is a coroutine.
         """
         try:
-            command_category_trace, command_function, index = get_command_category_trace(self.command, self.content, 0)
+            (
+                command_category_trace,
+                command_function,
+                index,
+            ) = get_command_category_trace(self.command, self.content, 0)
             self.command_category_trace = command_category_trace
             self.command_function = command_function
-            
-            if (command_function is None):
+
+            if command_function is None:
                 return
-            
+
             failed_check = await run_checks(self.command._iter_checks(), self)
-            if (failed_check is not None):
+            if failed_check is not None:
                 raise CommandCheckError(failed_check)
-            
+
             for wrapper in command_function._iter_wrappers():
                 await wrapper(self)
-            
-            parameter_parsing_states = await command_function._content_parser.parse_content(self, index)
+
+            parameter_parsing_states = (
+                await command_function._content_parser.parse_content(self, index)
+            )
             command_positional_parameters = self.command_positional_parameters
             command_keyword_parameters = self.command_keyword_parameters
             for parameter_parsing_state in parameter_parsing_states:
-                parameter_parsing_state.get_parser_value(command_positional_parameters, command_keyword_parameters)
-            
-            await process_command_coroutine(self,
-                command_function._function(*command_positional_parameters, **command_keyword_parameters)
+                parameter_parsing_state.get_parser_value(
+                    command_positional_parameters, command_keyword_parameters
+                )
+
+            await process_command_coroutine(
+                self,
+                command_function._function(
+                    *command_positional_parameters, **command_keyword_parameters
+                ),
             )
-            
+
         except BaseException as err:
             await handle_exception(self, err)
-

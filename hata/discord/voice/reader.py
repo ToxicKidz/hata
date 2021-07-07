@@ -8,7 +8,12 @@ from ..core import KOKORO
 
 from .opus import OpusDecoder, opus
 from .audio_source import AudioSource
-from .rtp_packet import EMPTY_VOICE_FRAME_DECODED, EMPTY_VOICE_FRAME_ENCODED, RTPPacket, VoicePacket
+from .rtp_packet import (
+    EMPTY_VOICE_FRAME_DECODED,
+    EMPTY_VOICE_FRAME_ENCODED,
+    RTPPacket,
+    VoicePacket,
+)
 
 if opus is None:
     DECODER = None
@@ -19,7 +24,7 @@ else:
 class AudioStream(AudioSource):
     """
     Represents a received audio stream from Discord.
-    
+
     Attributes
     ----------
     auto_decode : `bool`
@@ -36,18 +41,27 @@ class AudioStream(AudioSource):
         Whether the audio stream should yield encoded data.
     voice_client : ``VoiceClient``
         Weakreference to the parent ``AudioReader`` to avoid reference loops.
-    
+
     Class Attributes
     ----------------
     REPEATABLE : `bool` = `False`
         Whether the source can be repeated after it is exhausted once.
     """
-    __slots__ = ('auto_decode', 'buffer', 'done', 'source', 'user', 'yield_decoded', 'voice_client')
-    
+
+    __slots__ = (
+        'auto_decode',
+        'buffer',
+        'done',
+        'source',
+        'user',
+        'yield_decoded',
+        'voice_client',
+    )
+
     def __init__(self, voice_client, user, *, auto_decode=False, yield_decoded=False):
         """
         Creates a new audio stream instance.
-        
+
         Parameters
         ----------
         voice_client : ``VoiceClient``
@@ -63,7 +77,7 @@ class AudioStream(AudioSource):
             audio_source = voice_client._audio_sources[user.id]
         except KeyError:
             audio_source = None
-        
+
         self.voice_client = voice_client
         self.buffer = deque()
         self.auto_decode = auto_decode
@@ -71,66 +85,60 @@ class AudioStream(AudioSource):
         self.done = False
         self.user = user
         self.source = audio_source
-    
-    
+
     def stop(self):
         """
         Stops the audio stream by marking it as done and un-links it as well.
         """
         if self.done:
             return
-        
+
         self.done = True
         self.voice_client._unlink_audio_stream(self)
-    
-    
+
     async def cleanup(self):
         """
         Cleans the audio stream up.
-        
+
         This method is a coroutine.
         """
         self.stop()
-    
+
     __del__ = stop
-    
-    
+
     @property
     def NEEDS_ENCODE(self):
         """
         Returns whether the audio stream needs encoding when streaming to an audio player.
-        
+
         Returns
         -------
         needs_encode : `bool`
         """
         return self.yield_decoded
-    
-    
+
     def feed(self, packet):
         """
         Adds the given packet to the buffer of the audio stream.
-        
+
         Parameters
         ----------
         packet : ``VoicePacket``
         """
         self.buffer.append(packet)
-        
-        
+
         if self.auto_decode:
             if packet.decoded is None:
                 packet.decoded = DECODER.decode(packet.encoded)
-    
-    
+
     async def read(self):
         """
         Reads a frame from the audio stream's buffer.
-        
+
         With yielding `None` indicates end of stream.
-        
+
         This method is a coroutine.
-        
+
         Returns
         -------
         frame : `None` or `bytes`
@@ -144,7 +152,7 @@ class AudioStream(AudioSource):
                     data = DECODER.decode(packet.encoded)
             else:
                 data = packet.encoded
-        
+
         else:
             if self.done:
                 data = None
@@ -153,15 +161,14 @@ class AudioStream(AudioSource):
                     data = EMPTY_VOICE_FRAME_DECODED
                 else:
                     data = EMPTY_VOICE_FRAME_ENCODED
-        
+
         return data
-    
-    
+
     @property
     def title(self):
         """
         Returns the title of the audio stream.
-        
+
         Returns
         -------
         title : `str`
@@ -172,7 +179,7 @@ class AudioStream(AudioSource):
 class AudioReader:
     """
     Audio reader of a ``VoiceClient``.
-    
+
     Attributes
     ----------
     audio_streams : `dict` of (`int`, (``AudioStream`` or (`list` of ``AudioStream``))) items
@@ -184,12 +191,18 @@ class AudioReader:
     voice_client : ``VoiceClient``
         The parent voice client.
     """
-    __slots__ = ('audio_streams', 'done', 'task', 'voice_client', )
-    
+
+    __slots__ = (
+        'audio_streams',
+        'done',
+        'task',
+        'voice_client',
+    )
+
     def __init__(self, voice_client):
         """
         Creates an ``AudioReader`` instance bound to the given voice client.
-        
+
         Parameters
         ----------
         voice_client : ``VoiceClient``
@@ -199,39 +212,38 @@ class AudioReader:
         self.done = False
         self.audio_streams = {}
         self.task = Task(self.run(), KOKORO)
-    
-    
+
     async def run(self):
         """
         The main runner of the ``AudioReader`` what keeps reading from the voice client's datagram stream and feeding
         them to the receiver ``AudioStream``-s.
-        
+
         This method is a coroutine.
         """
         voice_client = self.voice_client
         audio_streams = self.audio_streams
-        
+
         try:
             if not voice_client.connected.is_set():
                 await voice_client.connected
-            
+
             protocol = voice_client._protocol
             while True:
-                
+
                 if self.done:
                     break
-                
+
                 if not voice_client.connected.is_set():
                     await voice_client.connected
                     protocol = voice_client._protocol
-                
+
                 try:
                     data = await protocol.read_once()
                 except CancelledError:
                     if self.done:
                         protocol.cancel_current_reader()
                         return
-                    
+
                     # If cancelled, we are probably establishing connection, so wait till that is done.
                     payload_waiter = protocol.payload_waiter
                     if payload_waiter is None:
@@ -240,18 +252,18 @@ class AudioReader:
                         payload_waiter = protocol.payload_waiter
                         if payload_waiter is None:
                             continue
-                    
+
                     await payload_waiter
                     continue
-                
+
                 if not audio_streams:
                     continue
-            
+
                 try:
                     if data[1] != 120:
                         # not voice data, we don't care
                         continue
-                    
+
                     packet = RTPPacket(data, voice_client)
                     source = packet.source
                     try:
@@ -265,30 +277,35 @@ class AudioReader:
                                 audio_stream.feed(voice_packet)
                         else:
                             audio_stream.feed(voice_packet)
-                
+
                 except BaseException as err:
                     if isinstance(err, CancelledError) and self.done:
                         return
-                    
-                    await KOKORO.render_exc_async(err, before=[
-                        'Exception occurred at decoding voice packet at\n',
-                        repr(self),
-                        '\n',
-                    ])
-        
+
+                    await KOKORO.render_exc_async(
+                        err,
+                        before=[
+                            'Exception occurred at decoding voice packet at\n',
+                            repr(self),
+                            '\n',
+                        ],
+                    )
+
         except BaseException as err:
             if isinstance(err, CancelledError) and self.done:
                 return
-            
-            await KOKORO.render_exc_async(err, before=[
-                'Exception occurred at \n',
-                repr(self),
-                '\n',
-            ])
-        
+
+            await KOKORO.render_exc_async(
+                err,
+                before=[
+                    'Exception occurred at \n',
+                    repr(self),
+                    '\n',
+                ],
+            )
+
         self.stop()
-    
-    
+
     def stop(self):
         """
         Stops the streams of the audio player.
@@ -296,15 +313,15 @@ class AudioReader:
         task = self.task
         if task is None:
             return
-        
+
         self.task = None
         self.done = True
         task.cancel()
-        
+
         voice_client = self.voice_client
         if voice_client.reader is self:
             voice_client.reader = None
-        
+
         audio_streams = self.audio_streams
         if audio_streams:
             collected_audio_streams = []
@@ -313,11 +330,11 @@ class AudioReader:
                     collected_audio_streams.extend(audio_stream)
                 else:
                     collected_audio_streams.append(audio_stream)
-            
+
             audio_streams.clear()
-            
+
             while collected_audio_streams:
                 audio_stream = collected_audio_streams.pop()
                 audio_stream.stop()
-    
+
     __del__ = stop

@@ -32,7 +32,11 @@ __all__ = (
     *wrappers.__all__,
 )
 
-from .. import register_library_extension, add_library_extension_hook, register_setup_function
+from .. import (
+    register_library_extension,
+    add_library_extension_hook,
+    register_setup_function,
+)
 
 from ...discord.client import Client
 
@@ -42,38 +46,39 @@ cooldown = CommandCooldownWrapper
 
 EXTENSION_SETUP_HOOKS = []
 
+
 def setup_ext_commands_v2(client, prefix, **kwargs):
     """
     Setups the commands extension of hata on the given client with the given parameters.
-    
+
     Note that this function can be called on a client only once.
-    
+
     The function adds the following attributes to the client:
     - `.command_processor` : ``CommandProcessor``
     - `.commands` : ``_EventHandlerManager``
-    
+
     And the following event handlers are added as well:
     - `message_create` : ``CommandProcessor``
     - `reaction_add` : ``ReactionAddWaitfor`` (Except if other ``EventWaitforBase`` instance is already added.)
     - `reaction_delete` : ``ReactionDeleteWaitfor`` (Except if other ``EventWaitforBase`` instance is already added.)
-    
+
     Parameters
     ----------
     client : ``Client`
         The client on what the extension will be setuped.
     prefix : `str`, (`tuple`, `list`, `deque`) of `str`, or `callable` -> `str`, Optional
         The prefix of the client's command processor.
-        
+
         Can be given as `str`, as `tuple`, `list` or `deque` of `str`, or as a `callable`, what accepts `1` parameter,
         the respective ``Message`` instance and returns `str`.
     **kwargs : Keyword parameters
         Additional keyword parameters to be passed to the created ``CommandProcessor``.
-    
+
     Returns
     -------
     command_processor : ``CommandProcessor``
         The created command processor. Returns `None` if `lite` is given as `True`.
-    
+
     Raises
     ------
     TypeError
@@ -84,21 +89,25 @@ def setup_ext_commands_v2(client, prefix, **kwargs):
         - If the given `client` has a ``CommandProcessor`` instance added as `message_create` event,
     """
     if not isinstance(client, Client):
-        raise TypeError(f'Expected type `{Client.__name__}` as client, meanwhile got `{client.__class__.__name__}`.')
-    
+        raise TypeError(
+            f'Expected type `{Client.__name__}` as client, meanwhile got `{client.__class__.__name__}`.'
+        )
+
     for attr_name in ('command_processor', 'commands'):
         if hasattr(client, attr_name):
-            raise RuntimeError(f'The client already has an attribute named as `{attr_name}`.')
-    
+            raise RuntimeError(
+                f'The client already has an attribute named as `{attr_name}`.'
+            )
+
     command_processor = CommandProcessor(prefix, **kwargs)
     for hook in EXTENSION_SETUP_HOOKS:
         hook(client, command_processor)
-    
+
     client.events(command_processor)
-    
+
     client.command_processor = command_processor
     client.commands = command_processor.shortcut
-    
+
     return command_processor
 
 
@@ -109,17 +118,18 @@ def snapshot_hook():
 register_library_extension('HuyaneMatsu.commands_v2')
 add_library_extension_hook(snapshot_hook, ['HuyaneMatsu.extension_loader'])
 
+
 def command_utils_hook():
     from . import extension_hook_command_utils
+
 
 add_library_extension_hook(command_utils_hook, ['HuyaneMatsu.command_utils'])
 
 register_setup_function(
     'HuyaneMatsu.commands_v2',
     setup_ext_commands_v2,
+    ('prefix',),
     (
-        'prefix',
-    ),(
         'precheck',
         'mention_prefix_enabled',
         'category_name_rule',

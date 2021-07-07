@@ -6,11 +6,12 @@ from .utils import create_partial_webhook_from_id
 from .webhook_base import WebhookBase
 from .preinstanced import WebhookType
 
+
 @export
 class WebhookRepr(WebhookBase):
     """
     Represents a Discord webhook's user representation.
-    
+
     Attributes
     ----------
     id : `int`
@@ -31,17 +32,18 @@ class WebhookRepr(WebhookBase):
         The channel, where the webhook is going to send it's messages.
     type : ``WebhookType``
         The webhook's type.
-    
+
     Notes
     -----
     Instances of the type support weakreferencing.
     """
+
     __slots__ = ()
-    
+
     def __init__(self, data, webhook_id, type_, channel):
         """
         Creates a webhook representation.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -60,13 +62,12 @@ class WebhookRepr(WebhookBase):
         self._set_banner(data)
         self.type = type_
         self.channel = channel
-    
-    
+
     @property
     def webhook(self):
         """
         Creates a partial webhook from the webhook data included with the webhook representation.
-        
+
         Returns
         -------
         webhook : ``Webhook``

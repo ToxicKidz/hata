@@ -16,29 +16,39 @@ SYNC_ID_NON_GLOBAL = 2
 def raw_name_to_display(raw_name):
     """
     Converts the given raw application command name to it's display name.
-    
+
     Parameters
     ----------
     raw_name : `str`
         The name to convert.
-    
+
     Returns
     -------
     display_name : `str`
         The converted name.
     """
-    return '-'.join([w for w in raw_name.strip('_ ').lower().replace(' ', '-').replace('_', '-').split('-') if w])
+    return '-'.join(
+        [
+            w
+            for w in raw_name.strip('_ ')
+            .lower()
+            .replace(' ', '-')
+            .replace('_', '-')
+            .split('-')
+            if w
+        ]
+    )
 
 
 def normalize_description(description):
     """
     Normalizes a docstrings.
-    
+
     Parameters
     ----------
     description : `str` or `None`
         The docstring to clear.
-    
+
     Returns
     -------
     cleared : `str` or `None`
@@ -46,7 +56,7 @@ def normalize_description(description):
     """
     if description is None:
         return None
-    
+
     lines = description.splitlines()
     for index in reversed(range(len(lines))):
         line = lines[index]
@@ -55,17 +65,17 @@ def normalize_description(description):
             lines[index] = line
         else:
             del lines[index]
-    
+
     if not lines:
         return None
-    
+
     return ' '.join(lines)
 
 
 def _check_maybe_route(variable_name, variable_value, route_to, validator):
     """
     Helper class of ``SlashCommand`` parameter routing.
-    
+
     Parameters
     ----------
     variable_name : `str`
@@ -77,7 +87,7 @@ def _check_maybe_route(variable_name, variable_value, route_to, validator):
         done yet.
     validator : `callable` or `None`
         A callable, what validates the given `variable_value`'s value and converts it as well if applicable.
-    
+
     Returns
     -------
     processed_value : `str`
@@ -85,7 +95,7 @@ def _check_maybe_route(variable_name, variable_value, route_to, validator):
         returned.
     route_to : `int`
         The amount of values to route to.
-    
+
     Raises
     ------
     ValueError
@@ -101,7 +111,7 @@ def _check_maybe_route(variable_name, variable_value, route_to, validator):
             variable_value = variable_value[0]
             if variable_value is ...:
                 variable_value = None
-            
+
             if validator is None:
                 processed_value = variable_value
             else:
@@ -112,36 +122,39 @@ def _check_maybe_route(variable_name, variable_value, route_to, validator):
             elif route_to == route_count:
                 pass
             else:
-                raise ValueError(f'`{variable_name}` is routed to `{route_count}`, meanwhile something else is '
-                    f'already routed to `{route_to}`.')
-            
+                raise ValueError(
+                    f'`{variable_name}` is routed to `{route_count}`, meanwhile something else is '
+                    f'already routed to `{route_to}`.'
+                )
+
             if validator is None:
                 processed_value = variable_value
             else:
                 processed_values = []
                 for value in variable_value:
-                    if (value is not ...):
+                    if value is not ...:
                         value = validator(value)
-                    
+
                     processed_values.append(value)
-                
+
                 processed_value = tuple(processed_values)
-    
+
     else:
         if validator is None:
             processed_value = variable_value
         else:
             processed_value = validator(variable_value)
-    
+
     return processed_value, route_to
 
 
 RUNTIME_SYNC_HOOKS = []
 
+
 def runtime_sync_hook_is_client_running(client):
     """
     Runtime sync hook to check whether a slash command should be registered and synced instantly when added or removed.
-    
+
     Parameters
     ----------
     client : ``Client``
@@ -149,6 +162,5 @@ def runtime_sync_hook_is_client_running(client):
     """
     return client.running
 
+
 RUNTIME_SYNC_HOOKS.append(runtime_sync_hook_is_client_running)
-
-

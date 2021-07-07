@@ -11,12 +11,12 @@ from ...backend.analyzer import CallableAnalyzer
 def _validate_entry_or_exit(point):
     """
     Validates the given entry or exit point, returning `True`, if they passed.
-    
+
     Parameters
     ----------
     point : `None`, `str` or `callable`
         The point to validate.
-    
+
     Raises
     ------
     TypeError
@@ -24,37 +24,48 @@ def _validate_entry_or_exit(point):
     """
     if point is None:
         return True
-    
+
     if isinstance(point, str):
         return True
-    
+
     if callable(point):
         analyzer = CallableAnalyzer(point)
         min_, max_ = analyzer.get_non_reserved_positional_parameter_range()
         if min_ > 1:
-            raise TypeError(f'`{point!r}` excepts at least `{min_!r}` non reserved parameters, meanwhile the event '
-                'expects to pass `1`.')
-        
+            raise TypeError(
+                f'`{point!r}` excepts at least `{min_!r}` non reserved parameters, meanwhile the event '
+                'expects to pass `1`.'
+            )
+
         if min_ == 1:
             return True
-        
-        #min<expected
+
+        # min<expected
         if max_ >= 1:
             return True
-        
+
         if analyzer.accepts_args():
             return True
-        
-        raise TypeError(f'`{point!r}` expects maximum `{max_!r}` non reserved parameters  meanwhile the event expects '
-            'to pass `1`.')
-    
+
+        raise TypeError(
+            f'`{point!r}` expects maximum `{max_!r}` non reserved parameters  meanwhile the event expects '
+            'to pass `1`.'
+        )
+
     return False
 
-def validate_extension_parameters(entry_point=None, exit_point=None, extend_default_variables=True, locked=False,
-        take_snapshot_difference=True, **variables):
+
+def validate_extension_parameters(
+    entry_point=None,
+    exit_point=None,
+    extend_default_variables=True,
+    locked=False,
+    take_snapshot_difference=True,
+    **variables,
+):
     """
     Validates extension parameters.
-    
+
     Parameters
     ----------
     entry_point : `None`, `str` or `callable`, Optional
@@ -67,7 +78,7 @@ def validate_extension_parameters(entry_point=None, exit_point=None, extend_defa
         Whether snapshot feature should be used.
     **variables : Keyword parameters
         Variables to assign to an extension(s)'s module before they are loaded.
-    
+
     Raises
     ------
     TypeError
@@ -82,7 +93,7 @@ def validate_extension_parameters(entry_point=None, exit_point=None, extend_defa
         - If `name` was not given as `str` or as `iterable` of `str`.
     ValueError
         If a variable name is would be used, what is `module` attribute.
-    
+
     Returns
     -------
     entry_point : `None`, `str` or `callable`
@@ -100,40 +111,57 @@ def validate_extension_parameters(entry_point=None, exit_point=None, extend_defa
         If would be empty, is set as `None` instead.
     """
     if not _validate_entry_or_exit(entry_point):
-        raise TypeError(f'`validate_extension_parameters` expected `None`, `str` or a `callable` as '
-            f'`entry_point`, got {entry_point.__class__.__name__}.')
-    
+        raise TypeError(
+            f'`validate_extension_parameters` expected `None`, `str` or a `callable` as '
+            f'`entry_point`, got {entry_point.__class__.__name__}.'
+        )
+
     if not _validate_entry_or_exit(exit_point):
-        raise TypeError(f'`validate_extension_parameters` expected `None`, `str` or a `callable` as `exit_point`, '
-            f'got {exit_point.__class__.__name__}.')
-    
+        raise TypeError(
+            f'`validate_extension_parameters` expected `None`, `str` or a `callable` as `exit_point`, '
+            f'got {exit_point.__class__.__name__}.'
+        )
+
     if variables:
         default_variables = HybridValueDictionary(variables)
         for key, value in variables.items():
             if key in PROTECTED_NAMES:
-                raise ValueError(f'The passed {key!r} is a protected variable name of module type.')
+                raise ValueError(
+                    f'The passed {key!r} is a protected variable name of module type.'
+                )
             default_variables[key] = value
     else:
         default_variables = None
-    
+
     extend_default_variables_type = extend_default_variables.__class__
     if extend_default_variables_type is bool:
         pass
     elif issubclass(extend_default_variables_type, int):
         extend_default_variables = bool(extend_default_variables)
     else:
-        raise TypeError(f'`extend_default_variables` should have been passed as `bool`, got: '
-            f'{extend_default_variables_type.__name__}.')
-    
+        raise TypeError(
+            f'`extend_default_variables` should have been passed as `bool`, got: '
+            f'{extend_default_variables_type.__name__}.'
+        )
+
     locked_type = type(locked)
     if locked_type is bool:
         pass
     elif issubclass(locked_type, int):
         locked = bool(locked)
     else:
-        raise TypeError(f'`locked` should have been passed as `bool`, got: {locked_type.__name__}.')
-    
-    return entry_point, exit_point, extend_default_variables, locked, take_snapshot_difference, default_variables
+        raise TypeError(
+            f'`locked` should have been passed as `bool`, got: {locked_type.__name__}.'
+        )
+
+    return (
+        entry_point,
+        exit_point,
+        extend_default_variables,
+        locked,
+        take_snapshot_difference,
+        default_variables,
+    )
 
 
 PROTECTED_NAMES = {
@@ -176,7 +204,6 @@ PROTECTED_NAMES = {
 }
 
 
-
 PYTHON_EXTENSION_NAMES = (
     '.py',
     '.pyd',
@@ -188,19 +215,19 @@ PYTHON_EXTENSION_NAMES = (
 def _iter_extension_names(name):
     """
     Fetches the names
-    
+
     This function is a generator.
-    
+
     Parameters
     ----------
     name : `str` or `iterable` of `str`
         The name to fetch to single strings.
-    
+
     Yields
     ------
     name : `str`
         Extension names.
-    
+
     Raises
     ------
     ImportError
@@ -215,19 +242,19 @@ def _iter_extension_names(name):
 def _iter_name_maybe_iterable(name):
     """
     Fetches the given name.
-    
+
     This function is a generator.
-    
+
     Parameters
     ----------
     name : `str` or `iterable` of `str`
         The name to fetch to single strings.
-    
+
     Yields
     ------
     name : `str`
         Extension names.
-    
+
     Raises
     ------
     TypeError
@@ -246,29 +273,33 @@ def _iter_name_maybe_iterable(name):
             elif issubclass(sub_name_type, str):
                 yield str(sub_name)
             else:
-                raise TypeError(f'`name` can be given as an `str` or as `iterable` of `str`, got an `iterable`, which '
-                    f'contains an: {sub_name_type.__name__} element.')
+                raise TypeError(
+                    f'`name` can be given as an `str` or as `iterable` of `str`, got an `iterable`, which '
+                    f'contains an: {sub_name_type.__name__} element.'
+                )
     else:
-        raise TypeError(f'`name` can be given as an `str` or as `iterable` of `str`, got an `iterable`, got '
-            f'{name_type.__name__}.')
+        raise TypeError(
+            f'`name` can be given as an `str` or as `iterable` of `str`, got an `iterable`, got '
+            f'{name_type.__name__}.'
+        )
 
 
 def _lookup_path(import_name):
     """
     Detects the root of the given name.
-    
+
     This function is an iterable generator.
-    
+
     Parameters
     ----------
     import_name : `str`
         An extension's import name.
-    
+
     Yields
     ------
     import_name : `str`
         Import name to an extension file.
-    
+
     Raise
     -----
     ImportError
@@ -280,14 +311,16 @@ def _lookup_path(import_name):
         if exists(path) and is_folder(path):
             yield from _iter_folder(import_name, path)
             return
-        
+
         for python_extension_name in PYTHON_EXTENSION_NAMES:
-            file_path = path+python_extension_name
+            file_path = path + python_extension_name
             if exists(file_path) and is_file(file_path):
                 yield import_name
                 return
-    
-    raise TypeError(f'The given `import_name` could not be detected as an extension, got {import_name!r}.')
+
+    raise TypeError(
+        f'The given `import_name` could not be detected as an extension, got {import_name!r}.'
+    )
 
 
 def _iter_folder(import_name, folder_path):
@@ -299,7 +332,7 @@ def _iter_folder(import_name, folder_path):
         The name of the extension if we would import it.
     folder_path : `str`
         Path to the folder
-    
+
     Yields
     ------
     import_name : `str`
@@ -310,25 +343,25 @@ def _iter_folder(import_name, folder_path):
         if exists(file_path) and is_file(file_path):
             yield import_name
             return
-    
+
     for file_name in list_directory(folder_path):
         if file_name.startswith('.') or (file_name == '__pycache__'):
             continue
-        
+
         path = join_path(folder_path, file_name)
-        
+
         if is_file(path):
             for python_extension_name in PYTHON_EXTENSION_NAMES:
                 if file_name.endswith(python_extension_name):
                     value = f'{import_name}.{file_name[:-len(python_extension_name)]}'
                     yield value
                     break
-            
+
             continue
-        
+
         if is_folder(path):
             yield from _iter_folder(f'{import_name}.{file_name}', path)
             continue
-        
+
         # no more cases
         continue

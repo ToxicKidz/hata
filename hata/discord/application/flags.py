@@ -2,12 +2,13 @@ __all__ = ('FlagBase',)
 
 from ..bases import FlagBase
 
+
 class ApplicationFlag(FlagBase):
     """
     Represents an application's flags.
-    
+
     The implemented user flags are the following:
-    
+
     +-----------------------------------+-------------------+
     | Respective name                   | Bitwise position  |
     +===================================+===================+
@@ -30,9 +31,10 @@ class ApplicationFlag(FlagBase):
     | embedded                          | 17                |
     +-----------------------------------+-------------------+
     """
+
     __keys__ = {
-        'managed_emoji':  2,
-        'group_dm_create':  4,
+        'managed_emoji': 2,
+        'group_dm_create': 4,
         'rpc_hash_connected': 11,
         'gateway_presence': 12,
         'gateway_presence_limited': 13,

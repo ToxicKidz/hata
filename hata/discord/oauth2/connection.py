@@ -1,4 +1,4 @@
-__all__ = ('Connection', )
+__all__ = ('Connection',)
 
 from ..integration import Integration
 from ..bases import DiscordEntity
@@ -7,7 +7,7 @@ from ..bases import DiscordEntity
 class Connection(DiscordEntity):
     """
     A connection object that a user is attached to.
-    
+
     Attributes
     ----------
     id : `int`
@@ -28,7 +28,7 @@ class Connection(DiscordEntity):
         Whether the connection is verified.
     visibility : `int`
         For who is the connection visible for.
-        
+
         Possible visibility values
         +-------+-------------------------------+
         | value | description                   |
@@ -38,12 +38,22 @@ class Connection(DiscordEntity):
         | 1     | Visible to everyone.          |
         +-------+-------------------------------+
     """
-    __slots__ = ('friend_sync', 'integrations', 'name', 'revoked', 'show_activity', 'type', 'verified', 'visibility',)
-    
+
+    __slots__ = (
+        'friend_sync',
+        'integrations',
+        'name',
+        'revoked',
+        'show_activity',
+        'type',
+        'verified',
+        'visibility',
+    )
+
     def __init__(self, data):
         """
         Creates a connection object from received connection data.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`)
@@ -57,14 +67,17 @@ class Connection(DiscordEntity):
         self.show_activity = data.get('show_activity', False)
         self.friend_sync = data.get('friend_sync', False)
         self.visibility = data.get('visibility', 0)
-        
+
         try:
             integration_datas = data['integrations']
         except KeyError:
             integrations = None
         else:
             if integration_datas:
-                integrations = [Integration(integration_data) for integration_data in integration_datas]
+                integrations = [
+                    Integration(integration_data)
+                    for integration_data in integration_datas
+                ]
             else:
                 integrations = None
         self.integrations = integrations

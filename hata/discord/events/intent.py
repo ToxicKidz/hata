@@ -20,21 +20,21 @@ INTENT_SHIFT_DIRECT_MESSAGES = 12
 INTENT_SHIFT_DIRECT_REACTIONS = 13
 INTENT_SHIFT_DIRECT_TYPINGS = 14
 
-INTENT_MASK_GUILDS = 1<<INTENT_SHIFT_GUILDS
-INTENT_MASK_GUILD_USERS = 1<<INTENT_SHIFT_GUILD_USERS
-INTENT_MASK_GUILD_BANS = 1<<INTENT_SHIFT_GUILD_BANS
-INTENT_MASK_GUILD_EMOJIS_AND_STICKERS = 1<<INTENT_SHIFT_GUILD_EMOJIS_AND_STICKERS
-INTENT_MASK_GUILD_INTEGRATIONS = 1<<INTENT_SHIFT_GUILD_INTEGRATIONS
-INTENT_MASK_GUILD_WEBHOOKS = 1<<INTENT_SHIFT_GUILD_WEBHOOKS
-INTENT_MASK_GUILD_INVITES = 1<<INTENT_SHIFT_GUILD_INVITES
-INTENT_MASK_GUILD_VOICE_STATES = 1<<INTENT_SHIFT_GUILD_VOICE_STATES
-INTENT_MASK_GUILD_PRESENCES = 1<<INTENT_SHIFT_GUILD_PRESENCES
-INTENT_MASK_GUILD_MESSAGES = 1<<INTENT_SHIFT_GUILD_MESSAGES
-INTENT_MASK_GUILD_REACTIONS = 1<<INTENT_SHIFT_GUILD_REACTIONS
-INTENT_MASK_GUILD_TYPINGS = 1<<INTENT_SHIFT_GUILD_TYPINGS
-INTENT_MASK_DIRECT_MESSAGES = 1<<INTENT_SHIFT_DIRECT_MESSAGES
-INTENT_MASK_DIRECT_REACTIONS = 1<<INTENT_SHIFT_DIRECT_REACTIONS
-INTENT_MASK_DIRECT_TYPINGS = 1<<INTENT_SHIFT_DIRECT_TYPINGS
+INTENT_MASK_GUILDS = 1 << INTENT_SHIFT_GUILDS
+INTENT_MASK_GUILD_USERS = 1 << INTENT_SHIFT_GUILD_USERS
+INTENT_MASK_GUILD_BANS = 1 << INTENT_SHIFT_GUILD_BANS
+INTENT_MASK_GUILD_EMOJIS_AND_STICKERS = 1 << INTENT_SHIFT_GUILD_EMOJIS_AND_STICKERS
+INTENT_MASK_GUILD_INTEGRATIONS = 1 << INTENT_SHIFT_GUILD_INTEGRATIONS
+INTENT_MASK_GUILD_WEBHOOKS = 1 << INTENT_SHIFT_GUILD_WEBHOOKS
+INTENT_MASK_GUILD_INVITES = 1 << INTENT_SHIFT_GUILD_INVITES
+INTENT_MASK_GUILD_VOICE_STATES = 1 << INTENT_SHIFT_GUILD_VOICE_STATES
+INTENT_MASK_GUILD_PRESENCES = 1 << INTENT_SHIFT_GUILD_PRESENCES
+INTENT_MASK_GUILD_MESSAGES = 1 << INTENT_SHIFT_GUILD_MESSAGES
+INTENT_MASK_GUILD_REACTIONS = 1 << INTENT_SHIFT_GUILD_REACTIONS
+INTENT_MASK_GUILD_TYPINGS = 1 << INTENT_SHIFT_GUILD_TYPINGS
+INTENT_MASK_DIRECT_MESSAGES = 1 << INTENT_SHIFT_DIRECT_MESSAGES
+INTENT_MASK_DIRECT_REACTIONS = 1 << INTENT_SHIFT_DIRECT_REACTIONS
+INTENT_MASK_DIRECT_TYPINGS = 1 << INTENT_SHIFT_DIRECT_TYPINGS
 
 
 INTENT_SHIFT_EVENTS = {
@@ -80,25 +80,19 @@ INTENT_SHIFT_EVENTS = {
         'INTEGRATION_UPDATE',
         'GUILD_INTEGRATIONS_UPDATE',
     ),
-    INTENT_SHIFT_GUILD_WEBHOOKS: (
-        'WEBHOOKS_UPDATE',
-    ),
+    INTENT_SHIFT_GUILD_WEBHOOKS: ('WEBHOOKS_UPDATE',),
     INTENT_SHIFT_GUILD_INVITES: (
         'INVITE_CREATE',
         'INVITE_DELETE',
     ),
-    INTENT_SHIFT_GUILD_VOICE_STATES: (
-        'VOICE_STATE_UPDATE',
-    ),
-    INTENT_SHIFT_GUILD_PRESENCES: (
-        'PRESENCE_UPDATE',
-    ),
+    INTENT_SHIFT_GUILD_VOICE_STATES: ('VOICE_STATE_UPDATE',),
+    INTENT_SHIFT_GUILD_PRESENCES: ('PRESENCE_UPDATE',),
     INTENT_SHIFT_GUILD_MESSAGES: (
         'CHANNEL_PINS_UPDATE',
         'MESSAGE_CREATE',
         'MESSAGE_UPDATE',
         'MESSAGE_DELETE',
-        'MESSAGE_DELETE_BULK', # Not listed by Discord, yayyyy
+        'MESSAGE_DELETE_BULK',  # Not listed by Discord, yayyyy
     ),
     INTENT_SHIFT_GUILD_REACTIONS: (
         'MESSAGE_REACTION_ADD',
@@ -106,9 +100,7 @@ INTENT_SHIFT_EVENTS = {
         'MESSAGE_REACTION_REMOVE_ALL',
         'MESSAGE_REACTION_REMOVE_EMOJI',
     ),
-    INTENT_SHIFT_GUILD_TYPINGS: (
-        'TYPING_START',
-    ),
+    INTENT_SHIFT_GUILD_TYPINGS: ('TYPING_START',),
     INTENT_SHIFT_DIRECT_MESSAGES: (
         'CHANNEL_CREATE',
         'CHANNEL_PINS_UPDATE',
@@ -122,34 +114,32 @@ INTENT_SHIFT_EVENTS = {
         'MESSAGE_REACTION_REMOVE_ALL',
         'MESSAGE_REACTION_REMOVE_EMOJI',
     ),
-    INTENT_SHIFT_DIRECT_TYPINGS : (
-        'TYPING_START',
-    ),
+    INTENT_SHIFT_DIRECT_TYPINGS: ('TYPING_START',),
 }
 
 GLOBAL_INTENT_SHIFT_EVENTS = (
     'READY',
     'RESUMED',
     'USER_UPDATE',
-    'CHANNEL_RECIPIENT_ADD', # User account only
-    'CHANNEL_RECIPIENT_REMOVE', # User only
+    'CHANNEL_RECIPIENT_ADD',  # User account only
+    'CHANNEL_RECIPIENT_REMOVE',  # User only
     'GUILD_MEMBERS_CHUNK',
     'VOICE_SERVER_UPDATE',
-    'RELATIONSHIP_ADD', # User account only
-    'RELATIONSHIP_REMOVE', # User account only
-    'PRESENCES_REPLACE', # Empty / User account
-    'USER_SETTINGS_UPDATE', # User account only
+    'RELATIONSHIP_ADD',  # User account only
+    'RELATIONSHIP_REMOVE',  # User account only
+    'PRESENCES_REPLACE',  # Empty / User account
+    'USER_SETTINGS_UPDATE',  # User account only
     'GIFT_CODE_UPDATE',
-    'USER_ACHIEVEMENT_UPDATE', # User account only
-    'MESSAGE_ACK', # User account only
-    'SESSIONS_REPLACE', # User account only
+    'USER_ACHIEVEMENT_UPDATE',  # User account only
+    'MESSAGE_ACK',  # User account only
+    'SESSIONS_REPLACE',  # User account only
     'INTERACTION_CREATE',
     'APPLICATION_COMMAND_CREATE',
     'APPLICATION_COMMAND_UPDATE',
     'APPLICATION_COMMAND_DELETE',
     'APPLICATION_COMMAND_PERMISSIONS_UPDATE',
-    'USER_GUILD_SETTINGS_UPDATE', # User account only
-    'CHANNEL_UNREAD_UPDATE', # User account only
+    'USER_GUILD_SETTINGS_UPDATE',  # User account only
+    'CHANNEL_UNREAD_UPDATE',  # User account only
 )
 
 INTENT_SHIFT_DEFAULT_EVENT = 255
@@ -158,22 +148,28 @@ INTENT_SHIFT_MISSING_EVENT = 254
 
 DISPATCH_EVENT_TO_INTENTS = {}
 
+
 def populate_dispatch_event_intents():
     from itertools import chain
-    
+
     for intent_shift, event_names in chain(
-            INTENT_SHIFT_EVENTS.items(), ((INTENT_SHIFT_DEFAULT_EVENT, GLOBAL_INTENT_SHIFT_EVENTS),)
-                ):
-        
+        INTENT_SHIFT_EVENTS.items(),
+        ((INTENT_SHIFT_DEFAULT_EVENT, GLOBAL_INTENT_SHIFT_EVENTS),),
+    ):
+
         for event_name in event_names:
             try:
                 intent_shifts = DISPATCH_EVENT_TO_INTENTS[event_name]
             except KeyError:
-                intent_shifts = (intent_shift, )
+                intent_shifts = (intent_shift,)
             else:
-                intent_shifts = (*intent_shifts, intent_shift, )
-            
+                intent_shifts = (
+                    *intent_shifts,
+                    intent_shift,
+                )
+
             DISPATCH_EVENT_TO_INTENTS[event_name] = intent_shifts
+
 
 populate_dispatch_event_intents()
 del populate_dispatch_event_intents
@@ -183,10 +179,10 @@ class IntentFlag(FlagBase, enable_keyword='allow', disable_keyword='deny'):
     """
     An `int` subclass representing the intents to receive specific events. The wrapper picks these up as well and
     optimizes the dispatch events' events.
-    
+
     Each flag specifies which parser's dispatch event is received from Discord. Not mentioned events do not depend
     on intent flags and they are expected to be received independently.
-    
+
     +----------------------------------------+-------+----------------------------+-----------------------------------+
     | Intent flag position's                 | Shift | Intent name                | Corresponding parser              |
     | respective name                        | value |                            |                                   |
@@ -264,6 +260,7 @@ class IntentFlag(FlagBase, enable_keyword='allow', disable_keyword='deny'):
     | INTENT_SHIFT_DIRECT_TYPINGS            | 14    | direct_typings             | TYPING_START                      |
     +----------------------------------------+-------+----------------------------+-----------------------------------+
     """
+
     __keys__ = {
         'guilds': INTENT_SHIFT_GUILDS,
         'guild_users': INTENT_SHIFT_GUILD_USERS,
@@ -281,28 +278,28 @@ class IntentFlag(FlagBase, enable_keyword='allow', disable_keyword='deny'):
         'direct_reactions': INTENT_SHIFT_DIRECT_REACTIONS,
         'direct_typings': INTENT_SHIFT_DIRECT_TYPINGS,
     }
-    
+
     def __new__(cls, int_=-1):
         """
         Creates a new ``IntentFlag`` instance from the passed `int_`. If any invalid intent flag is passed, those
         will be removed. If the wrapper is started up without presence caching, then `.guild_presences` will be
         set to `False` by default.
-        
+
         Parameters
         ----------
         int_ : `int` instance, Optional
             The value what will be converted ``IntentFlag`` instance. If not passed or passed as a negative value,
             then returns an ``IntentFlag`` what contains all the enabled flags.
-        
+
         Returns
         -------
         intent_flag : ``IntentFlag``
-        
+
         Raises
         ------
         TypeError
             If `int_` was not passed as `int` instance.
-        
+
         Notes
         -----
         The defaultly created intent flags contain the privileged gateway intents, so if you have those disabled, or
@@ -310,39 +307,39 @@ class IntentFlag(FlagBase, enable_keyword='allow', disable_keyword='deny'):
         """
         if not isinstance(int_, int):
             raise TypeError(f'{cls.__name__} expected `int` instance, got `{int_!r}')
-        
+
         intent_flag = 0
         if int_ < 0:
             for value in cls.__keys__.values():
-                intent_flag = intent_flag|(1<<value)
-            
+                intent_flag = intent_flag | (1 << value)
+
             # If presence cache is disabled, disable presence updates
             if not CACHE_PRESENCE:
-                intent_flag = intent_flag^(1<<INTENT_SHIFT_GUILD_PRESENCES)
+                intent_flag = intent_flag ^ (1 << INTENT_SHIFT_GUILD_PRESENCES)
         else:
             for value in cls.__keys__.values():
-                if (int_>>value)&1:
-                    intent_flag = intent_flag|(1<<value)
-            
+                if (int_ >> value) & 1:
+                    intent_flag = intent_flag | (1 << value)
+
             # If presence cache is disabled, disable presence updates
             if not CACHE_PRESENCE:
-                if (intent_flag>>INTENT_SHIFT_GUILD_PRESENCES)&1:
-                    intent_flag = intent_flag^(1<<INTENT_SHIFT_GUILD_PRESENCES)
-        
+                if (intent_flag >> INTENT_SHIFT_GUILD_PRESENCES) & 1:
+                    intent_flag = intent_flag ^ (1 << INTENT_SHIFT_GUILD_PRESENCES)
+
         return int.__new__(cls, intent_flag)
-    
+
     def iterate_parser_names(self):
         """
         Yields every parser's name, what the intent flag allows to be received.
-        
+
         This method is a generator.
-        
+
         Yields
         ------
         parser_name : `str`
         """
         for shift in self.__keys__.values():
-            if (self>>shift)&1:
+            if (self >> shift) & 1:
                 yield from INTENT_SHIFT_EVENTS[shift]
-        
+
         yield from GLOBAL_INTENT_SHIFT_EVENTS

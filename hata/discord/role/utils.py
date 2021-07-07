@@ -1,4 +1,9 @@
-__all__ = ('create_partial_role_from_id', 'cr_p_role_object', 'parse_role', 'parse_role_mention')
+__all__ = (
+    'create_partial_role_from_id',
+    'cr_p_role_object',
+    'parse_role',
+    'parse_role_mention',
+)
 
 from ...backend.export import export
 
@@ -12,16 +17,17 @@ from .role import Role
 
 ROLE_MANAGER_TYPE_NONE = RoleManagerType.none
 
+
 @export
 def create_partial_role_from_id(role_id):
     """
     Creates a partial role from the given `role_id`. If the role already exists returns that instead.
-    
+
     Parameters
     ----------
     role_id : `int`
         The unique identifier number of the role.
-    
+
     Returns
     -------
     role : ``Role``
@@ -30,10 +36,10 @@ def create_partial_role_from_id(role_id):
         return ROLES[role_id]
     except KeyError:
         pass
-    
+
     role = object.__new__(Role)
     role.id = role_id
-    
+
     role.color = Color()
     role.guild = None
     role.separated = False
@@ -43,17 +49,26 @@ def create_partial_role_from_id(role_id):
     role.mentionable = False
     role.name = ''
     role.permissions = PERMISSION_NONE
-    role.position = 1 # 0 is default role, so we go for 1
-    
+    role.position = 1  # 0 is default role, so we go for 1
+
     ROLES[role_id] = role
-    
+
     return role
 
-def cr_p_role_object(name, role_id=None, color=Color(), separated=False, position=0, permissions=Permission(),
-        managed=False, mentionable=False):
+
+def cr_p_role_object(
+    name,
+    role_id=None,
+    color=Color(),
+    separated=False,
+    position=0,
+    permissions=Permission(),
+    managed=False,
+    mentionable=False,
+):
     """
     Creates a json serializable object representing a ``Role``.
-    
+
     Parameters
     ----------
     name : `str`
@@ -72,14 +87,14 @@ def cr_p_role_object(name, role_id=None, color=Color(), separated=False, positio
         Whether the role is managed by an integration.
     mentionable : `bool`, Optional
         Whether the role can be mentioned.
-    
+
     Returns
     -------
     role_data : `dict` of (`str`, `Any`) items
     """
     if role_id is None:
         role_id = random_id()
-    
+
     return {
         'id': role_id,
         'name': name,
@@ -95,12 +110,12 @@ def cr_p_role_object(name, role_id=None, color=Color(), separated=False, positio
 def parse_role_mention(text):
     """
     If the text is a role mention, returns the respective role if found.
-    
+
     Parameters
     ----------
     text : `str`
        The text to parse the role out from.
-    
+
     Returns
     -------
     role : `None` or ``Role``
@@ -109,7 +124,7 @@ def parse_role_mention(text):
     parsed = ROLE_MENTION_RP.fullmatch(text)
     if parsed is None:
         return
-    
+
     role_id = int(parsed.group(1))
     return ROLES.get(role_id, None)
 
@@ -117,21 +132,21 @@ def parse_role_mention(text):
 def parse_role(text, message=None):
     """
     Tries to parse a role out from the given text.
-    
+
     Parameters
     ----------
     text : `str`
         The text to parse the role out.
     message : `None` or ``Message``, Optional
         Context for name based parsing.
-    
+
     Returns
     -------
     role : `None` or ``Role``
         The found role if any.
     """
     parsed = ID_RP.fullmatch(text)
-    if (parsed is not None):
+    if parsed is not None:
         role_id = int(parsed.group(1))
         try:
             role = ROLES[role_id]
@@ -139,16 +154,16 @@ def parse_role(text, message=None):
             pass
         else:
             return role
-    
+
     role = parse_role_mention(text)
-    if (role is not None):
+    if role is not None:
         return role
-    
-    if (message is not None):
+
+    if message is not None:
         guild = message.channel.guild
-        if (guild is not None):
+        if guild is not None:
             role = guild.get_role_like(text)
-            if (role is not None):
+            if role is not None:
                 return role
-    
+
     return None

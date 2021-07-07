@@ -1,7 +1,13 @@
 __all__ = ()
 
-from .rate_limit import RateLimitGroup, LIMITER_WEBHOOK, LIMITER_CHANNEL, StaticRateLimitGroup, LIMITER_GUILD, \
-    LIMITER_INTERACTION
+from .rate_limit import (
+    RateLimitGroup,
+    LIMITER_WEBHOOK,
+    LIMITER_CHANNEL,
+    StaticRateLimitGroup,
+    LIMITER_GUILD,
+    LIMITER_INTERACTION,
+)
 
 __doc__ = """
 Defines the rate limit groups by hata. Hata uses burst half automatic rate limit handler.
@@ -1713,7 +1719,7 @@ Group Details
 """
 GROUP_REACTION_MODIFY = RateLimitGroup(LIMITER_CHANNEL)
 GROUP_PIN_MODIFY = RateLimitGroup(LIMITER_CHANNEL)
-GROUP_USER_MODIFY = RateLimitGroup(LIMITER_GUILD) # both has the same endpoint
+GROUP_USER_MODIFY = RateLimitGroup(LIMITER_GUILD)  # both has the same endpoint
 GROUP_USER_ROLE_MODIFY = RateLimitGroup(LIMITER_GUILD)
 GROUP_WEBHOOK_EXECUTE = RateLimitGroup(LIMITER_WEBHOOK)
 GROUP_INTERACTION_EXECUTE = RateLimitGroup(LIMITER_INTERACTION)
@@ -1723,7 +1729,7 @@ GROUP_APPLICATION_COMMAND_EDIT = RateLimitGroup()
 GROUP_PERMISSION_OVERWRITE_MODIFY = RateLimitGroup(LIMITER_CHANNEL)
 
 oauth2_token = RateLimitGroup(optimistic=True)
-application_get = RateLimitGroup(optimistic=True) # untested
+application_get = RateLimitGroup(optimistic=True)  # untested
 achievement_get_all = RateLimitGroup()
 achievement_create = RateLimitGroup()
 achievement_delete = RateLimitGroup()
@@ -1745,11 +1751,13 @@ application_command_guild_edit = RateLimitGroup(LIMITER_GUILD)
 application_command_permission_get = RateLimitGroup.unlimited()
 application_command_permission_edit = RateLimitGroup()
 application_get_all_detectable = RateLimitGroup(optimistic=True)
-client_logout = RateLimitGroup() # untested
+client_logout = RateLimitGroup()  # untested
 channel_delete = RateLimitGroup.unlimited()
-channel_group_leave = RateLimitGroup.unlimited() # untested; same as channel_delete?
+channel_group_leave = RateLimitGroup.unlimited()  # untested; same as channel_delete?
 channel_edit = RateLimitGroup(LIMITER_CHANNEL)
-channel_group_edit = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested; same as channel_edit?
+channel_group_edit = RateLimitGroup(
+    LIMITER_CHANNEL, optimistic=True
+)  # untested; same as channel_edit?
 channel_follow = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)
 invite_get_all_channel = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)
 invite_create = RateLimitGroup()
@@ -1760,9 +1768,9 @@ message_delete = RateLimitGroup(LIMITER_CHANNEL)
 message_delete_b2wo = RateLimitGroup(LIMITER_CHANNEL)
 message_get = RateLimitGroup(LIMITER_CHANNEL)
 message_edit = RateLimitGroup(LIMITER_CHANNEL)
-message_ack = RateLimitGroup(optimistic=True) # untested
+message_ack = RateLimitGroup(optimistic=True)  # untested
 message_crosspost = RateLimitGroup(LIMITER_CHANNEL)
-message_interaction = RateLimitGroup(optimistic=True) # untested
+message_interaction = RateLimitGroup(optimistic=True)  # untested
 reaction_clear = GROUP_REACTION_MODIFY
 reaction_delete_emoji = GROUP_REACTION_MODIFY
 reaction_user_get_chunk = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)
@@ -1770,41 +1778,49 @@ reaction_delete_own = GROUP_REACTION_MODIFY
 reaction_add = GROUP_REACTION_MODIFY
 reaction_delete = GROUP_REACTION_MODIFY
 message_suppress_embeds = RateLimitGroup()
-thread_create_public = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
+thread_create_public = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
 permission_overwrite_delete = GROUP_PERMISSION_OVERWRITE_MODIFY
 permission_overwrite_create = GROUP_PERMISSION_OVERWRITE_MODIFY
 channel_pin_get_all = RateLimitGroup()
-channel_pin_ack = RateLimitGroup(optimistic=True) # untested
+channel_pin_ack = RateLimitGroup(optimistic=True)  # untested
 message_unpin = GROUP_PIN_MODIFY
 message_pin = GROUP_PIN_MODIFY
-channel_group_user_get_all = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-channel_group_user_delete = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-channel_group_user_add = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-thread_user_get_all = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-thread_join = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-thread_leave = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-thread_user_add = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-thread_user_delete = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-thread_settings_edit = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-thread_create_private = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
+channel_group_user_get_all = RateLimitGroup(
+    LIMITER_CHANNEL, optimistic=True
+)  # untested
+channel_group_user_delete = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
+channel_group_user_add = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
+thread_user_get_all = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
+thread_join = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
+thread_leave = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
+thread_user_add = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
+thread_user_delete = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
+thread_settings_edit = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
+thread_create_private = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
 typing = RateLimitGroup(LIMITER_CHANNEL)
-thread_get_chunk_active = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-thread_get_chunk_archived_private = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-thread_get_chunk_archived_public = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
-thread_get_chunk_self_archived = RateLimitGroup(LIMITER_CHANNEL, optimistic=True) # untested
+thread_get_chunk_active = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)  # untested
+thread_get_chunk_archived_private = RateLimitGroup(
+    LIMITER_CHANNEL, optimistic=True
+)  # untested
+thread_get_chunk_archived_public = RateLimitGroup(
+    LIMITER_CHANNEL, optimistic=True
+)  # untested
+thread_get_chunk_self_archived = RateLimitGroup(
+    LIMITER_CHANNEL, optimistic=True
+)  # untested
 webhook_get_all_channel = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)
 webhook_create = RateLimitGroup(LIMITER_CHANNEL, optimistic=True)
 discovery_category_get_all = RateLimitGroup()
-discovery_stage_get_all = RateLimitGroup(optimistic=True) # untested, not yet added
+discovery_stage_get_all = RateLimitGroup(optimistic=True)  # untested, not yet added
 discovery_validate_term = RateLimitGroup()
 client_gateway_hooman = RateLimitGroup()
 client_gateway_bot = RateLimitGroup()
-discovery_guild_get_all = RateLimitGroup(optimistic=True) # untested, not yet added
+discovery_guild_get_all = RateLimitGroup(optimistic=True)  # untested, not yet added
 guild_create = RateLimitGroup.unlimited()
 guild_delete = RateLimitGroup.unlimited()
 guild_get = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 guild_edit = RateLimitGroup(LIMITER_GUILD, optimistic=True)
-guild_ack = RateLimitGroup() # untested
+guild_ack = RateLimitGroup()  # untested
 audit_log_get_chunk = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 guild_ban_get_all = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 guild_ban_delete = RateLimitGroup(LIMITER_GUILD, optimistic=True)
@@ -1817,18 +1833,18 @@ guild_discovery_delete_subcategory = RateLimitGroup(LIMITER_GUILD, optimistic=Tr
 guild_discovery_add_subcategory = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 guild_discovery_get = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 guild_discovery_edit = RateLimitGroup(LIMITER_GUILD, optimistic=True)
-guild_embed_get = RateLimitGroup(LIMITER_GUILD, optimistic=True) # deprecated
-guild_embed_edit = RateLimitGroup(LIMITER_GUILD, optimistic=True) # deprecated
+guild_embed_get = RateLimitGroup(LIMITER_GUILD, optimistic=True)  # deprecated
+guild_embed_edit = RateLimitGroup(LIMITER_GUILD, optimistic=True)  # deprecated
 emoji_guild_get_all = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 emoji_create = RateLimitGroup()
 emoji_delete = RateLimitGroup()
 emoji_get = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 emoji_edit = RateLimitGroup()
 integration_get_all = RateLimitGroup(LIMITER_GUILD, optimistic=True)
-integration_create = RateLimitGroup(optimistic=True) # untested
-integration_delete = RateLimitGroup(optimistic=True) # untested
-integration_edit = RateLimitGroup(optimistic=True) # untested
-integration_sync = RateLimitGroup(optimistic=True) # untested
+integration_create = RateLimitGroup(optimistic=True)  # untested
+integration_delete = RateLimitGroup(optimistic=True)  # untested
+integration_edit = RateLimitGroup(optimistic=True)  # untested
+integration_sync = RateLimitGroup(optimistic=True)  # untested
 invite_get_all_guild = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 verification_screen_get = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 verification_screen_edit = RateLimitGroup(LIMITER_GUILD, optimistic=True)
@@ -1857,22 +1873,22 @@ sticker_guild_edit = RateLimitGroup()
 sticker_guild_delete = RateLimitGroup()
 sticker_guild_get = RateLimitGroup.unlimited()
 sticker_guild_create = RateLimitGroup()
-sticker_get_all = RateLimitGroup(LIMITER_GUILD, optimistic=True) # Untested
+sticker_get_all = RateLimitGroup(LIMITER_GUILD, optimistic=True)  # Untested
 vanity_invite_get = RateLimitGroup(LIMITER_GUILD, optimistic=True)
-vanity_invite_edit = RateLimitGroup(LIMITER_GUILD, optimistic=True) # untested
+vanity_invite_edit = RateLimitGroup(LIMITER_GUILD, optimistic=True)  # untested
 voice_state_client_edit = RateLimitGroup()
-voice_state_user_edit = RateLimitGroup.unlimited() # untested
+voice_state_user_edit = RateLimitGroup.unlimited()  # untested
 welcome_screen_get = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 welcome_screen_edit = RateLimitGroup(LIMITER_GUILD)
 webhook_get_all_guild = RateLimitGroup(LIMITER_GUILD, optimistic=True)
 guild_widget_get = RateLimitGroup.unlimited()
-hypesquad_house_leave = RateLimitGroup() # untested
-hypesquad_house_change = RateLimitGroup() # untested
+hypesquad_house_leave = RateLimitGroup()  # untested
+hypesquad_house_change = RateLimitGroup()  # untested
 interaction_response_message_create = RateLimitGroup.unlimited()
 invite_delete = RateLimitGroup.unlimited()
 invite_get = RateLimitGroup()
 client_application_get = RateLimitGroup(optimistic=True)
-bulk_ack = RateLimitGroup(optimistic=True) # untested
+bulk_ack = RateLimitGroup(optimistic=True)  # untested
 stage_get_all = RateLimitGroup.unlimited()
 stage_create = RateLimitGroup()
 stage_get = RateLimitGroup()
@@ -1884,7 +1900,7 @@ eula_get = RateLimitGroup(optimistic=True)
 user_info_get = RateLimitGroup(optimistic=True)
 client_user_get = RateLimitGroup(optimistic=True)
 client_edit = RateLimitGroup()
-user_achievement_get_all = RateLimitGroup() # untested; has expected global rate limit
+user_achievement_get_all = RateLimitGroup()  # untested; has expected global rate limit
 user_achievement_update = RateLimitGroup()
 channel_private_get_all = RateLimitGroup(optimistic=True)
 channel_private_create = RateLimitGroup.unlimited()
@@ -1893,14 +1909,14 @@ user_connection_get_all = RateLimitGroup(optimistic=True)
 guild_get_all = RateLimitGroup()
 user_guild_get_all = RateLimitGroup()
 guild_leave = RateLimitGroup.unlimited()
-relationship_friend_request = RateLimitGroup(optimistic=True) # untested
-relationship_delete = RateLimitGroup(optimistic=True) # untested
-relationship_create = RateLimitGroup(optimistic=True) # untested
-client_settings_get = RateLimitGroup(optimistic=True) # untested
-client_settings_edit = RateLimitGroup(optimistic=True) # untested
+relationship_friend_request = RateLimitGroup(optimistic=True)  # untested
+relationship_delete = RateLimitGroup(optimistic=True)  # untested
+relationship_create = RateLimitGroup(optimistic=True)  # untested
+client_settings_get = RateLimitGroup(optimistic=True)  # untested
+client_settings_edit = RateLimitGroup(optimistic=True)  # untested
 user_get = RateLimitGroup()
-channel_group_create = RateLimitGroup(optimistic=True) # untested
-user_get_profile = RateLimitGroup(optimistic=True) # untested
+channel_group_create = RateLimitGroup(optimistic=True)  # untested
+user_get_profile = RateLimitGroup(optimistic=True)  # untested
 voice_region_get_all = RateLimitGroup(optimistic=True)
 interaction_followup_message_create = GROUP_INTERACTION_EXECUTE
 interaction_response_message_delete = GROUP_INTERACTION_EXECUTE
@@ -1921,5 +1937,11 @@ webhook_message_delete = GROUP_WEBHOOK_EXECUTE
 
 # Alternative static versions
 STATIC_MESSAGE_DELETE_SUB = StaticRateLimitGroup(5, 5.0, LIMITER_CHANNEL)
-static_message_delete = (STATIC_MESSAGE_DELETE_SUB, StaticRateLimitGroup(3, 1.0, LIMITER_CHANNEL))
-static_message_delete_b2wo = (STATIC_MESSAGE_DELETE_SUB, StaticRateLimitGroup(30, 120.0, LIMITER_CHANNEL))
+static_message_delete = (
+    STATIC_MESSAGE_DELETE_SUB,
+    StaticRateLimitGroup(3, 1.0, LIMITER_CHANNEL),
+)
+static_message_delete_b2wo = (
+    STATIC_MESSAGE_DELETE_SUB,
+    StaticRateLimitGroup(30, 120.0, LIMITER_CHANNEL),
+)

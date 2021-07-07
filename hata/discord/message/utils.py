@@ -2,10 +2,11 @@ __all__ = ()
 
 from ..core import INTERACTION_EVENT_RESPONSE_WAITERS, INTERACTION_EVENT_MESSAGE_WAITERS
 
+
 def try_resolve_interaction_message(message, interaction):
     """
     Tries to resolve an interaction's message if not yet resolved.
-    
+
     Parameters
     ----------
     message : ``Message``
@@ -19,7 +20,7 @@ def try_resolve_interaction_message(message, interaction):
         pass
     else:
         interaction_event.message = message
-        
+
         try:
             waiter = INTERACTION_EVENT_MESSAGE_WAITERS[interaction_event]
         except KeyError:

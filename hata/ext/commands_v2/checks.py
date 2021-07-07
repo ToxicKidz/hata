@@ -169,8 +169,14 @@ from ...discord.bases import instance_or_id_to_instance, instance_or_id_to_snowf
 from ...discord.guild import Guild
 from ...discord.permission import Permission
 from ...discord.role import Role
-from ...discord.channel import ChannelBase, ChannelText, ChannelCategory, ChannelGuildBase, ChannelPrivate, \
-    ChannelGroup
+from ...discord.channel import (
+    ChannelBase,
+    ChannelText,
+    ChannelCategory,
+    ChannelGuildBase,
+    ChannelPrivate,
+    ChannelGroup,
+)
 from ...discord.client import Client
 from ...discord.user import ClientUserBase
 
@@ -180,16 +186,16 @@ from .wrappers import CommandCheckWrapper
 def _convert_permission(permission):
     """
     Validates the given `permission`.
-    
+
     Parameters
     ----------
     permission : `None`, ``Permission`` or `int` instance.
         Permission to validate.
-    
+
     Returns
     -------
     permissions : ``Permission``
-    
+
     Raises
     ------
     TypeError
@@ -203,9 +209,11 @@ def _convert_permission(permission):
         elif isinstance(permission, int):
             permission = Permission(permission)
         else:
-            raise TypeError(f'`permission` can be given as `None`, `{Permission.__name__}` or as `int` instance, got '
-                f'{permission.__class__.__name__}.')
-    
+            raise TypeError(
+                f'`permission` can be given as `None`, `{Permission.__name__}` or as `int` instance, got '
+                f'{permission.__class__.__name__}.'
+            )
+
     return permission
 
 
@@ -213,6 +221,7 @@ class CheckMeta(type):
     """
     Check metaclass for collecting their `__slots__` in a `__all_slot__` class attribute.
     """
+
     def __new__(cls, class_name, class_parents, class_attributes):
         """
         Parameters
@@ -223,7 +232,7 @@ class CheckMeta(type):
             The superclasses of the creates type.
         class_attributes : `dict` of (`str`, `Any`) items
             The class attributes of the created type.
-        
+
         Returns
         -------
         type : ``CheckMeta`` instance
@@ -233,18 +242,18 @@ class CheckMeta(type):
             inherited_slots = getattr(parent, '__all_slot__', None)
         else:
             inherited_slots = None
-        
+
         new_slots = class_attributes.get('__slots__', None)
-        
+
         final_slots = []
-        if (inherited_slots is not None):
+        if inherited_slots is not None:
             final_slots.extend(inherited_slots)
-        
-        if (new_slots is not None):
+
+        if new_slots is not None:
             final_slots.extend(new_slots)
-        
+
         class_attributes['__all_slot__'] = tuple(final_slots)
-        
+
         return type.__new__(cls, class_name, class_parents, class_attributes)
 
 
@@ -253,41 +262,43 @@ class CheckBase(metaclass=CheckMeta):
     """
     Base class for checks.
     """
+
     __slots__ = ()
+
     def __new__(cls):
         """
         Creates a new check instance.
-        
+
         Subclasses should overwrite it.
         """
         return object.__new__(cls)
-    
+
     async def __call__(client, context):
         """
         Returns whether the check's condition passes.
-        
+
         Subclasses should overwrite it.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         context : ``CommandContext``
             Processing context for the respective command.
-        
+
         Returns
         -------
         passed : `bool`
             Whether the check passed.
         """
-    
+
     def __repr__(self):
         """Returns the check's representation."""
         result = [
             self.__class__.__name__,
             '(',
         ]
-        
+
         slots = self.__all_slot__
         limit = len(slots)
         if limit:
@@ -300,7 +311,7 @@ class CheckBase(metaclass=CheckMeta):
                         break
                     else:
                         continue
-                
+
                 # case of `channel_id`, `guild_id`
                 if name.endswith('id'):
                     display_name = name[:-3]
@@ -309,69 +320,71 @@ class CheckBase(metaclass=CheckMeta):
                     display_name = name[:-4]
                 else:
                     display_name = name
-                
+
                 result.append(display_name)
                 result.append('=')
-                attr = getattr(self,name)
+                attr = getattr(self, name)
                 result.append(repr(attr))
-                
+
                 if index == limit:
                     break
-                
+
                 result.append(', ')
                 continue
-        
+
         result.append(')')
-        
+
         return ''.join(result)
-    
+
     def __invert__(self):
         """Inverts the check's condition returning a new check."""
         return CheckInvert(self)
-    
+
     def __or__(self, other):
         """Connects the two check with `or` relation."""
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if type(self) is CheckBase:
             return other
-        
+
         return CheckOrRelation(self, other)
-    
+
     def __and__(self, other):
         """Connects the two checks which `and` relation."""
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if type(self) is CheckBase:
             return self
-        
+
         return CheckAndRelation(self, other)
 
 
 class CheckInvert(CheckBase):
     """
     Inverts the wrapped check's result.
-    
+
     Attributes
     ----------
     check : ``CheckBase``
         The check to invert.
     """
-    __slots__ = ('check', )
+
+    __slots__ = ('check',)
+
     def __new__(cls, check):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         check : ``CheckBase``
@@ -383,12 +396,14 @@ class CheckInvert(CheckBase):
             If `check` was not given as ``CheckBase`` instance.
         """
         if not isinstance(check, CheckBase):
-            raise TypeError(f'`check` can be given as `{CheckBase.__name__}` instance, got {check.__class__.__name__}.')
-        
+            raise TypeError(
+                f'`check` can be given as `{CheckBase.__name__}` instance, got {check.__class__.__name__}.'
+            )
+
         self = object.__new__(cls)
         self.check = check
         return self
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         return not await self.check(context)
@@ -397,17 +412,19 @@ class CheckInvert(CheckBase):
 class CheckRelationBase(CheckBase):
     """
     Base class for relation checks.
-    
+
     Attributes
     ----------
     checks : `tuple` of ``CheckBase``
         The check to connect.
     """
-    __slots__ = ('checks', )
+
+    __slots__ = ('checks',)
+
     def __new__(cls, *checks):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         *checks : ``CheckBase``
@@ -420,9 +437,11 @@ class CheckRelationBase(CheckBase):
         """
         for check in checks:
             if not isinstance(check, CheckBase):
-                raise TypeError(f'`check` can be given as `{CheckBase.__name__}` instance, got '
-                    f'{check.__class__.__name__}.')
-        
+                raise TypeError(
+                    f'`check` can be given as `{CheckBase.__name__}` instance, got '
+                    f'{check.__class__.__name__}.'
+                )
+
         self = object.__new__(cls)
         self.checks = checks
         return self
@@ -431,74 +450,76 @@ class CheckRelationBase(CheckBase):
 class CheckOrRelation(CheckRelationBase):
     """
     Connects checks with `or` relation.
-    
+
     Attributes
     ----------
     checks : `tuple` of ``CheckBase``
         The check to connect.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         for check in self.checks:
             if await check(context):
                 return True
-        
+
         return False
 
 
 class CheckAndRelation(CheckRelationBase):
     """
     Connects checks with `and` relation.
-    
+
     Attributes
     ----------
     checks : `tuple` of ``CheckBase``
         The check to connect.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         for check in self.checks:
             if not await check(context):
                 return False
-        
-        return True
 
+        return True
 
 
 class CheckSingleBase(CheckBase):
     """
     Base class for single condition checks without attributes.
     """
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if other_type is type(self):
             return self
-        
+
         return CheckOrRelation(self, other)
-    
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if other_type is type(self):
             return self
-        
+
         return CheckAndRelation(self, other)
 
 
@@ -506,49 +527,50 @@ class CheckIsOwner(CheckSingleBase):
     """
     Checks whether the command was called by the client's owner.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         if context.client.is_owner(context.message.author):
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if other_type is type(self):
             return self
-        
+
         # Let the other check decide
-        return other|self
-    
+        return other | self
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if type(self) is other_type:
             return self
-        
+
         if issubclass(other, CheckIsOwner):
-            if (type(self) is CheckIsOwner):
+            if type(self) is CheckIsOwner:
                 return self
-            
+
             if type(other) is CheckIsOwner:
                 return other
-        
+
         return CheckAndRelation(self, other)
 
 
@@ -556,68 +578,67 @@ class CheckHasRoleBase(CheckBase):
     """
     Base class for role checks.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if not issubclass(other_type, CheckHasRoleBase):
             return CheckOrRelation(self, other)
-        
+
         roles = {*self._iter_roles(), *other._iter_roles()}
-        
+
         if isinstance(self, CheckIsOwner) or issubclass(other_type, CheckIsOwner):
             owner_allowed = True
         else:
             owner_allowed = False
-        
+
         if owner_allowed:
             check_type = CheckHasRoleOrIsOwner
         else:
             check_type = HasAnyRoleCheckOrRelationIsOwner
-        
+
         return check_type(*roles)
-    
-    
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if not issubclass(other_type, CheckHasRoleBase):
             return CheckAndRelation(self, other)
-        
-        roles = {*self._iter_roles()}&{*other._iter_roles()}
-        
+
+        roles = {*self._iter_roles()} & {*other._iter_roles()}
+
         if isinstance(self, CheckIsOwner) or issubclass(other_type, CheckIsOwner):
             owner_required = True
         else:
             owner_required = False
-        
+
         if owner_required:
             check_type = CheckHasRoleOrIsOwner
         else:
             check_type = HasAnyRoleCheckOrRelationIsOwner
-        
+
         return check_type(*roles)
-    
-    
+
     def _iter_roles(self):
         """
         Iterates the roles of the check.
-        
+
         This method is a generator.
-        
+
         Yields
         ------
         role : ``Role``
@@ -629,22 +650,24 @@ class CheckHasRoleBase(CheckBase):
 class CheckHasRole(CheckHasRoleBase):
     """
     Checks whether the message's author has the given role.
-    
+
     Attributes
     ----------
     role : ``Role``
         The legend itself.
     """
-    __slots__ = ('role', )
+
+    __slots__ = ('role',)
+
     def __new__(cls, role):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         role : `str`, `int` or ``Role``
             The role what the message's author should have.
-        
+
         Raises
         ------
         TypeError
@@ -654,64 +677,68 @@ class CheckHasRole(CheckHasRoleBase):
             cannot be precreated with it.
         """
         role = instance_or_id_to_instance(role, Role, 'role')
-        
+
         self = object.__new__(cls)
         self.role = role
         return self
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         if context.message.author.has_role(self.role):
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckHasRoleBase._iter_roles)
     def _iter_roles(self):
         yield self.role
 
+
 class CheckHasRoleOrIsOwner(CheckHasRole, CheckIsOwner):
     """
     Checks whether the message's author has the given role, or if it the client's owner.
-    
+
     Attributes
     ----------
     role : ``Role``
         The legend itself.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         user = context.message.author
         if user.has_role(self.role):
             return True
-        
+
         if context.client.is_owner(user):
             return True
-        
+
         return False
 
 
 class CheckHasAnyRole(CheckHasRoleBase):
     """
     Checks whether the message's author has any of the given roles.
-    
+
     Attributes
     ----------
     roles : `set` of ``Role``
         The legends themselves.
     """
-    __slots__ = ('roles', )
+
+    __slots__ = ('roles',)
+
     def __new__(cls, *roles):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         *roles : `str`, `int` or ``Role``
             Role from which the message's author should have at least one.
-        
+
         Raises
         ------
         TypeError
@@ -724,27 +751,27 @@ class CheckHasAnyRole(CheckHasRoleBase):
         for role in roles:
             role = instance_or_id_to_instance(role, Role, 'role')
             roles_processed.add(role)
-        
+
         roles_processed_length = len(roles_processed)
         if roles_processed_length == 0:
             return CheckBase()
-        
+
         if roles_processed_length == 1:
             return CheckHasRole(roles_processed.pop())
-        
+
         self = object.__new__(cls)
         self.roles = roles_processed
         return self
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         user = context.message.author
         for role in self.roles:
-            if  user.has_role(role):
+            if user.has_role(role):
                 return True
-        
+
         return False
-    
+
     @copy_docs(CheckHasRoleBase._iter_roles)
     def _iter_roles(self):
         yield from self.roles
@@ -753,22 +780,24 @@ class CheckHasAnyRole(CheckHasRoleBase):
 class HasAnyRoleCheckOrRelationIsOwner(CheckHasAnyRole, CheckIsOwner):
     """
     Checks whether the message's author has any of the given roles, or whether is it the client's owner.
-    
+
     Attributes
     ----------
     roles : `set` of ``Role``
         The roles from what the user should have at least 1.
     """
+
     __slots__ = ()
+
     def __new__(cls, *roles):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         *roles : `str`, `int` or ``Role``
             Role from which the message's author should have at least one.
-        
+
         Raises
         ------
         TypeError
@@ -781,28 +810,28 @@ class HasAnyRoleCheckOrRelationIsOwner(CheckHasAnyRole, CheckIsOwner):
         for role in roles:
             role = instance_or_id_to_instance(role, Role, 'role')
             roles_processed.add(role)
-        
+
         roles_processed_length = len(roles_processed)
         if roles_processed_length == 0:
             return CheckIsOwner()
-        
+
         if roles_processed_length == 1:
             return CheckHasRoleOrIsOwner(roles_processed.pop())
-        
+
         self = object.__new__(cls)
         self.roles = roles_processed
         return self
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         user = context.message.author
         for role in self.roles:
-            if  user.has_role(role):
+            if user.has_role(role):
                 return True
-        
+
         if context.client.is_owner(user):
             return True
-        
+
         return False
 
 
@@ -810,15 +839,16 @@ class CheckIsInGuild(CheckSingleBase):
     """
     Checks whether the command was called from a guild.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         if isinstance(context.message.channel, ChannelGuildBase):
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckBase.__invert__)
     def __invert__(self):
         return CheckIsInPrivate()
@@ -828,15 +858,16 @@ class CheckIsInPrivate(CheckSingleBase):
     """
     Checks whether the command was used inside of a private channel.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         if isinstance(context.message.channel, (ChannelPrivate, ChannelGroup)):
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckBase.__invert__)
     def __invert__(self):
         return CheckIsInGuild()
@@ -846,86 +877,89 @@ class CheckIsGuildOwner(CheckBase):
     """
     Checks whether the command was called by the local guild's owner.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         message = context.context
         guild = message.channel.guild
         if guild is None:
             return False
-        
+
         if guild.owner_id == message.author.id:
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if other_type is type(self):
             return self
-        
+
         if other_type is not CheckIsOwner:
             return CheckOrRelation(self, other)
-        
+
         if isinstance(self, CheckIsOwner):
             return self
-        
+
         return CheckIsGuildOwnerOrIsOwner()
 
 
 class CheckIsGuildOwnerOrIsOwner(CheckIsGuildOwner, CheckIsOwner):
     """
     Checks whether a message was sent by the message's guild's owner or by the client's owner.
-    
+
     > Guild check is always applied.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         message = context.context
         guild = message.channel.guild
         if guild is None:
             return False
-        
+
         user = message.author
         if guild.owner_id == user.id:
             return True
-        
+
         if context.client.is_owner(user):
             return True
-        
+
         return False
 
 
 class CheckHasPermissionBase(CheckBase):
     """
     Base class for checking permissions.
-    
+
     Attributes
     ----------
     permission : ``Permission``
         The required permissions to pass the check.
     """
+
     def __new__(cls, permission=None, **kwargs):
         """
         Creates a check, which will validate whether the a received message of a client passes the given condition.
-        
+
         Parameters
         ----------
         permissions : `None`, ``Permission`` or `int` instance, Optional
             The permission, which the respective user should have. Defaults to `None`
         **kwargs : Keyword parameters
             `permission-name` - `bool` relations.
-        
+
         Raises
         ------
         LookupError
@@ -935,15 +969,15 @@ class CheckHasPermissionBase(CheckBase):
         """
         permission = _convert_permission(permission)
         permission = permission.update_by_keys(**kwargs)
-        
+
         if not permission:
             if issubclass(cls, CheckIsOwner):
                 permission_type = CheckIsOwner
             else:
                 permission_type = CheckBase
-            
+
             return permission_type()
-        
+
         self = object.__new__(cls)
         self.permission = permission
         return self
@@ -952,296 +986,300 @@ class CheckHasPermissionBase(CheckBase):
 class CheckHasPermission(CheckHasPermissionBase):
     """
     Checks whether the message's author has the given permissions in the message's channel.
-    
+
     Attributes
     ----------
     permission : ``Permission``
         The required permissions to pass the check.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         message = context.message
         if message.channel.permissions_for(message.author) >= self.permission:
             return True
-        
+
         return False
 
-    
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if not issubclass(other_type, CheckHasPermission):
             return CheckAndRelation(self, other)
-        
+
         if isinstance(self, CheckIsOwner) or issubclass(other_type, CheckIsOwner):
             owner_allowed = True
         else:
             owner_allowed = False
-        
-        permission = Permission(self.permission&other.permission)
-        
+
+        permission = Permission(self.permission & other.permission)
+
         if owner_allowed:
             check_type = CheckHasPermissionOrIsOwner
         else:
             check_type = CheckHasPermission
-        
+
         return check_type(permission)
-    
-    
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if not issubclass(other_type, CheckHasPermission):
             return CheckOrRelation(self, other)
-        
+
         if isinstance(self, CheckIsOwner) or issubclass(other_type, CheckIsOwner):
             owner_required = True
         else:
             owner_required = False
-        
-        permission = Permission(self.permission|other.permission)
+
+        permission = Permission(self.permission | other.permission)
         if permission:
             if owner_required:
                 check_type = CheckHasPermissionOrIsOwner
             else:
                 check_type = CheckHasPermission
-            
+
             return check_type(permission)
         else:
             if owner_required:
                 check_type = CheckIsOwner
             else:
                 check_type = CheckBase
-            
-            return check_type()
 
+            return check_type()
 
 
 class CheckHasPermissionOrIsOwner(CheckHasPermission, CheckIsOwner):
     """
     Checks whether the message's author is the client's owner or has the given permissions in the message's channel.
-    
+
     Attributes
     ----------
     permission : ``Permission``
         The required permissions to pass the check.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         message = context.message
         user = message.author
         if message.channel.permissions_for(user) >= self.permission:
             return True
-        
+
         if context.client.is_owner(user):
             return True
-        
+
         return False
 
 
 class CheckHasGuildPermission(CheckHasPermissionBase):
     """
     Checks whether the message's author has the given permissions in the message's guild.
-    
+
     Attributes
     ----------
     permission : ``Permission``
         The required permissions to pass the check.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         message = context.message
         guild = message.channel.guild
         if guild is None:
             return False
-        
+
         if guild.permissions_for(message.author) >= self.permission:
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if not issubclass(other_type, CheckHasGuildPermission):
             return CheckOrRelation(self, other)
-        
+
         if isinstance(self, CheckIsOwner) or issubclass(other_type, CheckIsOwner):
             owner_allowed = True
         else:
             owner_allowed = False
-        
-        permission = Permission(self.permission&other.permission)
-        
+
+        permission = Permission(self.permission & other.permission)
+
         if owner_allowed:
             check_type = CheckHasGuildPermissionOrIsOwner
         else:
             check_type = CheckHasGuildPermission
-        
+
         return check_type(permission)
-    
-    
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if not issubclass(other_type, CheckHasGuildPermission):
             return CheckAndRelation(self, other)
-        
+
         if isinstance(self, CheckIsOwner) or issubclass(other_type, CheckIsOwner):
             owner_required = True
         else:
             owner_required = False
-        
-        permission = Permission(self.permission|other.permission)
+
+        permission = Permission(self.permission | other.permission)
         if permission:
             if owner_required:
                 check_type = CheckHasGuildPermissionOrIsOwner
             else:
                 check_type = CheckHasGuildPermission
-            
+
             return check_type(permission)
         else:
             if owner_required:
                 check_type = CheckIsOwner
             else:
                 check_type = CheckBase
-            
+
             return check_type()
 
 
 class CheckHasGuildPermissionOrIsOwner(CheckHasGuildPermission, CheckIsOwner):
     """
     Checks whether the message's author has the given permissions in the message's guild.
-    
+
     > Guild check is always applied.
-    
+
     Attributes
     ----------
     permission : ``Permission``
         The required permissions to pass the check.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         message = context.message
         guild = message.channel.guild
         if guild is None:
             return False
-        
+
         user = message.author
         if guild.permissions_for(user) >= self.permission:
             return True
-        
+
         if context.client.is_owner(user):
             return True
-        
+
         return False
 
 
 class CheckHasClientPermission(CheckHasPermissionBase):
     """
     Checks whether the client has the given permissions in the message's channel.
-    
+
     ----------
     permission : ``Permission``
         The required permissions to pass the check.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
-        if context.message.channel.cached_permissions_for(context.client) >= self.permission:
+        if (
+            context.message.channel.cached_permissions_for(context.client)
+            >= self.permission
+        ):
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if type(self) is not other_type:
             return CheckOrRelation(self, other)
-        
-        permission = Permission(self.permission&other.permission)
-        
+
+        permission = Permission(self.permission & other.permission)
+
         return type(self)(permission)
-    
-    
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if type(self) is not other_type:
             return CheckOrRelation(self, other)
-        
-        permission = Permission(self.permission|other.permission)
-        
+
+        permission = Permission(self.permission | other.permission)
+
         if not permission:
             return CheckBase()
-        
+
         return type(self)(permission)
 
 
 class CheckHasClientGuildPermission(CheckHasClientPermission):
     """
     Checks whether the client has the given permissions in the message's guild.
-    
+
     ----------
     permission : ``Permission``
         The required permissions to pass the check.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         guild = context.message.channel.guild
         if guild is None:
             return False
-        
+
         if guild.cached_permissions_for(context.client) >= self.permission:
             return True
-        
+
         return False
 
 
@@ -1249,73 +1287,76 @@ class CheckIsGuildBase(CheckBase):
     """
     Base class fro guild checks.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if not issubclass(other_type, CheckIsGuildBase):
             return CheckOrRelation(self, other)
-        
+
         guild_ids = {*self._iter_guild_ids(), *other._iter_guild_ids()}
-        
+
         return CheckIsAnyGuild(*guild_ids)
-    
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if not issubclass(other_type, CheckIsGuildBase):
             return CheckAndRelation(self, other)
-    
-        guild_ids = {*self._iter_guild_ids()}&{*other._iter_guild_ids()}
-        
+
+        guild_ids = {*self._iter_guild_ids()} & {*other._iter_guild_ids()}
+
         return CheckIsAnyGuild(*guild_ids)
-    
+
     def _iter_guild_ids(self):
         """
         Iterates the guild ids of the check.
-        
+
         This method is a generator.
-        
+
         Yields
         ------
         guild_id : ``int``
         """
         return
         yield
-    
-    
+
+
 class CheckIsGuild(CheckIsGuildBase):
     """
     Checks whether the message was sent to the given guild.
-    
+
     Attributes
     ----------
     guild_id : `int`
         The respective guild's id.
     """
-    __slots__ = ('guild_id', )
+
+    __slots__ = ('guild_id',)
+
     def __new__(cls, guild):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         guild : `str`, `int` or ``Guild``
             The guild where the message should be sent.
-        
+
         Raises
         ------
         TypeError
@@ -1324,22 +1365,22 @@ class CheckIsGuild(CheckIsGuildBase):
             If `guild` was given as `str` or as `int` instance, but not as a valid snowflake.
         """
         guild_id = instance_or_id_to_snowflake(guild, Guild, 'guild')
-        
+
         self = object.__new__(cls)
         self.guild_id = guild_id
         return self
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         guild = context.message.channel.guild
         if guild is None:
             return False
-        
-        if (guild.id == self.guild_id):
+
+        if guild.id == self.guild_id:
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckIsGuildBase._iter_guild_ids)
     def _iter_guild_ids(self):
         yield self.guild_id
@@ -1348,22 +1389,24 @@ class CheckIsGuild(CheckIsGuildBase):
 class CheckIsAnyGuild(CheckIsGuildBase):
     """
     Checks whether the message was sent into any of the given guilds.
-    
+
     Attributes
     ----------
     guild_ids : `set` of `int`
         The respective guilds' identifiers.
     """
-    __slots__ = ('guild_ids', )
+
+    __slots__ = ('guild_ids',)
+
     def __new__(cls, *guilds):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         *guilds : `str`, `int` or ``Guild``
             The guilds where the message should be sent.
-        
+
         Raises
         ------
         TypeError
@@ -1372,33 +1415,33 @@ class CheckIsAnyGuild(CheckIsGuildBase):
             If a guild was given as `str` or as `int` instance, but not as a valid snowflake.
         """
         guild_ids_processed = set()
-        
+
         for guild in guilds:
             guild_id = instance_or_id_to_snowflake(guild, Guild, 'guild')
             guild_ids_processed.add(guild_id)
-        
+
         guild_ids_processed_length = len(guild_ids_processed)
         if guild_ids_processed_length == 0:
             return CheckBase()
-        
+
         if guild_ids_processed_length == 1:
             return CheckIsGuild(guild_ids_processed.pop())
-        
+
         self = object.__new__(cls)
         self.guild_ids = guild_ids_processed
         return self
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         guild = context.message.channel.guild
         if guild is None:
             return False
-        
-        if (guild.id in self.guild_ids):
+
+        if guild.id in self.guild_ids:
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckIsGuildBase._iter_guild_ids)
     def _iter_guild_ids(self):
         yield from self.guild_ids
@@ -1407,7 +1450,7 @@ class CheckIsAnyGuild(CheckIsGuildBase):
 class CheckCustom(CheckBase):
     """
     Does a custom check.
-    
+
     Attributes
     ----------
     _is_async : `bool`
@@ -1415,40 +1458,48 @@ class CheckCustom(CheckBase):
     check : `callable`
         The custom check's function.
     """
-    __slots__ = ('_is_async', 'check', )
+
+    __slots__ = (
+        '_is_async',
+        'check',
+    )
 
     def __new__(cls, check):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         check : `callable`
             The custom check which should pass. Can be async.
-        
+
         Raises
         ------
         TypeError
             - If `check` was not given as an `callable`.
             - If `check` accepts more or less non reserved positional non default parameters.
-        
+
         Notes
         -----
         Only `int` instances are evaluated to boolean.
         """
         analyzer = CallableAnalyzer(check)
-        non_reserved_positional_parameter_count = analyzer.get_non_reserved_positional_parameter_count()
-        if  non_reserved_positional_parameter_count != 1:
-            raise TypeError(f'The passed check: {check!r} should have accept `1` non reserved, positional, '
-                f'non default parameters, meanwhile it accepts `{non_reserved_positional_parameter_count}`.')
-        
+        non_reserved_positional_parameter_count = (
+            analyzer.get_non_reserved_positional_parameter_count()
+        )
+        if non_reserved_positional_parameter_count != 1:
+            raise TypeError(
+                f'The passed check: {check!r} should have accept `1` non reserved, positional, '
+                f'non default parameters, meanwhile it accepts `{non_reserved_positional_parameter_count}`.'
+            )
+
         is_async = analyzer.is_async()
-        
+
         self = object.__new__(cls)
         self.check = check
         self._is_async = is_async
         return self
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         try:
@@ -1459,13 +1510,13 @@ class CheckCustom(CheckBase):
             client = context.client
             Task(client.events.error(client, repr(self), err), KOKORO)
             return False
-        
+
         if result is None:
             return False
-        
+
         if isinstance(result, int) and result:
             return True
-        
+
         return False
 
 
@@ -1473,46 +1524,47 @@ class CheckIsChannelBase(CheckBase):
     """
     Base class for channel checks.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if not issubclass(other_type, CheckIsChannelBase):
             return CheckOrRelation(self, other)
-        
+
         channel_ids = {*self._iter_channel_ids(), *other._iter_channel_ids()}
-        
+
         return CheckIsAnyChannel(*channel_ids)
-    
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if not issubclass(other_type, CheckIsChannelBase):
             return CheckAndRelation(self, other)
-    
-        channel_ids = {*self._iter_channel_ids()}&{*other._iter_channel_ids()}
-        
+
+        channel_ids = {*self._iter_channel_ids()} & {*other._iter_channel_ids()}
+
         return CheckIsAnyChannel(*channel_ids)
-    
+
     def _iter_channel_ids(self):
         """
         Iterates the channel id-s of the check.
-        
+
         This method is a generator.
-        
+
         Yields
         ------
         channel_id : ``int``
@@ -1524,22 +1576,24 @@ class CheckIsChannelBase(CheckBase):
 class CheckIsChannel(CheckIsChannelBase):
     """
     Checks whether the message was sent to the given channel.
-    
+
     Attributes
     ----------
     channel_id : `int`
         The respective channel's id.
     """
-    __slots__ = ('channel_id', )
+
+    __slots__ = ('channel_id',)
+
     def __new__(cls, channel):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         channel : `str`, `int` or ``Guild``
             The guild where the message should be sent.
-        
+
         Raises
         ------
         TypeError
@@ -1548,18 +1602,18 @@ class CheckIsChannel(CheckIsChannelBase):
             If `channel` was given as `str` or as `int` instance, but not as a valid snowflake.
         """
         channel_id = instance_or_id_to_snowflake(channel, ChannelBase, 'channel')
-        
+
         self = object.__new__(cls)
         self.channel_id = channel_id
         return self
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
-        if (context.message.channel.id == self.channel_id):
+        if context.message.channel.id == self.channel_id:
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckIsChannelBase._iter_channel_ids)
     def _iter_channel_ids(self):
         yield self.channel_id
@@ -1568,22 +1622,24 @@ class CheckIsChannel(CheckIsChannelBase):
 class CheckIsAnyChannel(CheckIsChannelBase):
     """
     Checks whether the message was sent into any of the given channels.
-    
+
     Attributes
     ----------
     channel_ids : `set` of `int`
         The respective channels' identifiers.
     """
-    __slots__ = ('channel_ids', )
+
+    __slots__ = ('channel_ids',)
+
     def __new__(cls, *channels):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         *channels : `str`, `int` or ``ChannelBase``
             The channel where the message should be sent.
-        
+
         Raises
         ------
         TypeError
@@ -1592,29 +1648,29 @@ class CheckIsAnyChannel(CheckIsChannelBase):
             If a channel was given as `str` or as `int` instance, but not as a valid snowflake.
         """
         channel_ids_processed = set()
-        
+
         for channel in channels:
             channel_id = instance_or_id_to_snowflake(channel, ChannelBase, 'guild')
             channel_ids_processed.add(channel_id)
-        
+
         channel_ids_processed_length = len(channel_ids_processed)
         if channel_ids_processed_length == 0:
             return CheckBase()
-        
+
         if channel_ids_processed_length == 1:
             return CheckIsChannel(channel_ids_processed.pop())
-        
+
         self = object.__new__(cls)
         self.channel_ids = channel_ids_processed
         return self
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
-        if (context.message.channel.id in self.channel_ids):
+        if context.message.channel.id in self.channel_ids:
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckIsChannelBase._iter_channel_ids)
     def _iter_channel_ids(self):
         yield from self.channel_ids
@@ -1624,14 +1680,15 @@ class CheckIsNsfwChannel(CheckSingleBase):
     """
     Checks whether the message was sent to an nsfw channel.
     """
+
     __slots__ = ()
 
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         channel = context.message.channel
-        if (isinstance(channel, ChannelText) and channel.nsfw):
+        if isinstance(channel, ChannelText) and channel.nsfw:
             return True
-        
+
         return False
 
 
@@ -1639,13 +1696,14 @@ class CheckIsAnnouncementChannel(CheckSingleBase):
     """
     Checks whether the message was sent to an announcement channel.
     """
+
     __slots__ = ()
 
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         if context.message.channel.type == 5:
             return True
-        
+
         return False
 
 
@@ -1653,6 +1711,7 @@ class CheckIsInVoice(CheckSingleBase):
     """
     Checks whether the message's author is in a voice channel in the respective guild.
     """
+
     __slots__ = ()
 
     @copy_docs(CheckBase.__call__)
@@ -1661,10 +1720,10 @@ class CheckIsInVoice(CheckSingleBase):
         guild = message.channel.guild
         if guild is None:
             return False
-        
+
         if message.author.id in guild.voice_states:
             return True
-        
+
         return False
 
 
@@ -1672,6 +1731,7 @@ class CheckIsBooster(CheckSingleBase):
     """
     Checks whether the message's author boosts the respective guild.
     """
+
     __slots__ = ()
 
     @copy_docs(CheckBase.__call__)
@@ -1680,15 +1740,15 @@ class CheckIsBooster(CheckSingleBase):
         guild = message.channel.guild
         if guild is None:
             return
-        
+
         try:
             profile = message.author.guild_profiles[guild]
         except KeyError:
             return False
-        
+
         if profile.boosts_since is None:
             return False
-        
+
         return True
 
 
@@ -1696,47 +1756,48 @@ class CheckIsClient(CheckSingleBase):
     """
     Check whether the message was sent by a client.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         if isinstance(context.message.author, Client):
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if other_type is type(self):
             return self
-        
+
         if other_type is CheckUserAccount:
             return CheckIsUserAccountOrIsClient()
-        
+
         return CheckOrRelation(self, other)
-    
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if other_type is type(self):
             return self
-        
-        if (other_type is CheckIsUserAccountOrIsClient):
+
+        if other_type is CheckIsUserAccountOrIsClient:
             return self
-        
+
         return CheckAndRelation(self, other)
 
 
@@ -1744,47 +1805,48 @@ class CheckUserAccount(CheckSingleBase):
     """
     Checks whether the message was sent by an user account.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         if not context.message.author.is_bot:
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if other_type is type(self):
             return self
-        
+
         if other_type is CheckIsClient:
             return CheckIsUserAccountOrIsClient()
-        
+
         return CheckOrRelation(self, other)
-    
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if other_type is type(self):
             return self
-        
-        if (other_type is CheckIsUserAccountOrIsClient):
+
+        if other_type is CheckIsUserAccountOrIsClient:
             return self
-        
+
         return CheckAndRelation(self, other)
 
 
@@ -1792,6 +1854,7 @@ class CheckBotAccount(CheckSingleBase):
     """
     Checks whether the message was sent by a bot account.
     """
+
     __slots__ = ()
 
     @copy_docs(CheckBase.__call__)
@@ -1799,7 +1862,7 @@ class CheckBotAccount(CheckSingleBase):
         user = context.message.author
         if user.is_bot and isinstance(user, ClientUserBase):
             return True
-        
+
         return False
 
 
@@ -1807,31 +1870,36 @@ class CheckIsUserAccountOrIsClient(CheckIsClient, CheckUserAccount, CheckSingleB
     """
     Checks whether the message was sent by a user account or by a client.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         user = context.message.author
         if not user.is_bot:
             return True
-        
+
         if isinstance(user, Client):
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
-        if (other_type is type(self)) or (other_type is CheckIsClient) or (other_type is CheckUserAccount):
+
+        if (
+            (other_type is type(self))
+            or (other_type is CheckIsClient)
+            or (other_type is CheckUserAccount)
+        ):
             return self
-        
+
         return CheckOrRelation(self, other)
 
     @copy_docs(CheckBase.__and__)
@@ -1839,16 +1907,16 @@ class CheckIsUserAccountOrIsClient(CheckIsClient, CheckUserAccount, CheckSingleB
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if other_type is type(self):
             return self
-        
+
         if (other_type is CheckIsClient) or (other_type is CheckUserAccount):
             return other
-        
+
         return CheckAndRelation(self, other)
 
 
@@ -1856,46 +1924,47 @@ class CheckIsCategoryBase(CheckBase):
     """
     Base class for category checks.
     """
+
     __slots__ = ()
-    
+
     @copy_docs(CheckBase.__or__)
     def __or__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return self
-        
+
         if not issubclass(other_type, CheckIsCategoryBase):
             return CheckOrRelation(self, other)
-        
+
         category_ids = {*self._iter_category_ids(), *other._iter_category_ids()}
-        
+
         return CheckIsAnyCategory(*category_ids)
-    
+
     @copy_docs(CheckBase.__and__)
     def __and__(self, other):
         other_type = type(other)
         if not issubclass(other_type, CheckBase):
             return NotImplemented
-        
+
         if other_type is CheckBase:
             return other
-        
+
         if not issubclass(other_type, CheckIsCategoryBase):
             return CheckAndRelation(self, other)
-        
-        category_ids = {*self._iter_category_ids()}&{*other._iter_category_ids()}
-        
+
+        category_ids = {*self._iter_category_ids()} & {*other._iter_category_ids()}
+
         return CheckIsAnyCategory(*category_ids)
-    
+
     def _iter_category_ids(self):
         """
         Iterates the category ids of the check.
-        
+
         This method is a generator.
-        
+
         Yields
         ------
         category_id : `int`
@@ -1907,25 +1976,27 @@ class CheckIsCategoryBase(CheckBase):
 class CheckIsCategory(CheckIsCategoryBase):
     """
     Checks whether the message was sent into any channel of the given category.
-    
+
     Attributes
     ----------
     category_id : `int`
         The respective category's id.
     """
-    __slots__ = ('category_id', )
+
+    __slots__ = ('category_id',)
+
     def __new__(cls, category):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         category : `str`, `int`, ``ChannelCategory`` or ``Guild``
             The category, within sent messages pass the check.
-            
+
             If you want to check whether the channel is not in a category, pass the parameter as the respective guild
             instead.
-        
+
         Raises
         ------
         TypeError
@@ -1933,33 +2004,35 @@ class CheckIsCategory(CheckIsCategoryBase):
         ValueError
             If `category` was given as `str` or as `int` instance, but not as a valid snowflake.
         """
-        category_id = instance_or_id_to_snowflake(category, (ChannelCategory, Guild), 'category')
-        
+        category_id = instance_or_id_to_snowflake(
+            category, (ChannelCategory, Guild), 'category'
+        )
+
         self = object.__new__(cls)
         self.category_id = category_id
         return self
-    
+
     @copy_docs(CheckBase.__call__)
     async def __call__(self, context):
         channel = context.message.channel
         if not isinstance(channel, ChannelGuildBase):
             return False
-        
+
         parent = channel.parent
         if parent is None:
             guild = channel.guild
             if guild is None:
                 return False
-            
+
             parent_id = guild.id
         else:
             parent_id = parent.id
-        
+
         if parent_id == self.category_id:
             return True
-        
+
         return False
-    
+
     @copy_docs(CheckIsCategoryBase._iter_category_ids)
     def _iter_category_ids(self):
         yield self.category_id
@@ -1968,25 +2041,27 @@ class CheckIsCategory(CheckIsCategoryBase):
 class CheckIsAnyCategory(CheckIsCategoryBase):
     """
     Checks whether the message was sent into any channel of the given categories.
-    
+
     Attributes
     ----------
     category_ids : `set` of `int`
         The respective categories' id.
     """
-    __slots__ = ('category_ids', )
+
+    __slots__ = ('category_ids',)
+
     def __new__(cls, *categories):
         """
         Checks whether a respective condition passes.
-        
+
         Parameters
         ----------
         *categories : `str`, `int`, ``ChannelCategory`` or ``Guild``
             The categories, within sent messages pass the check.
-            
+
             If you want to check whether the channel is not in a category, pass the parameter as the respective guild
             instead.
-        
+
         Raises
         ------
         TypeError
@@ -1995,17 +2070,19 @@ class CheckIsAnyCategory(CheckIsCategoryBase):
             If a category was given as `str` or as `int` instance, but not as a valid snowflake.
         """
         category_ids_processed = set()
-        
+
         for category in categories:
-            category_id = instance_or_id_to_snowflake(category, (ChannelCategory, Guild), 'category')
+            category_id = instance_or_id_to_snowflake(
+                category, (ChannelCategory, Guild), 'category'
+            )
             category_ids_processed.add(category_id)
-        
+
         category_ids_processed_length = len(category_ids_processed)
         if category_ids_processed_length == 0:
             return CheckBase()
         if category_ids_processed_length == 1:
             return CheckIsCategory(category_ids_processed.pop())
-        
+
         self = object.__new__(cls)
         self.category_ids = category_ids_processed
         return self
@@ -2018,30 +2095,44 @@ class CheckIsAnyCategory(CheckIsCategoryBase):
 has_role = partial_func(CommandCheckWrapper, CheckHasRole)
 owner_or_has_role = partial_func(CommandCheckWrapper, CheckHasRoleOrIsOwner)
 has_any_role = partial_func(CommandCheckWrapper, CheckHasAnyRole)
-owner_or_has_any_role = partial_func(CommandCheckWrapper, HasAnyRoleCheckOrRelationIsOwner)
+owner_or_has_any_role = partial_func(
+    CommandCheckWrapper, HasAnyRoleCheckOrRelationIsOwner
+)
 guild_only = partial_func(CommandCheckWrapper, CheckIsInGuild)
 private_only = partial_func(CommandCheckWrapper, CheckIsInPrivate)
 owner_only = partial_func(CommandCheckWrapper, CheckIsOwner)
 guild_owner_only = partial_func(CommandCheckWrapper, CheckIsGuildOwner)
-owner_or_guild_owner_only = partial_func(CommandCheckWrapper, CheckIsGuildOwnerOrIsOwner)
+owner_or_guild_owner_only = partial_func(
+    CommandCheckWrapper, CheckIsGuildOwnerOrIsOwner
+)
 has_permissions = partial_func(CommandCheckWrapper, CheckHasPermission)
-owner_or_has_permissions = partial_func(CommandCheckWrapper, CheckHasPermissionOrIsOwner)
+owner_or_has_permissions = partial_func(
+    CommandCheckWrapper, CheckHasPermissionOrIsOwner
+)
 has_guild_permissions = partial_func(CommandCheckWrapper, CheckHasGuildPermission)
-owner_or_has_guild_permissions = partial_func(CommandCheckWrapper, CheckHasGuildPermissionOrIsOwner)
+owner_or_has_guild_permissions = partial_func(
+    CommandCheckWrapper, CheckHasGuildPermissionOrIsOwner
+)
 has_client_permissions = partial_func(CommandCheckWrapper, CheckHasClientPermission)
-has_client_guild_permissions = partial_func(CommandCheckWrapper, CheckHasClientGuildPermission)
+has_client_guild_permissions = partial_func(
+    CommandCheckWrapper, CheckHasClientGuildPermission
+)
 is_guild = partial_func(CommandCheckWrapper, CheckIsGuild)
 is_any_guild = partial_func(CommandCheckWrapper, CheckIsAnyGuild)
 custom = partial_func(CommandCheckWrapper, CheckCustom)
 is_channel = partial_func(CommandCheckWrapper, CheckIsChannel)
 is_any_channel = partial_func(CommandCheckWrapper, CheckIsAnyChannel)
 nsfw_channel_only = partial_func(CommandCheckWrapper, CheckIsNsfwChannel)
-announcement_channel_only = partial_func(CommandCheckWrapper, CheckIsAnnouncementChannel)
+announcement_channel_only = partial_func(
+    CommandCheckWrapper, CheckIsAnnouncementChannel
+)
 is_in_voice = partial_func(CommandCheckWrapper, CheckIsInVoice)
 booster_only = partial_func(CommandCheckWrapper, CheckIsBooster)
 client_only = partial_func(CommandCheckWrapper, CheckIsClient)
 user_account_only = partial_func(CommandCheckWrapper, CheckUserAccount)
 bot_account_only = partial_func(CommandCheckWrapper, CheckBotAccount)
-user_account_or_client_only = partial_func(CommandCheckWrapper, CheckIsUserAccountOrIsClient)
+user_account_or_client_only = partial_func(
+    CommandCheckWrapper, CheckIsUserAccountOrIsClient
+)
 is_category = partial_func(CommandCheckWrapper, CheckIsCategory)
 is_any_category = partial_func(CommandCheckWrapper, CheckIsAnyCategory)

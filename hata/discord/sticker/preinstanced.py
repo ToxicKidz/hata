@@ -1,14 +1,18 @@
-__all__ = ('StickerFormat', 'StickerType', )
+__all__ = (
+    'StickerFormat',
+    'StickerType',
+)
 
 from ...backend.export import export
 
 from ..bases import PreinstancedBase, Preinstance as P
 
+
 @export
 class StickerFormat(PreinstancedBase):
     """
     Represents a message sticker's format's type.
-    
+
     Attributes
     ----------
     name : `str`
@@ -17,7 +21,7 @@ class StickerFormat(PreinstancedBase):
         The Discord side identifier value of the message sticker format type.
     extension : `str`
         The extension of the sticker format type.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``StickerFormat``) items
@@ -28,9 +32,9 @@ class StickerFormat(PreinstancedBase):
         The default name of the sticker format types.
     DEFAULT_EXTENSION : `str` = `'png'`
         The default extension of the sticker format type.
-    
+
     Every predefined sticker format type can be accessed as class attribute as well:
-    
+
     +-----------------------+-----------+-------+---------------+
     | Class attribute name  | name      | value | extension     |
     +=======================+===========+=======+===============+
@@ -43,25 +47,26 @@ class StickerFormat(PreinstancedBase):
     | lottie                | lottie    | 3     | json          |
     +-----------------------+-----------+-------+---------------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = int
     DEFAULT_NAME = 'UNDEFINED'
     DEFAULT_EXTENSION = 'png'
-    
-    __slots__ = ('extension', )
-    
+
+    __slots__ = ('extension',)
+
     @classmethod
     def _from_value(cls, value):
         """
         Creates a sticker format type from the given id and stores it at class's `.INSTANCES`.
-        
+
         Called by `.get` when no sticker format type was found with the given id.
-        
+
         Parameters
         ----------
         id_ : `int`
             The identifier of the sticker format type.
-        
+
         Returns
         -------
         sticker_format : ``StickerFormat``
@@ -72,11 +77,11 @@ class StickerFormat(PreinstancedBase):
         self.extension = cls.DEFAULT_EXTENSION
         self.INSTANCES[value] = self
         return self
-    
+
     def __init__(self, value, name, extension):
         """
         Creates a new sticker format type with the given parameters and stores it at the class's `.INSTANCES`.
-        
+
         Parameters
         ----------
         value : `int`
@@ -90,7 +95,7 @@ class StickerFormat(PreinstancedBase):
         self.value = value
         self.extension = extension
         self.INSTANCES[value] = self
-    
+
     # predefined
     none = P(0, 'none', 'png')
     png = P(1, 'png', 'png')
@@ -101,14 +106,14 @@ class StickerFormat(PreinstancedBase):
 class StickerType(PreinstancedBase):
     """
     Represents a message sticker's type.
-    
+
     Attributes
     ----------
     name : `str`
         The name of the message sticker type.
     value : `int`
         The Discord side identifier value of the message sticker type.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``StickerType``) items
@@ -117,9 +122,9 @@ class StickerType(PreinstancedBase):
         The message sticker types' values' type.
     DEFAULT_NAME : `str` = `'UNDEFINED'`
         The default name of the sticker types.
-    
+
     Every predefined sticker type can be accessed as class attribute as well:
-    
+
     +-----------------------+-----------+-------+
     | Class attribute name  | name      | value |
     +=======================+===========+=======+
@@ -130,12 +135,13 @@ class StickerType(PreinstancedBase):
     | guild                 | guild     | 2     |
     +-----------------------+-----------+-------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = int
     DEFAULT_NAME = 'UNDEFINED'
-    
+
     __slots__ = ()
-    
+
     # predefined
     none = P(0, 'none')
     standard = P(1, 'standard')

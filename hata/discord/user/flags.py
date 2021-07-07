@@ -1,13 +1,18 @@
-__all__ = ('PurchasedFlag', 'ThreadProfileFlag', 'UserFlag', )
+__all__ = (
+    'PurchasedFlag',
+    'ThreadProfileFlag',
+    'UserFlag',
+)
 
 from ..bases import FlagBase
+
 
 class UserFlag(FlagBase):
     """
     Represents a user's flags.
-    
+
     The implemented user flags are the following:
-    
+
     +-------------------------------+-------------------+
     | Respective name               | Bitwise position  |
     +===============================+===================+
@@ -50,6 +55,7 @@ class UserFlag(FlagBase):
     | certified_moderator           | 18                |
     +-------------------------------+-------------------+
     """
+
     __keys__ = {
         'staff': 0,
         'partner': 1,
@@ -77,15 +83,16 @@ class ThreadProfileFlag(FlagBase):
     """
     Represents a ``ThreadProfile``'s user specific bitwise flag based settings.
     """
+
     __keys__ = {}
 
 
 class PurchasedFlag(FlagBase):
     """
     A user's purchase flags.
-    
+
     The implemented purchased flags are the following:
-    
+
     +-------------------------------+-------------------+
     | Respective name               | Bitwise position  |
     +===============================+===================+
@@ -96,6 +103,7 @@ class PurchasedFlag(FlagBase):
     | premium_guild                 | 4                 |
     +-------------------------------+-------------------+
     """
+
     __keys__ = {
         'premium_tier_1': 1,
         'premium_tier_2': 2,

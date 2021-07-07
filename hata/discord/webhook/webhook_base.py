@@ -6,10 +6,11 @@ from ..user import UserBase
 
 from .preinstanced import WebhookType
 
+
 class WebhookBase(UserBase):
     """
     Base class for webhook like-types.
-    
+
     Attributes
     ----------
     id : `int`
@@ -31,27 +32,30 @@ class WebhookBase(UserBase):
     type : ``WebhookType``
         The webhook's type.
     """
-    __slots__ = ('channel', 'type',)
-    
+
+    __slots__ = (
+        'channel',
+        'type',
+    )
+
     @property
     def is_bot(self):
         """
         Webhooks are always bots.
-        
+
         Returns
         -------
         is_bot : `bool`
         """
         return True
-    
-    
+
     @property
     def partial(self):
         """
         Returns whether the webhook is partial.
-        
+
         A webhook is partial, if it's respective guild is unknown.
-        
+
         Returns
         -------
         partial : `bool`
@@ -59,18 +63,17 @@ class WebhookBase(UserBase):
         channel = self.channel
         if channel is None:
             return True
-        
+
         if channel.guild is None:
             return True
-        
+
         return False
-    
-    
+
     @property
     def guild(self):
         """
         Returns the webhook's guild if applicable.
-        
+
         Returns
         -------
         guild : `None` or ``Guild``
@@ -78,33 +81,31 @@ class WebhookBase(UserBase):
         channel = self.channel
         if channel is None:
             return
-        
+
         return channel.guild
-    
-    
+
     @copy_docs(UserBase.can_use_emoji)
     def can_use_emoji(self, emoji):
         if emoji.is_unicode_emoji():
             return True
-        
+
         emoji_roles = emoji.emoji_roles
-        if (emoji_roles is not None):
+        if emoji_roles is not None:
             return False
-        
+
         guild = self.guild
         if guild is None:
             return False
-        
+
         default_role = guild.default_role
-        if (default_role.can_use_external_emojis):
+        if default_role.can_use_external_emojis:
             return True
-        
+
         return False
-    
-    
+
     @copy_docs(UserBase._set_default_attributes)
     def _set_default_attributes(self):
         UserBase._set_default_attributes(self)
-        
+
         self.channel = None
         self.type = WebhookType.none

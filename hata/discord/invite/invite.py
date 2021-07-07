@@ -3,12 +3,23 @@ __all__ = ('Invite',)
 from datetime import datetime
 
 from ..bases import DiscordEntity, instance_or_id_to_instance
-from ..preconverters import preconvert_str, preconvert_int, preconvert_bool, preconvert_preinstanced_type
+from ..preconverters import (
+    preconvert_str,
+    preconvert_int,
+    preconvert_bool,
+    preconvert_preinstanced_type,
+)
 from ..utils import parse_time, DISCORD_EPOCH_START
 from ..core import GUILDS, CHANNELS, INVITES
 from ..user import User, ZEROUSER, ClientUserBase
 from ..guild import create_partial_guild_from_data, Guild
-from ..channel import create_partial_channel_from_data, ChannelText, ChannelGroup, ChannelVoice, ChannelStore
+from ..channel import (
+    create_partial_channel_from_data,
+    ChannelText,
+    ChannelGroup,
+    ChannelVoice,
+    ChannelStore,
+)
 from ..application import Application
 from ..http import urls as module_urls
 
@@ -19,7 +30,7 @@ from .invite_stage import InviteStage
 class Invite(DiscordEntity, immortal=True):
     """
     Represents a Discord Invite.
-    
+
     Attributes
     ---------
     approximate_online_count : `int`
@@ -41,11 +52,11 @@ class Invite(DiscordEntity, immortal=True):
         The creator of the invite. If not included, then set as `ZEROUSER`.
     max_age : `None` or `int`
         The time in seconds after the invite will expire. If not included, then set as `None`.
-        
+
         If the invite was created with max age as `0`, then this value will be negative instead of the expected `0`.
     max_uses : `None` or `int`
         How much times the invite can be used. If not included, then set as `None`.
-        
+
         If the invite has no use limit, then this value is set as `0`.
     partial : `bool`
         Whether the invite is only partially loaded.
@@ -59,27 +70,43 @@ class Invite(DiscordEntity, immortal=True):
         The target of the invite if applicable. Defaults to `ZEROUSER`.
     temporary : `bool`
         Whether this invite only grants temporary membership.
-        
+
         When the user goes offline, they get kicked, except if they got a role meanwhile.
     uses : `None` or `int`
         The amount how much times the invite was used. If not included, set as `None`.
     """
-    __slots__ = ('approximate_user_count', 'approximate_online_count', 'channel', 'code', 'created_at', 'guild',
-        'inviter', 'max_age', 'max_uses', 'partial', 'target_application', 'stage', 'target_type', 'target_user',
-        'temporary', 'uses',)
-    
+
+    __slots__ = (
+        'approximate_user_count',
+        'approximate_online_count',
+        'channel',
+        'code',
+        'created_at',
+        'guild',
+        'inviter',
+        'max_age',
+        'max_uses',
+        'partial',
+        'target_application',
+        'stage',
+        'target_type',
+        'target_user',
+        'temporary',
+        'uses',
+    )
+
     def __new__(cls, data, data_partial):
         """
         Creates an invite from the given invite data. The invite data can be requested or received through the gateway
         as well.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Invite data.
         """
         code = data['code']
-        
+
         try:
             invite = INVITES[code]
         except KeyError:
@@ -99,22 +126,22 @@ class Invite(DiscordEntity, immortal=True):
                     updater = cls._update_counts_only
                 else:
                     updater = cls._update_attributes
-        
+
         updater(invite, data)
         return invite
-    
+
     @classmethod
     def _create_vanity(cls, guild, data):
         """
         Creates a vanity invite from the given guild and from the given invite data.
-        
+
         Parameters
         ----------
         guild : ``Guild``
             The respective guild of the vanity invite.
         data : `dict` of (`str`, `Any`) items
             Invite data requested from Discord.
-        
+
         Returns
         -------
         invite : ``Invite``
@@ -124,7 +151,7 @@ class Invite(DiscordEntity, immortal=True):
             self = INVITES[code]
         except KeyError:
             self = object.__new__(cls)
-        
+
         self.code = code
         self.inviter = ZEROUSER
         self.uses = None
@@ -147,39 +174,39 @@ class Invite(DiscordEntity, immortal=True):
         self.target_application = None
         self.partial = True
         self.stage = None
-        
+
         return self
-    
+
     def __str__(self):
         """Returns the invite's url."""
         return self.url
-    
+
     def __repr__(self):
         """Returns the representation of the invite."""
         return f'<{self.__class__.__name__} code={self.code!r}>'
-    
+
     def __hash__(self):
         """Returns the invite's code's hash."""
         return hash(self.code)
-    
+
     url = property(module_urls.invite_url)
-    
+
     @property
     def id(self):
         """
         Compatibility property with other Discord entities.
-        
+
         Returns
         -------
         id : `int` = `0`
         """
         return 0
-    
+
     # When we update it we get only a partial invite from Discord. So sad.
     def _set_attributes(self, data):
         """
         Updates the invite by overwriting it's old attributes.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -197,9 +224,9 @@ class Invite(DiscordEntity, immortal=True):
                 guild = GUILDS.get(guild_id, None)
         else:
             guild = create_partial_guild_from_data(guild_data)
-        
+
         self.guild = guild
-        
+
         try:
             channel_data = data['channel']
         except KeyError:
@@ -213,27 +240,27 @@ class Invite(DiscordEntity, immortal=True):
         else:
             channel = create_partial_channel_from_data(channel_data, guild)
         self.channel = channel
-        
+
         try:
             approximate_online_count = data['approximate_presence_count']
         except KeyError:
             approximate_online_count = 0
         else:
-            if (guild is not None):
+            if guild is not None:
                 guild.approximate_online_count = approximate_online_count
-        
+
         self.approximate_online_count = approximate_online_count
-        
+
         try:
             approximate_user_count = data['approximate_member_count']
         except KeyError:
             approximate_user_count = 0
         else:
-            if (guild is not None):
+            if guild is not None:
                 guild.approximate_user_count = approximate_user_count
-            
+
         self.approximate_user_count = approximate_user_count
-        
+
         try:
             inviter_data = data['inviter']
         except KeyError:
@@ -241,12 +268,12 @@ class Invite(DiscordEntity, immortal=True):
         else:
             inviter = User(inviter_data)
         self.inviter = inviter
-        
+
         self.uses = data.get('uses', None)
         self.max_age = data.get('max_age', None)
         self.max_uses = data.get('max_uses', None)
         self.temporary = data.get('temporary', True)
-        
+
         try:
             created_at_data = data['created_at']
         except KeyError:
@@ -254,27 +281,27 @@ class Invite(DiscordEntity, immortal=True):
         else:
             created_at = parse_time(created_at_data)
         self.created_at = created_at
-        
+
         self.target_type = InviteTargetType.get(data.get('target_type', 0))
-        
+
         try:
             target_user_data = data['target_user']
         except KeyError:
             target_user = ZEROUSER
         else:
             target_user = User(target_user_data)
-        
+
         self.target_user = target_user
-        
+
         try:
             target_application_data = data['target_application']
         except KeyError:
             target_application = None
         else:
             target_application = Application(target_application_data)
-        
+
         self.target_application = target_application
-        
+
         try:
             invite_stage_data = data['stage_instance']
         except KeyError:
@@ -282,12 +309,11 @@ class Invite(DiscordEntity, immortal=True):
         else:
             invite_stage = InviteStage(invite_stage_data, guild)
         self.stage = invite_stage
-    
-    
+
     def _update_attributes(self, data):
         """
         Updates the invite with the given data. Only updates the attributes, which's respective value is included.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -307,9 +333,9 @@ class Invite(DiscordEntity, immortal=True):
                     guild = GUILDS.get(guild_id, None)
             else:
                 guild = create_partial_guild_from_data(guild_data)
-            
+
             self.guild = guild
-        
+
         if self.channel is None:
             try:
                 channel_data = data['channel']
@@ -323,78 +349,77 @@ class Invite(DiscordEntity, immortal=True):
                     channel = CHANNELS.get(channel_id, None)
             else:
                 channel = create_partial_channel_from_data(channel_data, guild)
-            
+
             self.channel = channel
-        
+
         self._update_counts_only(data)
-        
+
         try:
             inviter_data = data['inviter']
         except KeyError:
             pass
         else:
             self.inviter = User(inviter_data)
-        
+
         try:
             self.uses = data['uses']
         except KeyError:
             pass
-        
+
         try:
             self.max_age = data['max_age']
         except KeyError:
             pass
-        
+
         try:
             self.max_uses = data['max_uses']
         except KeyError:
             pass
-        
+
         try:
             self.temporary = data['temporary']
         except KeyError:
             pass
-        
+
         try:
             created_at_data = data['created_at']
         except KeyError:
             pass
         else:
             self.created_at = parse_time(created_at_data)
-        
+
         try:
             target_type_value = data['target_type']
         except KeyError:
             pass
         else:
             self.target_type = InviteTargetType.get(target_type_value)
-        
+
         try:
             target_user_data = data['target_user']
         except KeyError:
             pass
         else:
             self.target_user = User(target_user_data)
-    
+
         try:
             target_application_data = data['target_application']
         except KeyError:
             pass
         else:
             self.target_application = Application(target_application_data)
-        
+
         try:
             invite_stage_data = data['stage_instance']
         except KeyError:
             pass
         else:
             self.stage = InviteStage(invite_stage_data, guild)
-    
-    
+
     def _update_counts_only(self, data):
         """
         Updates the invite's counts if given.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -407,31 +432,30 @@ class Invite(DiscordEntity, immortal=True):
             pass
         else:
             self.approximate_online_count = approximate_online_count
-            if (guild is not None):
+            if guild is not None:
                 guild.approximate_online_count = approximate_online_count
-        
+
         try:
             approximate_user_count = data['approximate_member_count']
         except KeyError:
             pass
         else:
             self.approximate_user_count = approximate_user_count
-            if (guild is not None):
+            if guild is not None:
                 guild.approximate_user_count = approximate_user_count
-    
-    
+
     @classmethod
     def precreate(cls, code, **kwargs):
         """
         Precreates an invite object with the given parameters.
-        
+
         Parameters
         ----------
         code : `str`
             The invite's code.
         **kwargs : keyword parameters
             Additional predefined attributes for the invite.
-        
+
         Other Parameters
         ----------------
         channel : `None`, ``ChannelText``, ``ChannelVoice``, ``ChannelStore`` or ``ChannelGroup``, Optional (Keyword only)
@@ -460,11 +484,11 @@ class Invite(DiscordEntity, immortal=True):
             The amount of users at the respective guild (or group channel).
         uses : `None` or `int`, Optional (Keyword only)
             The amount how much times the invite was used.
-        
+
         Returns
         -------
         invite : ``Invite``
-        
+
         Raises
         ------
         TypeError
@@ -476,16 +500,16 @@ class Invite(DiscordEntity, immortal=True):
 
         if kwargs:
             processable = []
-            for key in ('uses', 'max_age', 'max_uses' ):
+            for key in ('uses', 'max_age', 'max_uses'):
                 try:
                     value = kwargs.pop(key)
                 except KeyError:
                     pass
                 else:
-                    if (value is not None):
-                        value = preconvert_int(value, key, 0, (1<<64)-1)
+                    if value is not None:
+                        value = preconvert_int(value, key, 0, (1 << 64) - 1)
                         processable.append((key, value))
-            
+
             try:
                 temporary = kwargs.pop('temporary')
             except KeyError:
@@ -493,18 +517,23 @@ class Invite(DiscordEntity, immortal=True):
             else:
                 temporary = preconvert_bool(temporary, 'temporary')
                 processable.append(('temporary', temporary))
-            
+
             try:
                 created_at = kwargs.pop('created_at')
             except KeyError:
                 pass
             else:
                 created_at_type = created_at.__class__
-                if (created_at_type is not datetime):
-                    raise TypeError(f'`\'created_at\'` can be `int` instance, got {created_at_type.__name__}.')
+                if created_at_type is not datetime:
+                    raise TypeError(
+                        f'`\'created_at\'` can be `int` instance, got {created_at_type.__name__}.'
+                    )
                 processable.append(('created_at', created_at))
-            
-            for key in ('inviter', 'target_user',):
+
+            for key in (
+                'inviter',
+                'target_user',
+            ):
                 try:
                     value = kwargs.pop(key)
                 except KeyError:
@@ -512,38 +541,43 @@ class Invite(DiscordEntity, immortal=True):
                 else:
                     value = instance_or_id_to_instance(value, ClientUserBase, key)
                     processable.append((key, value))
-            
-            for key in ('approximate_online_count', 'approximate_user_count',):
+
+            for key in (
+                'approximate_online_count',
+                'approximate_user_count',
+            ):
                 try:
                     value = kwargs.pop(key)
                 except KeyError:
                     pass
                 else:
-                    value = preconvert_int(value, key, 0, (1<<64)-1)
+                    value = preconvert_int(value, key, 0, (1 << 64) - 1)
                     processable.append((key, value))
-            
+
             for key, type_ in (
-                    ('guild', Guild),
-                    ('channel', (ChannelText, ChannelGroup, ChannelVoice, ChannelStore)),
-                        ):
-                
+                ('guild', Guild),
+                ('channel', (ChannelText, ChannelGroup, ChannelVoice, ChannelStore)),
+            ):
+
                 try:
                     value = kwargs.pop(key)
                 except KeyError:
                     pass
                 else:
-                    if (value is not None):
+                    if value is not None:
                         value = instance_or_id_to_instance(value, type_, key)
                         processable.append((key, value))
-                    
+
             try:
                 target_type = kwargs.pop('target_type')
             except KeyError:
                 pass
             else:
-                target_type = preconvert_preinstanced_type(target_type, InviteTargetType, 'target_type')
+                target_type = preconvert_preinstanced_type(
+                    target_type, InviteTargetType, 'target_type'
+                )
                 processable.append(('target_type', target_type))
-            
+
             try:
                 target_application = kwargs.pop('target_application')
             except KeyError:
@@ -551,13 +585,13 @@ class Invite(DiscordEntity, immortal=True):
             else:
                 value = instance_or_id_to_instance(target_application, Application, key)
                 processable.append(('target_application', value))
-            
+
             if kwargs:
                 raise TypeError(f'Unused or unsettable attributes: {kwargs}.')
-        
+
         else:
             processable = None
-        
+
         try:
             self = INVITES[code]
         except KeyError:
@@ -578,14 +612,14 @@ class Invite(DiscordEntity, immortal=True):
             self.target_user = ZEROUSER
             self.partial = True
             self.stage = None
-            
+
             INVITES[code] = self
         else:
             if not self.partial:
                 return self
-        
-        if (processable is not None):
+
+        if processable is not None:
             for item in processable:
                 setattr(self, *item)
-        
+
         return self

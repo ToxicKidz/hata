@@ -1,6 +1,23 @@
-﻿__all__ = ('APPLICATION_COMMANDS', 'APPLICATIONS', 'CHANNELS', 'CLIENTS', 'DISCOVERY_CATEGORIES', 'EMOJIS', 'EULAS',
-    'GUILDS', 'INTEGRATIONS', 'INVITES', 'KOKORO', 'MESSAGES', 'ROLES', 'STAGES', 'STICKERS', 'STICKER_PACKS', 'TEAMS',
-    'USERS', )
+﻿__all__ = (
+    'APPLICATION_COMMANDS',
+    'APPLICATIONS',
+    'CHANNELS',
+    'CLIENTS',
+    'DISCOVERY_CATEGORIES',
+    'EMOJIS',
+    'EULAS',
+    'GUILDS',
+    'INTEGRATIONS',
+    'INVITES',
+    'KOKORO',
+    'MESSAGES',
+    'ROLES',
+    'STAGES',
+    'STICKERS',
+    'STICKER_PACKS',
+    'TEAMS',
+    'USERS',
+)
 
 import sys, gc
 
@@ -30,12 +47,13 @@ STICKER_PACKS = WeakValueDictionary()
 
 KOKORO = EventThread(daemon=False, name='KOKORO')
 
-GC_CYCLER = KOKORO.cycle(1200.)
+GC_CYCLER = KOKORO.cycle(1200.0)
 
 if sys.implementation.name == 'pypy':
+
     def manual_gc_call(cycler):
         gc.collect()
-    
-    GC_CYCLER.append(manual_gc_call, (1<<31)-1)
-    
+
+    GC_CYCLER.append(manual_gc_call, (1 << 31) - 1)
+
     del manual_gc_call

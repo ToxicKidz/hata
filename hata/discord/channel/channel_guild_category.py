@@ -9,11 +9,12 @@ from ..preconverters import preconvert_snowflake, preconvert_str
 from .channel_base import ChannelBase
 from .channel_guild_base import ChannelGuildMainBase
 
+
 @export
 class ChannelCategory(ChannelGuildMainBase):
     """
     Represents a ``Guild`` channel category.
-    
+
     Attributes
     ----------
     id : `int`
@@ -31,7 +32,7 @@ class ChannelCategory(ChannelGuildMainBase):
         The channel's permission overwrites.
     position : `int`
         The channel's position.
-    
+
     Class Attributes
     ----------------
     DEFAULT_TYPE : `int` = `4`
@@ -44,18 +45,19 @@ class ChannelCategory(ChannelGuildMainBase):
     type : `int` = `4`
         The channel's Discord side type.
     """
-    __slots__ = () # channel category related
-    
+
+    __slots__ = ()  # channel category related
+
     DEFAULT_TYPE = 4
     ORDER_GROUP = 4
     INTERCHANGE = (4,)
     type = 4
-    
+
     def __new__(cls, data, client=None, guild=None):
         """
         Creates a category channel from the channel data received from Discord. If the channel already exists and if it
         is partial, then updates it.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -65,8 +67,10 @@ class ChannelCategory(ChannelGuildMainBase):
         guild : `None` or ``Guild``, Optional
             The guild of the channel.
         """
-        assert (guild is not None), f'`guild` parameter cannot be `None` when calling `{cls.__name__}.__new__`.'
-        
+        assert (
+            guild is not None
+        ), f'`guild` parameter cannot be `None` when calling `{cls.__name__}.__new__`.'
+
         channel_id = int(data['id'])
         try:
             self = CHANNELS[channel_id]
@@ -77,46 +81,43 @@ class ChannelCategory(ChannelGuildMainBase):
         else:
             if self.clients:
                 return self
-        
+
         self._cache_perm = None
         self.name = data['name']
-        
+
         self._init_parent_and_position(data, guild)
         self.overwrites = self._parse_overwrites(data)
-        
+
         return self
-    
-    
+
     @property
     @copy_docs(ChannelBase.display_name)
     def display_name(self):
         return self.name.upper()
-    
-    
+
     @copy_docs(ChannelBase._update_no_return)
     def _update_no_return(self, data):
         self._cache_perm = None
         self._set_parent_and_position(data)
         self.overwrites = self._parse_overwrites(data)
-        
+
         self.name = data['name']
-    
-    
+
     def _update(self, data):
         """
         Updates the channel and returns it's overwritten attributes as a `dict` with a `attribute-name` - `old-value`
         relation.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Channel data received from Discord.
-            
+
         Returns
         -------
         old_attributes : `dict` of (`str`, `Any`) items
             All item in the returned dict is optional.
-        
+
         Returned Data Structure
         -----------------------
         +---------------+-----------------------------------+
@@ -136,53 +137,53 @@ class ChannelCategory(ChannelGuildMainBase):
         if self.name != name:
             old_attributes['name'] = self.name
             self.name = name
-        
+
         overwrites = self._parse_overwrites(data)
         if self.overwrites != overwrites:
             old_attributes['overwrites'] = self.overwrites
             self.overwrites = overwrites
-        
+
         self._update_parent_and_position(data, old_attributes)
-        
+
         return old_attributes
-    
+
     @copy_docs(ChannelBase._delete)
     def _delete(self):
         guild = self.guild
         if guild is None:
             return
-        
+
         self.guild = None
         del guild.channels[self.id]
-        
+
         self.parent = None
-        
+
         self.overwrites.clear()
         self._cache_perm = None
-    
+
     @classmethod
     def precreate(cls, channel_id, **kwargs):
         """
         Precreates the channel by creating a partial one with the given parameters. When the channel is loaded
         the precrated channel will be picked up. If an already existing channel would be precreated, returns that
         instead and updates that only, if that is a partial channel.
-        
+
         Parameters
         ----------
         channel_id : `int` or `str`
             The channel's id.
         **kwargs : keyword parameters
             Additional predefined attributes for the channel.
-        
+
         Other Parameters
         ----------------
         name : `str`, Optional (Keyword only)
             The channel's ``.name``.
-        
+
         Returns
         -------
         channel : ``ChannelCategory``
-        
+
         Raises
         ------
         TypeError
@@ -191,10 +192,10 @@ class ChannelCategory(ChannelGuildMainBase):
             If an parameter's type is good, but it's value is unacceptable.
         """
         channel_id = preconvert_snowflake(channel_id, 'channel_id')
-        
+
         if kwargs:
             processable = []
-            
+
             try:
                 name = kwargs.pop('name')
             except KeyError:
@@ -202,34 +203,34 @@ class ChannelCategory(ChannelGuildMainBase):
             else:
                 name = preconvert_str(name, 'name', 2, 100)
                 processable.append(('name', name))
-            
+
             if kwargs:
                 raise TypeError(f'Unused or unsettable attributes: {kwargs}')
-        
+
         else:
             processable = None
-        
+
         try:
             self = CHANNELS[channel_id]
         except KeyError:
             self = cls._create_empty(channel_id, cls.type, None)
             CHANNELS[channel_id] = self
-            
+
         else:
             if not self.partial:
                 return self
-        
-        if (processable is not None):
+
+        if processable is not None:
             for item in processable:
                 setattr(self, *item)
-        
+
         return self
-    
+
     @property
     def channel_list(self):
         """
         Returns the channels of the category in a list in their display order.
-        
+
         Returns
         -------
         channels : `list` of ``ChannelGuildMainBase`` instances
@@ -237,5 +238,7 @@ class ChannelCategory(ChannelGuildMainBase):
         guild = self.guild
         if guild is None:
             return []
-        
-        return sorted(channel for channel in guild.channels.values() if channel.parent is self)
+
+        return sorted(
+            channel for channel in guild.channels.values() if channel.parent is self
+        )

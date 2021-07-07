@@ -8,7 +8,7 @@ from ..http import urls as module_urls
 class IntegrationApplication(DiscordEntity):
     """
     Represents a Discord ``Application`` received with Integration data.
-    
+
     Attributes
     ----------
     bot : ``Client`` or ``User``
@@ -27,14 +27,25 @@ class IntegrationApplication(DiscordEntity):
         if this application is a game sold on Discord, this field will be the summary field for the store page of its
         primary sku. Defaults to empty string.
     """
-    __slots__ = ('bot', 'description', 'name', 'summary', )
-    
-    icon = IconSlot('icon', 'icon', module_urls.application_icon_url, module_urls.application_icon_url_as,)
-    
+
+    __slots__ = (
+        'bot',
+        'description',
+        'name',
+        'summary',
+    )
+
+    icon = IconSlot(
+        'icon',
+        'icon',
+        module_urls.application_icon_url,
+        module_urls.application_icon_url_as,
+    )
+
     def __init__(self, data):
         """
         Creates a new integration application instance with the given application data.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -45,11 +56,11 @@ class IntegrationApplication(DiscordEntity):
         self.description = data['description']
         self.summary = data['summary']
         self._set_icon(data)
-        
+
         bot_data = data.get('bot', None)
         if bot_data is None:
             bot = ZEROUSER
         else:
             bot = User(bot_data)
-        
+
         self.bot = bot

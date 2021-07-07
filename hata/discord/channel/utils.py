@@ -1,5 +1,9 @@
-__all__ = ('CHANNEL_TYPES', 'cr_pg_channel_object', 'create_partial_channel_from_data',
-    'create_partial_channel_from_id')
+__all__ = (
+    'CHANNEL_TYPES',
+    'cr_pg_channel_object',
+    'create_partial_channel_from_data',
+    'create_partial_channel_from_id',
+)
 
 from datetime import datetime
 import warnings
@@ -25,13 +29,13 @@ VoiceRegion = include('VoiceRegion')
 Guild = include('Guild')
 
 CHANNEL_TYPES = {
-     0: ChannelText,
-     1: ChannelPrivate,
-     2: ChannelVoice,
-     3: ChannelGroup,
-     4: ChannelCategory,
-     5: ChannelText,
-     6: ChannelStore,
+    0: ChannelText,
+    1: ChannelPrivate,
+    2: ChannelVoice,
+    3: ChannelGroup,
+    4: ChannelCategory,
+    5: ChannelText,
+    6: ChannelStore,
     10: ChannelThread,
     11: ChannelThread,
     12: ChannelThread,
@@ -44,14 +48,14 @@ export(CHANNEL_TYPES, 'CHANNEL_TYPES')
 def create_partial_channel_from_data(data, partial_guild=None):
     """
     Creates a partial channel from partial channel data.
-    
+
     Parameters
     ----------
     data : `None` or `dict` of (`str`, `Any`) items
         Partial channel data received from Discord.
     partial_guild : `None` or ``Guild``, Optional
         A partial guild for the created channel.
-    
+
     Returns
     -------
     channel : `None` or ``ChannelBase`` instance
@@ -59,18 +63,18 @@ def create_partial_channel_from_data(data, partial_guild=None):
     """
     if (data is None) or (not data):
         return None
-    
+
     channel_id = int(data['id'])
     try:
         return CHANNELS[channel_id]
     except KeyError:
         pass
-    
+
     cls = CHANNEL_TYPES.get(data['type'], ChannelGuildUndefined)
-    
+
     channel = cls._from_partial_data(data, channel_id, partial_guild)
     CHANNELS[channel_id] = channel
-    
+
     return channel
 
 
@@ -78,7 +82,7 @@ def create_partial_channel_from_data(data, partial_guild=None):
 def create_partial_channel_from_id(channel_id, channel_type, partial_guild=None):
     """
     Creates a new partial channel from the given identifier.
-    
+
     Parameters
     ----------
     channel_id : `int`
@@ -92,20 +96,39 @@ def create_partial_channel_from_id(channel_id, channel_type, partial_guild=None)
         return CHANNELS[channel_id]
     except KeyError:
         pass
-    
+
     cls = CHANNEL_TYPES.get(channel_type, ChannelGuildUndefined)
-    
+
     channel = cls._create_empty(channel_id, channel_type, partial_guild)
     CHANNELS[channel_id] = channel
-    
+
     return channel
 
-def cr_pg_channel_object(name, type_, *, overwrites=None, topic=None, nsfw=None, slowmode=None, bitrate=None,
-        user_limit=None, region=None, video_quality_mode=None, archived=None, archived_at=None,
-        auto_archive_after=None, open_=None, default_auto_archive_after=None, parent=None, category=None, guild=None):
+
+def cr_pg_channel_object(
+    name,
+    type_,
+    *,
+    overwrites=None,
+    topic=None,
+    nsfw=None,
+    slowmode=None,
+    bitrate=None,
+    user_limit=None,
+    region=None,
+    video_quality_mode=None,
+    archived=None,
+    archived_at=None,
+    auto_archive_after=None,
+    open_=None,
+    default_auto_archive_after=None,
+    parent=None,
+    category=None,
+    guild=None,
+):
     """
     Creates a json serializable object representing a ``GuildChannelBase`` instance.
-    
+
     Parameters
     ----------
     name : `str`
@@ -147,11 +170,11 @@ def cr_pg_channel_object(name, type_, *, overwrites=None, topic=None, nsfw=None,
         Deprecated, please use `parent` parameter instead.
     guild : `None` or ``Guild``, Optional (Keyword only)
         Reference guild used for validation purposes. Defaults to `None`.
-    
+
     Returns
     -------
     channel_data : `dict` of (`str`, `Any`) items
-    
+
     Raises
     ------
     TypeError
@@ -198,262 +221,325 @@ def cr_pg_channel_object(name, type_, *, overwrites=None, topic=None, nsfw=None,
     """
     if __debug__:
         if (guild is not None) and (not isinstance(guild, Guild)):
-            raise AssertionError('`guild` is given, but not as `None` nor `Guild` instance, got '
-                f'{guild.__class__.__name__}.')
-    
-    if (category is not None):
+            raise AssertionError(
+                '`guild` is given, but not as `None` nor `Guild` instance, got '
+                f'{guild.__class__.__name__}.'
+            )
+
+    if category is not None:
         warnings.warn(
             f'`cr_pg_channel_object`\'s `category` parameter is deprecated, and will be removed in 2021 july. '
             f'Please use `parent` instead.',
-            FutureWarning)
-        
+            FutureWarning,
+        )
+
         parent = category
-    
+
     if isinstance(type_, int):
         if __debug__:
             if type_ < 0:
-                raise AssertionError(f'`type_` cannot be negative value, got `{type_!r}`.')
+                raise AssertionError(
+                    f'`type_` cannot be negative value, got `{type_!r}`.'
+                )
             if type_ not in CHANNEL_TYPES:
-                raise AssertionError(f'`type_` is not in an of the existing channel types: {set(CHANNEL_TYPES)!r}, '
-                    f'got `{type_}`.')
-        
+                raise AssertionError(
+                    f'`type_` is not in an of the existing channel types: {set(CHANNEL_TYPES)!r}, '
+                    f'got `{type_}`.'
+                )
+
         channel_type = CHANNEL_TYPES.get(type_, ChannelGuildUndefined)
         channel_type_value = type_
-    
+
     elif issubclass(type_, ChannelBase):
         channel_type = type_
         channel_type_value = type_.INTERCHANGE[0]
     else:
-        raise TypeError(f'The given `type_` is not, neither refers to a channel a type, got {type_!r}.')
-    
+        raise TypeError(
+            f'The given `type_` is not, neither refers to a channel a type, got {type_!r}.'
+        )
+
     if not issubclass(channel_type, ChannelGuildBase):
-        raise TypeError(f'`type_` not refers to a `{ChannelGuildBase.__name__}` instance, but to '
-            f'{channel_type.__name__}. Got {type_!r}.')
-    
-    
+        raise TypeError(
+            f'`type_` not refers to a `{ChannelGuildBase.__name__}` instance, but to '
+            f'{channel_type.__name__}. Got {type_!r}.'
+        )
+
     if __debug__:
         if not isinstance(name, str):
-            raise AssertionError(f'`name` can be given as `str` instance, got {name.__class__.__name__}.')
-        
+            raise AssertionError(
+                f'`name` can be given as `str` instance, got {name.__class__.__name__}.'
+            )
+
         name_length = len(name)
-        
+
         if name_length < 1 or name_length > 100:
-            raise AssertionError(f'`name` length can be in range [1:100], got {name_length}; {name!r}.')
-    
+            raise AssertionError(
+                f'`name` length can be in range [1:100], got {name_length}; {name!r}.'
+            )
+
     channel_data = {
         'name': name,
         'type': channel_type_value,
     }
-    
+
     if not issubclass(channel_type, ChannelThread):
         if overwrites is None:
             overwrites = []
         else:
             if __debug__:
                 if not isinstance(overwrites, list):
-                    raise AssertionError(f'`overwrites` can be given as `None` or `list` of `cr_p_overwrite_object` '
-                         f'returns, got {overwrites.__class__.__name__}')
-                
+                    raise AssertionError(
+                        f'`overwrites` can be given as `None` or `list` of `cr_p_overwrite_object` '
+                        f'returns, got {overwrites.__class__.__name__}'
+                    )
+
                 for index, element in enumerate(overwrites):
                     if not isinstance(element, dict):
-                        raise AssertionError(f'`overwrites`\'s element {index} should be `dict` instance, but got '
-                            f'{element.__class__.__name__}')
-    
+                        raise AssertionError(
+                            f'`overwrites`\'s element {index} should be `dict` instance, but got '
+                            f'{element.__class__.__name__}'
+                        )
+
         channel_data['permission_overwrites'] = overwrites
-    
-    
-    if (topic is not None):
+
+    if topic is not None:
         if __debug__:
             if not issubclass(channel_type, (ChannelText, ChannelStage)):
-                raise AssertionError(f'`topic` is a valid parameter only for `{ChannelText.__name__}` and for '
-                    f'{ChannelStage.__name__} instances, got {channel_type.__name__}.')
-            
+                raise AssertionError(
+                    f'`topic` is a valid parameter only for `{ChannelText.__name__}` and for '
+                    f'{ChannelStage.__name__} instances, got {channel_type.__name__}.'
+                )
+
             if not isinstance(topic, str):
-                raise AssertionError(f'`topic` can be given as `str` instance, got {topic.__class__.__name__}.')
-            
+                raise AssertionError(
+                    f'`topic` can be given as `str` instance, got {topic.__class__.__name__}.'
+                )
+
             if issubclass(channel_type, ChannelText):
                 topic_length_limit = 1024
             else:
                 topic_length_limit = 120
-            
+
             topic_length = len(topic)
             if topic_length > topic_length_limit:
-                raise AssertionError(f'`topic` length can be in range [0:{topic_length_limit}], got {topic_length}; '
-                    f'{topic!r}.')
-        
+                raise AssertionError(
+                    f'`topic` length can be in range [0:{topic_length_limit}], got {topic_length}; '
+                    f'{topic!r}.'
+                )
+
         channel_data['topic'] = topic
-    
-    
-    if (nsfw is not None):
+
+    if nsfw is not None:
         if __debug__:
             if not issubclass(channel_type, (ChannelText, ChannelStore)):
-                raise AssertionError(f'`nsfw` is a valid parameter only for `{ChannelText.__name__}` and '
-                    f'`{ChannelStore.__name__}` instances, but got {channel_type.__name__}.')
-            
+                raise AssertionError(
+                    f'`nsfw` is a valid parameter only for `{ChannelText.__name__}` and '
+                    f'`{ChannelStore.__name__}` instances, but got {channel_type.__name__}.'
+                )
+
             if not isinstance(nsfw, bool):
-                raise AssertionError(f'`nsfw` can be given as `bool` instance, got {nsfw.__class__.__name__}.')
-        
+                raise AssertionError(
+                    f'`nsfw` can be given as `bool` instance, got {nsfw.__class__.__name__}.'
+                )
+
         channel_data['nsfw'] = nsfw
-    
-    
-    if (slowmode is not None):
+
+    if slowmode is not None:
         if __debug__:
             if not issubclass(channel_type, (ChannelText, ChannelThread)):
-                raise AssertionError(f'`slowmode` is a valid parameter only for `{ChannelText.__name__}` and for '
-                    f'`{ChannelThread.__name__}` instances, but got {channel_type.__name__}.')
-            
+                raise AssertionError(
+                    f'`slowmode` is a valid parameter only for `{ChannelText.__name__}` and for '
+                    f'`{ChannelThread.__name__}` instances, but got {channel_type.__name__}.'
+                )
+
             if not isinstance(slowmode, int):
-                raise AssertionError('`slowmode` can be given as `int` instance, got '
-                    f'{slowmode.__class__.__name__}.')
-            
+                raise AssertionError(
+                    '`slowmode` can be given as `int` instance, got '
+                    f'{slowmode.__class__.__name__}.'
+                )
+
             if slowmode < 0 or slowmode > 21600:
-                raise AssertionError(f'`slowmode` can be in range [0:21600], got: {slowmode!r}.')
-        
+                raise AssertionError(
+                    f'`slowmode` can be in range [0:21600], got: {slowmode!r}.'
+                )
+
         channel_data['rate_limit_per_user'] = slowmode
-    
-    
-    if (bitrate is not None):
+
+    if bitrate is not None:
         if __debug__:
             if not issubclass(channel_type, ChannelVoiceBase):
-                raise AssertionError(f'`bitrate` is a valid parameter only for `{ChannelVoiceBase.__name__}` instances, '
-                    f'but got {channel_type.__name__}.')
-                
+                raise AssertionError(
+                    f'`bitrate` is a valid parameter only for `{ChannelVoiceBase.__name__}` instances, '
+                    f'but got {channel_type.__name__}.'
+                )
+
             if not isinstance(bitrate, int):
-                raise AssertionError('`bitrate` can be given as `int` instance, got '
-                    f'{bitrate.__class__.__name__}.')
-            
+                raise AssertionError(
+                    '`bitrate` can be given as `int` instance, got '
+                    f'{bitrate.__class__.__name__}.'
+                )
+
             # Get max bitrate
             if guild is None:
                 bitrate_limit = 384000
             else:
                 bitrate_limit = guild.bitrate_limit
-            
+
             if bitrate < 8000 or bitrate > bitrate_limit:
-                raise AssertionError(f'`bitrate` is out of the expected [8000:{bitrate_limit}] range, got {bitrate!r}.')
-        
+                raise AssertionError(
+                    f'`bitrate` is out of the expected [8000:{bitrate_limit}] range, got {bitrate!r}.'
+                )
+
         channel_data['bitrate'] = bitrate
-    
-    
-    if (user_limit is not None):
+
+    if user_limit is not None:
         if __debug__:
             if not issubclass(channel_type, ChannelVoiceBase):
-                raise AssertionError(f'`user_limit` is a valid parameter only for `{ChannelVoiceBase.__name__}` '
-                    f'instances, but got {channel_type.__name__}.')
-            
+                raise AssertionError(
+                    f'`user_limit` is a valid parameter only for `{ChannelVoiceBase.__name__}` '
+                    f'instances, but got {channel_type.__name__}.'
+                )
+
             if user_limit < 0 or user_limit > 99:
-                raise AssertionError('`user_limit`\'s value is out of the expected [0:99] range, got '
-                    f'{user_limit!r}.')
-        
+                raise AssertionError(
+                    '`user_limit`\'s value is out of the expected [0:99] range, got '
+                    f'{user_limit!r}.'
+                )
+
         channel_data['user_limit'] = user_limit
-    
-    
-    if (region is not None):
+
+    if region is not None:
         if __debug__:
             if not issubclass(channel_type, ChannelVoiceBase):
-                raise AssertionError(f'`region` is a valid parameter only for `{ChannelVoiceBase.__name__}` '
-                    f'instances, but got {channel_type.__name__}.')
-        
+                raise AssertionError(
+                    f'`region` is a valid parameter only for `{ChannelVoiceBase.__name__}` '
+                    f'instances, but got {channel_type.__name__}.'
+                )
+
         if isinstance(region, VoiceRegion):
             region_value = region.value
         elif isinstance(region, str):
             region_value = region
         else:
-            raise TypeError(f'`region` can be given either as `None`, `str` or as `{VoiceRegion.__name__}` instance, '
-                f'{region.__class__.__name__}.')
-        
+            raise TypeError(
+                f'`region` can be given either as `None`, `str` or as `{VoiceRegion.__name__}` instance, '
+                f'{region.__class__.__name__}.'
+            )
+
         channel_data['rtc_region'] = region_value
-    
-    
-    if (video_quality_mode is not None):
+
+    if video_quality_mode is not None:
         if __debug__:
             if not issubclass(channel_type, ChannelVoice):
-                raise AssertionError(f'`video_quality_mode` is a valid parameter only for `{ChannelVoice.__name__}` '
-                    f'instances, but got {channel_type.__name__}.')
-        
+                raise AssertionError(
+                    f'`video_quality_mode` is a valid parameter only for `{ChannelVoice.__name__}` '
+                    f'instances, but got {channel_type.__name__}.'
+                )
+
         if isinstance(video_quality_mode, VideoQualityMode):
             video_quality_mode_value = video_quality_mode.value
         elif isinstance(video_quality_mode, int):
             video_quality_mode_value = video_quality_mode
         else:
-            raise TypeError(f'`video_quality_mode` can be given either as `None`, `str` or as '
-                f'`{VideoQualityMode.__name__}` instance, {video_quality_mode.__class__.__name__}.')
-        
+            raise TypeError(
+                f'`video_quality_mode` can be given either as `None`, `str` or as '
+                f'`{VideoQualityMode.__name__}` instance, {video_quality_mode.__class__.__name__}.'
+            )
+
         channel_data['video_quality_mode'] = video_quality_mode_value
-    
-    
-    if (archived is not None):
+
+    if archived is not None:
         if __debug__:
             if not issubclass(channel_type, ChannelThread):
-                raise AssertionError(f'`archived` is a valid parameter only for `{ChannelThread.__name__}` '
-                    f'instances, but got {channel_type.__name__}.')
-            
+                raise AssertionError(
+                    f'`archived` is a valid parameter only for `{ChannelThread.__name__}` '
+                    f'instances, but got {channel_type.__name__}.'
+                )
+
             if not isinstance(archived, bool):
-                raise AssertionError(f'`archived` can be given as `None` or as `bool` instance, got '
-                    f'{archived.__class__.__name__}.')
-        
+                raise AssertionError(
+                    f'`archived` can be given as `None` or as `bool` instance, got '
+                    f'{archived.__class__.__name__}.'
+                )
+
         channel_data['archived'] = archived
-    
-    
-    if (archived_at is not None):
+
+    if archived_at is not None:
         if __debug__:
             if not issubclass(channel_type, ChannelThread):
-                raise AssertionError(f'`archived_at` is a valid parameter only for `{ChannelThread.__name__}` '
-                    f'instances, but got {channel_type.__name__}.')
-            
+                raise AssertionError(
+                    f'`archived_at` is a valid parameter only for `{ChannelThread.__name__}` '
+                    f'instances, but got {channel_type.__name__}.'
+                )
+
             if not isinstance(archived_at, datetime):
-                raise AssertionError(f'`archived_at` can be given as `None` or as `datetime` instance, got '
-                    f'{archived_at.__class__.__name__}.')
-        
-        channel_data['archive_timestamp'] =  archived_at.isoformat()
-    
-    
-    if (auto_archive_after is not None):
+                raise AssertionError(
+                    f'`archived_at` can be given as `None` or as `datetime` instance, got '
+                    f'{archived_at.__class__.__name__}.'
+                )
+
+        channel_data['archive_timestamp'] = archived_at.isoformat()
+
+    if auto_archive_after is not None:
         if __debug__:
             if not issubclass(channel_type, ChannelThread):
-                raise AssertionError(f'`auto_archive_after` is a valid parameter only for `{ChannelThread.__name__}` '
-                    f'instances, but got {channel_type.__name__}.')
-            
+                raise AssertionError(
+                    f'`auto_archive_after` is a valid parameter only for `{ChannelThread.__name__}` '
+                    f'instances, but got {channel_type.__name__}.'
+                )
+
             if not isinstance(auto_archive_after, int):
-                raise AssertionError(f'`auto_archive_after` can be given as `None` or as `datetime` instance, got '
-                    f'{auto_archive_after.__class__.__name__}.')
-            
+                raise AssertionError(
+                    f'`auto_archive_after` can be given as `None` or as `datetime` instance, got '
+                    f'{auto_archive_after.__class__.__name__}.'
+                )
+
             if auto_archive_after not in AUTO_ARCHIVE_OPTIONS:
-                raise AssertionError(f'`auto_archive_after` can be any of: '
-                    f'{AUTO_ARCHIVE_OPTIONS}, got {auto_archive_after}.')
-        
-        channel_data['auto_archive_duration'] = auto_archive_after//60
-    
-    
-    if (default_auto_archive_after is not None):
+                raise AssertionError(
+                    f'`auto_archive_after` can be any of: '
+                    f'{AUTO_ARCHIVE_OPTIONS}, got {auto_archive_after}.'
+                )
+
+        channel_data['auto_archive_duration'] = auto_archive_after // 60
+
+    if default_auto_archive_after is not None:
         if __debug__:
             if not issubclass(channel_type, ChannelText):
-                raise AssertionError(f'`default_auto_archive_after` is a valid parameter only for `{ChannelText.__name__}` '
-                    f'instances, but got {channel_type.__name__}.')
-            
+                raise AssertionError(
+                    f'`default_auto_archive_after` is a valid parameter only for `{ChannelText.__name__}` '
+                    f'instances, but got {channel_type.__name__}.'
+                )
+
             if not isinstance(default_auto_archive_after, int):
-                raise AssertionError(f'`default_auto_archive_after` can be given as `None` or as `datetime` instance, got '
-                    f'{default_auto_archive_after.__class__.__name__}.')
-            
+                raise AssertionError(
+                    f'`default_auto_archive_after` can be given as `None` or as `datetime` instance, got '
+                    f'{default_auto_archive_after.__class__.__name__}.'
+                )
+
             if default_auto_archive_after not in AUTO_ARCHIVE_OPTIONS:
-                raise AssertionError(f'`default_auto_archive_after` can be any of: '
-                    f'{AUTO_ARCHIVE_OPTIONS}, got {default_auto_archive_after}.')
-        
-        channel_data['default_auto_archive_duration'] = default_auto_archive_after//60
-    
-    
-    if (open_ is not None):
+                raise AssertionError(
+                    f'`default_auto_archive_after` can be any of: '
+                    f'{AUTO_ARCHIVE_OPTIONS}, got {default_auto_archive_after}.'
+                )
+
+        channel_data['default_auto_archive_duration'] = default_auto_archive_after // 60
+
+    if open_ is not None:
         if __debug__:
             if not issubclass(channel_type, ChannelThread):
-                raise AssertionError(f'`open_` is a valid parameter only for `{ChannelThread.__name__}` '
-                    f'instances, but got {channel_type.__name__}.')
-            
+                raise AssertionError(
+                    f'`open_` is a valid parameter only for `{ChannelThread.__name__}` '
+                    f'instances, but got {channel_type.__name__}.'
+                )
+
             if not isinstance(open_, bool):
-                raise AssertionError(f'`open_` can be given as `None` or as `bool` instance, got '
-                    f'{open_.__class__.__name__}.')
-        
+                raise AssertionError(
+                    f'`open_` can be given as `None` or as `bool` instance, got '
+                    f'{open_.__class__.__name__}.'
+                )
+
         channel_data['locked'] = not open_
-    
-    
+
     if parent is None:
         parent_id = 0
     elif isinstance(parent, ChannelCategory):
@@ -461,15 +547,19 @@ def cr_pg_channel_object(name, type_, *, overwrites=None, topic=None, nsfw=None,
     else:
         parent_id = maybe_snowflake(parent)
         if parent_id is None:
-            raise TypeError(f'`parent` can be given as `{ChannelCategory.__name__}`, `{Guild.__name__}` or `int` '
-                f'instance, got {parent.__class__.__name__}.')
-    
+            raise TypeError(
+                f'`parent` can be given as `{ChannelCategory.__name__}`, `{Guild.__name__}` or `int` '
+                f'instance, got {parent.__class__.__name__}.'
+            )
+
     if parent_id:
         if __debug__:
             if issubclass(channel_type, ChannelCategory):
-                raise AssertionError(f'`parent` was given, but the respective channel type is '
-                    f'{channel_type.__name__}, which cannot be put under other categories.')
-        
+                raise AssertionError(
+                    f'`parent` was given, but the respective channel type is '
+                    f'{channel_type.__name__}, which cannot be put under other categories.'
+                )
+
         channel_data['parent_id'] = parent_id
-    
+
     return channel_data

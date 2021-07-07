@@ -1,14 +1,15 @@
-__all__ = ('ActivityFlag', )
+__all__ = ('ActivityFlag',)
 
 from ..bases import FlagBase
+
 
 class ActivityFlag(FlagBase):
     """
     The flags of an activity provided by Discord. These flags supposed to describe what the activity's payload
     includes.
-    
+
     The activity flags are the following:
-    
+
     +-------------------+-------------------+
     | Respective name   | Bitwise position  |
     +===================+===================+
@@ -25,6 +26,7 @@ class ActivityFlag(FlagBase):
     | play              | 5                 |
     +-------------------+-------------------+
     """
+
     __keys__ = {
         'instance': 0,
         'join': 1,

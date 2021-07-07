@@ -1,4 +1,8 @@
-__all__ = ('COLORS', 'Color', 'parse_color',)
+__all__ = (
+    'COLORS',
+    'Color',
+    'parse_color',
+)
 
 import re
 from math import floor
@@ -6,17 +10,18 @@ from random import Random
 
 from ..backend.utils import modulize
 
+
 class Color(int):
     """
     A Color object represents a RGB color. Using int instead of Color is completely fine.
-    
+
     Class Attributes
     ----------------
     _random : `random.Random`
         ``Color`` class uses it's own random seeding, so it has it's own `random.Random` instance to do it.
-        
+
         To get a random color, use ``.random` and to set seed use ``.set_seed``
-    
+
     Examples
     --------
     ```py
@@ -24,74 +29,75 @@ class Color(int):
     >>> color = Color(0x022587)
     >>> color
     <Color #022587>
-    
+
     >>> # Creating a color from rgb
     >>> color = Color.from_rgb(120, 255, 0)
     >>> color
     <Color #78FF00>
-    
+
     >>> # Or creating a color from a tuple
     >>> color = Color.from_rgb_tuple((100, 20, 255))
     >>> color
     <Color #6414FF>
-    
+
     >>> # Converting back to rgb
     >>> color.as_rgb
     (100, 20, 255)
-    
+
     >>> # Creating color from float color channels
     >>> color = Color.from_rgb_float(1.0, 0.125, 0.862)
     >>> color
     <Color #FF1FDB>
-    
+
     >>> # Converting color back to float color channels
     >>> color.as_rgb_float
     (1.0, 0.12156862745098039, 0.8588235294117647)
-    
+
     >>> # Creating color from html color code
     >>> color = Color.from_html('#ff0000')
     >>> color
     <Color #FF0000>
-    
+
     >>> # Converting color back to html color code
     <Color #FF0000>
     >>> color.as_html
     '#FF0000'
-    
+
     >>> # str(color) is same as color.as_html
     >>> str(color)
     '#FF0000'
-    
+
     >>> # html color codes with length of 3 are working as well
     >>> color = Color.from_html('#f00')
     >>> color
     <Color #FF0000>
     ```
     """
+
     __slots__ = ()
-    
+
     def __repr__(self):
         """Returns the color's representation."""
         return f'<{self.__class__.__name__} #{self:06X}>'
-    
+
     def __str__(self):
         """Returns the color as a string. Same as ``.as_html``."""
         return f'#{self:06X}'
-    
+
     @classmethod
     def from_html(cls, value):
         """
         Converts a HTML color code to a ``Color`` object.
-        
+
         Parameters
         ----------
         value : `str`
             HTML color code.
-        
+
         Returns
         -------
         color : ``Color``
-        
+
         Raises
         ------
         ValueError
@@ -102,7 +108,7 @@ class Color(int):
             if value[0] == '#':
                 value = value[1:]
                 value_length -= 1
-            
+
             if value_length == 6:
                 try:
                     color = cls(value, base=16)
@@ -110,36 +116,36 @@ class Color(int):
                     pass
                 else:
                     return color
-            
+
             elif value_length == 3:
                 try:
                     color_value = int(value, base=16)
                 except ValueError:
                     pass
                 else:
-                    red = (color_value>>8)*17
-                    green = ((color_value>>4)&0xf)*17
-                    blue = (color_value&0xf)*17
-                    return Color((red<<16)|(green<<8)|blue)
-        
+                    red = (color_value >> 8) * 17
+                    green = ((color_value >> 4) & 0xF) * 17
+                    blue = (color_value & 0xF) * 17
+                    return Color((red << 16) | (green << 8) | blue)
+
         raise ValueError('The given value has invalid length or is not hexadecimal')
-    
+
     @property
     def as_html(self):
         """
         Returns the color in HTML format.
-        
+
         Returns
         -------
         color : `str`
         """
         return f'#{self:06X}'
-    
+
     @classmethod
     def from_rgb_tuple(cls, rgb_tuple):
         """
         Converts a tuple of ints to a ``Color`` object.
-        
+
         Parameters
         ----------
         rgb_tuple : `tuple` (`int`, `int`, `int`)
@@ -148,7 +154,7 @@ class Color(int):
         Returns
         -------
         color : ``Color``
-        
+
         Raises
         ------
         ValueError
@@ -157,39 +163,39 @@ class Color(int):
         """
         if len(rgb_tuple) != 3:
             raise ValueError(f'Rgb tuple should have length `3`, got: {rgb_tuple!r}.')
-        
+
         return cls.from_rgb(*rgb_tuple)
-    
+
     from_tuple = from_rgb_tuple
-    
+
     @property
     def as_rgb_tuple(self):
         """
         Returns the color's red, green and blue channel's value in a tuple of integers.
-        
+
         Returns
         -------
         rgb_tuple : `tuple` (`int`, `int`, `int`)
         """
-        return (self>>16, (self>>8)&0x00ff, self&0x0000ff)
-    
+        return (self >> 16, (self >> 8) & 0x00FF, self & 0x0000FF)
+
     as_tuple = as_rgb_tuple
     as_rgb = as_rgb_tuple
-    
+
     @classmethod
     def from_rgb_float_tuple(cls, rgb_tuple):
         """
         Converts a tuple of floats to a ``Color`` object.
-        
+
         Parameters
         ----------
         rgb_tuple : `tuple` (`float`, `float`, `float`)
             A tuple of `3` floats which are in range [0.0, 1.0].
-        
+
         Returns
         -------
         color : ``Color``
-        
+
         Raises
         ------
         ValueError
@@ -198,30 +204,34 @@ class Color(int):
         """
         if len(rgb_tuple) != 3:
             raise ValueError(f'Rgb tuple should have length `3`, got: {rgb_tuple!r}.')
-        
+
         return cls.from_rgb_float(*rgb_tuple)
-    
+
     from_float_tuple = from_rgb_float_tuple
-    
+
     @property
     def as_rgb_float_tuple(self):
         """
         Returns the color's red, green and blue channel's value as a tuple of floats.
-        
+
         Returns
         -------
         rgb_tuple : `tuple` (`float`, `float`, `float`)
         """
-        return ((self>>16)*(1.0/255.0), ((self>>8)&0x00ff)*(1.0/255.0), (self&0x0000ff)*(1.0/255.0))
-    
+        return (
+            (self >> 16) * (1.0 / 255.0),
+            ((self >> 8) & 0x00FF) * (1.0 / 255.0),
+            (self & 0x0000FF) * (1.0 / 255.0),
+        )
+
     as_float_tuple = as_rgb_float_tuple
     as_rgb_float = as_rgb_float_tuple
-    
+
     @classmethod
     def from_rgb(cls, red, green, blue):
         """
         Converts red, green and blue channels to a `Color` object.
-        
+
         Does not checks if each element of the tuple is in 0-255, so inputting bad values can yield any error.
 
         Parameters
@@ -236,25 +246,31 @@ class Color(int):
         Returns
         -------
         color : ``Color``
-        
+
         Raises
         ------
             Channel value out of expected range.
         """
         if red > 255 or red < 0:
-            raise ValueError(f'Red channel value out of [0, 255] expected range, got {red!r}.')
+            raise ValueError(
+                f'Red channel value out of [0, 255] expected range, got {red!r}.'
+            )
         if green > 255 or green < 0:
-            raise ValueError(f'Green channel value out of [0, 255] expected range, got {green!r}.')
+            raise ValueError(
+                f'Green channel value out of [0, 255] expected range, got {green!r}.'
+            )
         if blue > 255 or blue < 0:
-            raise ValueError(f'Blue channel value out of [0, 255] expected range, got {blue!r}.')
-        
-        return cls((red<<16)|(green<<8)|blue)
-    
+            raise ValueError(
+                f'Blue channel value out of [0, 255] expected range, got {blue!r}.'
+            )
+
+        return cls((red << 16) | (green << 8) | blue)
+
     @classmethod
     def from_rgb_float(cls, red, green, blue):
         """
         Converts red, green and blue to a `Color` object.
-        
+
         Does not checks if each element of the tuple is in 0-255, so inputting bad values can yield any error.
 
         Parameters
@@ -269,104 +285,111 @@ class Color(int):
         Returns
         -------
         color : ``Color``
-        
+
         Raises
         ------
         ValueError
             Channel value out of expected range.
         """
         if red > 1.0 or red < 0.0:
-            raise ValueError(f'Red channel value out of [0.0, 1.0] expected range, got {red!r}.')
+            raise ValueError(
+                f'Red channel value out of [0.0, 1.0] expected range, got {red!r}.'
+            )
         if green > 1.0 or green < 0.0:
-            raise ValueError(f'Green channel value out of [0.0, 1.0] expected range, got {green!r}.')
+            raise ValueError(
+                f'Green channel value out of [0.0, 1.0] expected range, got {green!r}.'
+            )
         if blue > 1.0 or blue < 0.0:
-            raise ValueError(f'Blue channel value out of [0.0, 1.0] expected range, got {blue!r}.')
-        
+            raise ValueError(
+                f'Blue channel value out of [0.0, 1.0] expected range, got {blue!r}.'
+            )
+
         # Convert float values to 8 bit ints.
-        red = floor(red*255.0)
-        green = floor(green*255.0)
-        blue = floor(blue*255.0)
+        red = floor(red * 255.0)
+        green = floor(green * 255.0)
+        blue = floor(blue * 255.0)
         # Build color.
-        return Color((red<<16)|(green<<8)|blue)
-    
+        return Color((red << 16) | (green << 8) | blue)
+
     @property
     def red(self):
         """
         Returns the color's red channel's value.
-        
+
         Returns
         -------
         red_value : `int`
         """
-        return self>>16
-    
+        return self >> 16
+
     r = red
-    
+
     @property
     def green(self):
         """
         Returns the color's green channel's value.
-        
+
         Returns
         -------
         green_value : `int`
         """
-        return (self>>8)&0x0000ff
-    
+        return (self >> 8) & 0x0000FF
+
     g = green
-    
+
     @property
     def blue(self):
         """
         Returns the color's blue channel's value.
-        
+
         Returns
         -------
         blue_value : `int`
         """
-        return self&0x0000ff
-    
+        return self & 0x0000FF
+
     b = blue
-    
+
     _random = Random()
-    
+
     @classmethod
     def random(cls):
         """
         Returns a random color.
-        
+
         Returns
         -------
         color : ``Color``
         """
-        return cls(cls._random.random()*0xffffff)
-    
+        return cls(cls._random.random() * 0xFFFFFF)
+
     @classmethod
     def set_seed(cls, seed=None, version=2):
         """
         Initialize the random number generator for the ``Color`` class.
-        
+
         Parameters
         ----------
         seed : `Any`, Optional
             If `seed` is given as `None`, the current system time is used. If randomness sources are provided by the
             operating system, they are used instead of the system time.
-            
+
             If `seed` is an `int`, it is used directly.
-            
+
             > Since Python 3.9 the seed must be one of the following types: `NoneType`, `int`, `float`, `str`, `bytes`,
             > or `bytearray`.
-            
+
         version : `int`, Optional
             Can be given either as `1` or `2`.
-            
+
             If given as `2` (so by default), a `str`, `bytes`, or `bytearray` object gets converted to an `int` and all
             of its bits are used.
-            
+
             If given as `1` (provided for reproducing random sequences from older versions of Python), the algorithm
             for `str` and `bytes` generates a narrower range of seeds.
         """
         cls._random.seed(seed, version)
+
 
 COLOR_RGB_INT_RP = re.compile(
     '(25[0-5]|2[0-4][0-9]|1[0-9]{2}|0?[0-9]{0,2})[\s\,]+'
@@ -397,11 +420,13 @@ COLOR_DEC_RP = re.compile(
 
 COLOR_BY_NAME = {}
 
+
 @modulize
 class COLORS:
     """
     Contains the web colors as attributes.
     """
+
     alice_blue = Color(0xF0F8FF)
     antique_white = Color(0xFAEBD7)
     aquamarine = Color(0x7FFFD4)
@@ -553,60 +578,60 @@ del attribute_name, attribute_value
 def parse_color(text):
     """
     Tries to parse out a ``Color`` from the inputted text.
-    
+
     Returns
     -------
     color : `None` or ``Color``
     """
     text = text.lower()
-    
+
     parsed = COLOR_HTML_6_RP.fullmatch(text)
-    if (parsed is not None):
+    if parsed is not None:
         return Color(parsed.group(1), base=16)
-    
+
     try:
         return COLOR_BY_NAME[text]
     except KeyError:
         pass
-    
+
     parsed = COLOR_RGB_INT_RP.fullmatch(text)
-    if (parsed is not None):
+    if parsed is not None:
         red, green, blue = parsed.groups()
         red = int(red)
         green = int(green)
         blue = int(blue)
-        return Color((red<<16)|(green<<8)|blue)
-    
+        return Color((red << 16) | (green << 8) | blue)
+
     parsed = COLOR_HEX_RP.fullmatch(text)
-    if (parsed is not None):
+    if parsed is not None:
         return Color(parsed.group(1), base=16)
-    
+
     parsed = COLOR_OCT_RP.fullmatch(text)
-    if (parsed is not None):
+    if parsed is not None:
         return Color(parsed.group(1), base=8)
-    
+
     parsed = COLOR_BIN_RP.fullmatch(text)
-    if (parsed is not None):
+    if parsed is not None:
         return Color(parsed.group(1), base=2)
-    
+
     parsed = COLOR_RGB_FLOAT_RP.fullmatch(text)
-    if (parsed is not None):
+    if parsed is not None:
         red, green, blue = parsed.groups()
-        red = floor(float(red)*255.0)
-        green = floor(float(green)*255.0)
-        blue = floor(float(blue)*255.0)
-        return Color((red<<16)|(green<<8)|blue)
-    
+        red = floor(float(red) * 255.0)
+        green = floor(float(green) * 255.0)
+        blue = floor(float(blue) * 255.0)
+        return Color((red << 16) | (green << 8) | blue)
+
     parsed = COLOR_HTML_3_RP.fullmatch(text)
-    if (parsed is not None):
+    if parsed is not None:
         raw_value = int(parsed.group(1), base=16)
-        red = (raw_value>>8)*17
-        green = ((raw_value>>4)&0xf)*17
-        blue = (raw_value&0xf)*17
-        return Color((red<<16)|(green<<8)|blue)
-    
+        red = (raw_value >> 8) * 17
+        green = ((raw_value >> 4) & 0xF) * 17
+        blue = (raw_value & 0xF) * 17
+        return Color((red << 16) | (green << 8) | blue)
+
     parsed = COLOR_DEC_RP.fullmatch(text)
-    if (parsed is not None):
+    if parsed is not None:
         return Color(parsed.group(1))
-    
+
     return None

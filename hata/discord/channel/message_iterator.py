@@ -1,4 +1,4 @@
-__all__ = ('MessageIterator', )
+__all__ = ('MessageIterator',)
 
 from ..bases import maybe_snowflake
 from ..core import CHANNELS
@@ -9,10 +9,11 @@ from .channel_text_base import ChannelTextBase
 # sounds funny, but this is a class
 # the chunk_size is 99, because it means 1 request for _load_messages_till
 
+
 class MessageIterator:
     """
     An asynchronous message iterator over the given text channel.
-    
+
     Attributes
     ----------
     _index : `int`
@@ -27,13 +28,21 @@ class MessageIterator:
     client : ``Client``
         The client, who will do the api requests for requesting more messages.
     """
-    __slots__ = ('_can_read_history', '_index', 'channel', 'chunk_size', 'client',)
+
+    __slots__ = (
+        '_can_read_history',
+        '_index',
+        'channel',
+        'chunk_size',
+        'client',
+    )
+
     async def __new__(cls, client, channel, chunk_size=99):
         """
         Creates a message iterator.
-        
+
         This method is a coroutine.
-        
+
         Parameters
         ----------
         client : ``Client``
@@ -43,7 +52,7 @@ class MessageIterator:
         chunk_size : `int`, Optional
             The amount of messages, what the message iterator will extend it's channel's message history, each time,
             the loaded messages are exhausted. Limited to `97` as a maximal value.
-        
+
         Raises
         ------
         TypeError
@@ -58,38 +67,44 @@ class MessageIterator:
         """
         if __debug__:
             if not isinstance(chunk_size, int):
-                raise AssertionError(f'`chunk_size` can be given as `int` instance, got '
-                    f'{chunk_size.__class__.__name__}.')
-            
+                raise AssertionError(
+                    f'`chunk_size` can be given as `int` instance, got '
+                    f'{chunk_size.__class__.__name__}.'
+                )
+
             if chunk_size < 1:
-                raise AssertionError(f'`chunk_size` is out from the expected [0:] range, got {chunk_size!r}.')
-        
+                raise AssertionError(
+                    f'`chunk_size` is out from the expected [0:] range, got {chunk_size!r}.'
+                )
+
         if chunk_size > 99:
             chunk_size = 99
-        
+
         if isinstance(channel, ChannelTextBase):
             pass
         else:
             channel_id = maybe_snowflake(channel)
             if channel_id is None:
-                raise TypeError(f'`channel` can be given as `{ChannelTextBase.__name__}` instance, got'
-                    f'{channel.__class__.__name__}.')
-            
+                raise TypeError(
+                    f'`channel` can be given as `{ChannelTextBase.__name__}` instance, got'
+                    f'{channel.__class__.__name__}.'
+                )
+
             channel = CHANNELS.get(channel_id, None)
-            
+
             if channel is None:
                 try:
                     messages = await client.message_get_chunk_from_zero(channel_id, 100)
                 except BaseException as err:
                     if isinstance(err, DiscordException) and err.code in (
-                            ERROR_CODES.unknown_message, # message deleted
-                            ERROR_CODES.unknown_channel, # message's channel deleted
-                            ERROR_CODES.missing_access, # client removed
-                            ERROR_CODES.missing_permissions, # permissions changed meanwhile
-                            ERROR_CODES.cannot_message_user, # user has dm-s disallowed
-                                ):
+                        ERROR_CODES.unknown_message,  # message deleted
+                        ERROR_CODES.unknown_channel,  # message's channel deleted
+                        ERROR_CODES.missing_access,  # client removed
+                        ERROR_CODES.missing_permissions,  # permissions changed meanwhile
+                        ERROR_CODES.cannot_message_user,  # user has dm-s disallowed
+                    ):
                         pass
-                    
+
                     else:
                         raise
                 else:
@@ -97,62 +112,66 @@ class MessageIterator:
                         channel = messages[0].channel
                     else:
                         channel = await client._maybe_get_channel(channel_id)
-        
+
         self = object.__new__(cls)
         self.client = client
         self.channel = channel
         self.chunk_size = chunk_size
         self._index = 0
-        self._can_read_history = not channel.cached_permissions_for(client).can_read_message_history
+        self._can_read_history = not channel.cached_permissions_for(
+            client
+        ).can_read_message_history
         return self
-    
+
     def __aiter__(self):
         """Returns self and resets the `.index`."""
         self._index = 0
         return self
-    
+
     async def __anext__(self):
         """
         Yields the next message of the iterator's channel.
-        
+
         This method is a coroutine.
         """
         channel = self.channel
-        
+
         index = self._index
         messages = channel.messages
         if (messages is not None) and (len(messages) > index):
-            self._index = index+1
+            self._index = index + 1
             return channel.messages[index]
-        
+
         if channel.message_history_reached_end or self._can_read_history:
             raise StopAsyncIteration
-        
+
         try:
-            await self.client._load_messages_till(channel, index+self.chunk_size)
+            await self.client._load_messages_till(channel, index + self.chunk_size)
         except BaseException as err:
             if isinstance(err, ConnectionError):
                 pass
-            
+
             elif isinstance(err, DiscordException) and err.code in (
-                ERROR_CODES.unknown_message, # message deleted
-                ERROR_CODES.unknown_channel, # message's channel deleted
-                ERROR_CODES.missing_access, # client removed
-                ERROR_CODES.missing_permissions, # permissions changed meanwhile
-                ERROR_CODES.cannot_message_user, # user has dm-s disallowed
-                    ):
+                ERROR_CODES.unknown_message,  # message deleted
+                ERROR_CODES.unknown_channel,  # message's channel deleted
+                ERROR_CODES.missing_access,  # client removed
+                ERROR_CODES.missing_permissions,  # permissions changed meanwhile
+                ERROR_CODES.cannot_message_user,  # user has dm-s disallowed
+            ):
                 pass
             else:
                 raise
-        
+
         messages = channel.messages
         if (messages is not None) and (len(channel.messages) > index):
-            self._index = index+1
+            self._index = index + 1
             return channel.messages[index]
-        
+
         raise StopAsyncIteration
-    
+
     def __repr__(self):
         """Returns the representation of the message iterator."""
-        return (f'<{self.__class__.__name__} of client {self.client.full_name}, at channel {self.channel.name!r} ('
-            f'{self.channel.id})>')
+        return (
+            f'<{self.__class__.__name__} of client {self.client.full_name}, at channel {self.channel.name!r} ('
+            f'{self.channel.id})>'
+        )

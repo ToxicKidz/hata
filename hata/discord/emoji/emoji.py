@@ -14,7 +14,7 @@ from ..http import urls as module_urls
 Client = include('Client')
 Guild = include('Guild')
 
-UNICODE_EMOJI_LIMIT = 1<<21
+UNICODE_EMOJI_LIMIT = 1 << 21
 
 BUILTIN_EMOJIS = {}
 UNICODE_TO_EMOJI = {}
@@ -25,10 +25,10 @@ class Emoji(DiscordEntity, immortal=True):
     Represents a Discord emoji. It can be custom or builtin (unicode) emoji as well. Builtin emojis are loaded when the
     module is imported and they are stores at `BUILTIN_EMOJIS` dictionary. At `BUILTIN_EMOJIS` the keys are the
     emoji's names, so it is easy to access any Discord unicode emoji like that.
-    
+
     Custom emojis are loaded with ``Guild``-s on startup, but new partial custom emojis can be created later as well,
     when a ``Message`` receives any reaction.
-    
+
     Attributes
     ----------
     id : `int`
@@ -56,28 +56,39 @@ class Emoji(DiscordEntity, immortal=True):
     user : ``User`` or ``Client``
         The creator of the custom emoji. The emoji must be requested from Discord's API, or it's user will be just
         the default `ZEROUSER`.
-        
+
     See Also
     --------
     - ``create_partial_emoji`` : A function to create an emoji object from partial emoji data.
     - ``parse_emoji`` : Parses a partial emoji object out from text.
     """
-    __slots__ = ('animated', 'available', 'guild', 'managed', 'name', 'require_colons', 'roles', 'unicode', 'user', )
-    
+
+    __slots__ = (
+        'animated',
+        'available',
+        'guild',
+        'managed',
+        'name',
+        'require_colons',
+        'roles',
+        'unicode',
+        'user',
+    )
+
     def __new__(cls, data, guild):
         """
         Creates a new emoji object from emoji data included with it's guild's. If the emoji already exists, picks that
         up instead of creating a new one.
-        
+
         This method can not create builtin (unicode) emojis. Those are created when the library is loaded.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Emoji data received from Discord.
         guild : ``Guild``
             The guild of the emoji.
-        
+
         Returns
         -------
         emoji : ``Emoji``
@@ -90,7 +101,7 @@ class Emoji(DiscordEntity, immortal=True):
             self = object.__new__(cls)
             self.id = emoji_id
             EMOJIS[emoji_id] = self
-            
+
             try:
                 user_data = data['user']
             except KeyError:
@@ -98,13 +109,13 @@ class Emoji(DiscordEntity, immortal=True):
             else:
                 user = User(user_data)
             self.user = user
-            
+
         else:
             # whenever we receive an emoji, it will have no user data included,
             # so it is enough if we check for user data only whenever we
             # receive emoji data from a request or so.
             if not self.partial:
-                
+
                 if self.user is ZEROUSER:
                     try:
                         user_data = data['user']
@@ -112,47 +123,52 @@ class Emoji(DiscordEntity, immortal=True):
                         pass
                     else:
                         self.user = User(user_data)
-                
+
                 return self
-        
+
         name = data['name']
         if name is None:
             name = ''
-        
+
         self.name = name
         self.animated = data.get('animated', False)
-        self.require_colons= data.get('require_colons', True)
+        self.require_colons = data.get('require_colons', True)
         self.managed = data.get('managed', False)
         self.guild = guild
         self.available = data.get('available', True)
         self.user = ZEROUSER
-        
+
         self.unicode = None
-        
+
         role_ids = data.get('roles', None)
         if (role_ids is None) or (not role_ids):
             roles = None
         else:
-            roles = tuple(sorted((create_partial_role_from_id(int(role_id)) for role_id in role_ids), key=id_sort_key))
-        
+            roles = tuple(
+                sorted(
+                    (create_partial_role_from_id(int(role_id)) for role_id in role_ids),
+                    key=id_sort_key,
+                )
+            )
+
         self.roles = roles
-        
+
         return self
-    
+
     @classmethod
     def precreate(cls, emoji_id, **kwargs):
         """
         Precreates the emoji by creating a partial one with the given parameters. When the emoji is loaded
         the precrated one will be picked up. If an already existing emoji would be precreated, returns that
         instead and updates that only, if that is partial.
-        
+
         Parameters
         ----------
         emoji_id : `snowflake`
             The emoji's id.
         **kwargs : keyword parameters
             Additional predefined attributes for the emoji.
-        
+
         Other Parameters
         ----------------
         animated : `bool`, Optional (Keyword only)
@@ -169,11 +185,11 @@ class Emoji(DiscordEntity, immortal=True):
             The emoji's ``.roles``.
         user : ``ClientUserBase`, `int`, Optional (Keyword only)
             The emoji's ``.user``.
-        
+
         Returns
         -------
         self : ``Emoji``
-        
+
         Raises
         ------
         TypeError
@@ -182,10 +198,10 @@ class Emoji(DiscordEntity, immortal=True):
             If an parameter's type is good, but it's value is unacceptable.
         """
         emoji_id = preconvert_snowflake(emoji_id, 'emoji_id')
-        
+
         if kwargs:
             processable = []
-            
+
             try:
                 name = kwargs.pop('name')
             except KeyError:
@@ -193,8 +209,13 @@ class Emoji(DiscordEntity, immortal=True):
             else:
                 name = preconvert_str(name, 'name', 2, 32)
                 processable.append(('name', name))
-            
-            for attribute_name in ('animated', 'available', 'managed', 'require_colons',):
+
+            for attribute_name in (
+                'animated',
+                'available',
+                'managed',
+                'require_colons',
+            ):
                 try:
                     attribute_value = kwargs.pop(attribute_name)
                 except KeyError:
@@ -202,80 +223,82 @@ class Emoji(DiscordEntity, immortal=True):
                 else:
                     animated = preconvert_bool(attribute_value, attribute_name)
                     processable.append((attribute_name, animated))
-            
-            
+
             for attribute_name, attribute_type in (
-                        ('guild', Guild),
-                        ('user', (User, Client)),
-                    ):
+                ('guild', Guild),
+                ('user', (User, Client)),
+            ):
                 try:
                     attribute_value = kwargs.pop(attribute_name)
                 except KeyError:
                     pass
                 else:
-                    attribute_value = instance_or_id_to_instance(attribute_value, attribute_type, attribute_name)
+                    attribute_value = instance_or_id_to_instance(
+                        attribute_value, attribute_type, attribute_name
+                    )
                     processable.append((attribute_name, attribute_value))
-            
+
             try:
                 roles = kwargs.pop('roles')
             except KeyError:
                 pass
             else:
-                if (roles is not None):
-                    roles = iterable_of_instance_or_id_to_instances(roles, Role, 'roles')
+                if roles is not None:
+                    roles = iterable_of_instance_or_id_to_instances(
+                        roles, Role, 'roles'
+                    )
                     if roles:
                         roles = tuple(sorted(roles, key=id_sort_key))
                         processable.append(('roles', roles))
-            
+
             if kwargs:
                 raise TypeError(f'Unused or unsettable attributes: {kwargs}')
-        
+
         else:
             processable = None
-        
-        
+
         try:
             self = EMOJIS[emoji_id]
         except KeyError:
             self = cls._create_empty(emoji_id)
-            
+
             EMOJIS[emoji_id] = self
         else:
             if not self.partial:
                 return self
-        
-        if (processable is not None):
+
+        if processable is not None:
             for name, value in processable:
                 setattr(self, name, value)
-        
+
         return self
-    
+
     def __str__(self):
         """Returns the emoji's name."""
         return self.name
-    
+
     def __repr__(self):
         """Returns the emoji's representation."""
         return f'<{self.__class__.__name__} id={self.id}, name={self.name!r}>'
-    
+
     def __format__(self, code):
         """
         Formats the emoji in a format string.
-        
+
         Parameters
         ----------
         code : `str`
             The option on based the result will be formatted.
-        
+
         Returns
         -------
         emoji : `str`
-        
+
         Raises
         ------
         ValueError
             Unknown format code.
-        
+
         Examples
         --------
         ```py
@@ -309,101 +332,103 @@ class Emoji(DiscordEntity, immortal=True):
         """
         if not code:
             return self.name
-        
+
         if code == 'e':
             if self.id < UNICODE_EMOJI_LIMIT:
                 return self.unicode
-            
+
             if self.animated:
                 return f'<a:{self.name}:{self.id}>'
             else:
                 return f'<:{self.name}:{self.id}>'
-        
+
         if code == 'r':
             if self.id < UNICODE_EMOJI_LIMIT:
                 return self.unicode
-            
+
             return f'{self.name}:{self.id}'
-        
+
         if code == 'c':
             return self.created_at.__format__(DATETIME_FORMAT_CODE)
-        
-        raise ValueError(f'Unknown format code {code!r} for object of type {self.__class__.__name__!r}')
-    
+
+        raise ValueError(
+            f'Unknown format code {code!r} for object of type {self.__class__.__name__!r}'
+        )
+
     @property
     def partial(self):
         """
         Returns whether the emoji is partial.
-        
+
         Returns
         -------
         partial : `bool`
         """
-        if (self.unicode is not None):
+        if self.unicode is not None:
             return False
-        
+
         guild = self.guild
-        if (guild is None):
+        if guild is None:
             return True
-        
+
         return guild.partial
-    
+
     def is_custom_emoji(self):
         """
         Returns whether the emoji is a custom emoji.
-        
+
         Returns
         -------
         is_custom_emoji : `bool`
         """
-        return (self.id >= UNICODE_EMOJI_LIMIT)
+        return self.id >= UNICODE_EMOJI_LIMIT
 
     def is_unicode_emoji(self):
         """
         Returns whether the emoji is a unicode emoji.
-        
+
         Returns
         -------
         is_custom_emoji : `bool`
         """
-        return (self.id < UNICODE_EMOJI_LIMIT)
-    
+        return self.id < UNICODE_EMOJI_LIMIT
+
     @property
     def as_reaction(self):
         """
         Returns the emoji's reaction form, which is used by the Discord API at requests when working with reactions.
-        
+
         Returns
         -------
         as_reaction : `str`
         """
         if self.id < UNICODE_EMOJI_LIMIT:
             return self.unicode
-        
+
         return f'{self.name}:{self.id}'
-    
+
     @property
     def as_emoji(self):
         """
         Returns the emoji's emoji form. Should be used when sending an emoji within a ``Message``.
-        
+
         Returns
         -------
         as_emoji : `str`
         """
         if self.id < UNICODE_EMOJI_LIMIT:
             return self.unicode
-        
+
         if self.animated:
             return f'<a:{self.name}:{self.id}>'
         else:
             return f'<:{self.name}:{self.id}>'
-    
+
     @property
     def created_at(self):
         """
         When the emoji was created. If the emoji is unicode emoji, then returns Discord epoch's start.
-        
+
         Returns
         -------
         created_at : `datetime`
@@ -413,35 +438,35 @@ class Emoji(DiscordEntity, immortal=True):
             created_at = id_to_time(id_)
         else:
             created_at = DISCORD_EPOCH_START
-        
+
         return created_at
 
     url = property(module_urls.emoji_url)
     url_as = module_urls.emoji_url_as
-    
+
     def _delete(self):
         """
         Removes the emoji's references.
-        
+
         Used when the emoji is deleted.
         """
         guild = self.guild
         if guild is None:
             return
-        
+
         try:
             del guild.emojis[self.id]
         except KeyError:
             pass
-        
+
         self.roles = None
         self.guild = None
         self.available = False
-        
+
     def _update_no_return(self, data):
         """
         Updates the emoji with overwriting it's old attributes.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -449,47 +474,52 @@ class Emoji(DiscordEntity, immortal=True):
         """
         self.require_colons = data.get('require_colons', True)
         self.managed = data.get('managed', False)
-        
+
         self.animated = data.get('animated', False)
-        
+
         name = data['name']
         if name is None:
             name = ''
-        
+
         self.name = name
-        
+
         role_ids = data.get('roles', None)
         if (role_ids is None) or (not role_ids):
             roles = None
         else:
-            roles = tuple(sorted((create_partial_role_from_id(int(role_id)) for role_id in role_ids), key=id_sort_key))
-        
+            roles = tuple(
+                sorted(
+                    (create_partial_role_from_id(int(role_id)) for role_id in role_ids),
+                    key=id_sort_key,
+                )
+            )
+
         self.roles = roles
-        
+
         try:
             user_data = data['user']
         except KeyError:
             pass
         else:
             self.user = User(user_data)
-        
+
         self.available = data.get('available', True)
-    
+
     def _update(self, data):
         """
         Updates the emoji and returns it's overwritten old attributes as a `dict` with a `attribute-name` - `old-value`
         relation.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Emoji data received from Discord.
-        
+
         Returns
         -------
         old_attributes : `dict` of (`str`, `Any`) items
             All item in the returned dict is optional.
-        
+
         Returned Data Structure
         -----------------------
         +-------------------+-------------------------------+
@@ -509,59 +539,63 @@ class Emoji(DiscordEntity, immortal=True):
         +-------------------+-------------------------------+
         """
         old_attributes = {}
-        
+
         require_colons = data.get('require_colons', True)
         if self.require_colons != require_colons:
             old_attributes['require_colons'] = self.require_colons
             self.require_colons = require_colons
-        
+
         managed = data.get('managed', False)
         if self.managed != managed:
             old_attributes['managed'] = self.managed
             self.managed = managed
-        
+
         animated = data.get('animated', False)
         if self.animated != animated:
             old_attributes['animated'] = self.animated
             self.animated = animated
-        
+
         name = data['name']
         if name is None:
             name = ''
         if self.name != name:
             old_attributes['name'] = self.name
             self.name = name
-        
+
         role_ids = data.get('roles', None)
         if (role_ids is None) or (not role_ids):
             roles = None
         else:
-            roles = tuple(sorted((create_partial_role_from_id(int(role_id)) for role_id in role_ids), key=id_sort_key))
-        
+            roles = tuple(
+                sorted(
+                    (create_partial_role_from_id(int(role_id)) for role_id in role_ids),
+                    key=id_sort_key,
+                )
+            )
+
         if self.roles != roles:
             old_attributes['roles'] = self.roles
             self.roles = roles
-        
+
         try:
             user_data = data['user']
         except KeyError:
             pass
         else:
             self.user = User(user_data)
-        
+
         available = data.get('available', True)
         if self.available != available:
             old_attributes['available'] = self.available
             self.available = available
-        
+
         return old_attributes
-    
-    
+
     @classmethod
     def _create_partial(cls, emoji_id, name, animated):
         """
         Creates a new emoji from the given partial data.
-        
+
         Parameters
         ----------
         emoji_id : `int`
@@ -570,13 +604,13 @@ class Emoji(DiscordEntity, immortal=True):
             The emoji's name.
         animated : `bool`
             Whether the emoji is animated.
-        
+
         Returns
         -------
         emoji : ``Emoji``
         """
         emoji_id = int(emoji_id)
-        
+
         try:
             self = EMOJIS[emoji_id]
             if self.partial:
@@ -584,20 +618,19 @@ class Emoji(DiscordEntity, immortal=True):
         except KeyError:
             self = cls._create_empty(emoji_id)
             EMOJIS[emoji_id] = self
-        
+
         return self
-    
-    
+
     @classmethod
     def _create_empty(cls, emoji_id):
         """
         Creates an empty emoji with the given identifier.
-        
+
         Parameters
         ----------
         emoji_id : `int`
             The emoji's identifier.
-        
+
         Returns
         -------
         self : ``Emoji``

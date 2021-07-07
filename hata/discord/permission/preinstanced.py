@@ -9,14 +9,15 @@ class PermissionOverwriteTargetType(PreinstancedBase):
     INSTANCES = {}
     VALUE_TYPE = str if API_VERSION in (6, 7) else int
     DEFAULT_NAME = 'UNDEFINED'
-    
+
     __slots__ = ()
-    
+
     role = P('role' if API_VERSION in (6, 7) else 0, 'role')
     user = P('member' if API_VERSION in (6, 7) else 1, 'user')
 
 
-set_docs(PermissionOverwriteTargetType,
+set_docs(
+    PermissionOverwriteTargetType,
     """
     Represents a permission overwrite's target's type.
     
@@ -46,8 +47,8 @@ set_docs(PermissionOverwriteTargetType,
     | user                  | user          | `'member'`    |
     +-----------------------+---------------+---------------+
     """
-    if API_VERSION in (6, 7) else
-    """
+    if API_VERSION in (6, 7)
+    else """
     Represents a permission overwrite's target's type.
     
     Attributes
@@ -76,5 +77,5 @@ set_docs(PermissionOverwriteTargetType,
     +-----------------------+---------------+---------------+
     | user                  | user          | 1             |
     +-----------------------+---------------+---------------+
-    """
+    """,
 )

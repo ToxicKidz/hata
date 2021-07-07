@@ -7,8 +7,13 @@ from ...backend.export import include
 
 from ..core import USERS
 
-from ..preconverters import preconvert_snowflake, preconvert_str, preconvert_bool, preconvert_discriminator, \
-    preconvert_flag
+from ..preconverters import (
+    preconvert_snowflake,
+    preconvert_str,
+    preconvert_bool,
+    preconvert_discriminator,
+    preconvert_flag,
+)
 from .preinstanced import Status
 from .guild_profile import GuildProfile
 from .client_user_base import ClientUserPBase, ClientUserBase
@@ -26,7 +31,7 @@ else:
 class User(USER_BASE_CLASS):
     """
     Represents a Discord user.
-    
+
     Attributes
     ----------
     id : `int`
@@ -57,24 +62,26 @@ class User(USER_BASE_CLASS):
         Defaults to `None`.
     activities : `None` or `list` of ``ActivityBase`` instances
         A list of the client's activities. Defaults to `None`
-        
+
         > Only available if presence caching is enabled.
     status : ``Status``
         The user's display status.
-        
+
         > Only available if presence caching is enabled.
     statuses : `dict` of (`str`, `str`) items
         The user's statuses for each platform.
-        
+
         > Only available if presence caching is enabled.
-    
+
     Notes
     -----
     Instances of this class are weakreferable.
     """
+
     __slots__ = ()
-    
+
     if CACHE_PRESENCE:
+
         def __new__(cls, data, guild=None):
             try:
                 user_data = data['user']
@@ -83,9 +90,9 @@ class User(USER_BASE_CLASS):
                 guild_profile_data = data.get('member', None)
             else:
                 guild_profile_data = data
-            
+
             user_id = int(user_data['id'])
-            
+
             try:
                 self = USERS[user_id]
             except KeyError:
@@ -96,16 +103,16 @@ class User(USER_BASE_CLASS):
                 self.statuses = {}
                 self.activities = None
                 update = True
-                
+
                 USERS[user_id] = self
             else:
                 update = self.partial
-            
+
             if update:
                 self.partial = False
                 self.is_bot = user_data.get('bot', False)
                 self._update_no_return(user_data)
-            
+
             if (guild_profile_data is not None) and (guild is not None):
                 try:
                     profile = self.guild_profiles[guild]
@@ -114,10 +121,11 @@ class User(USER_BASE_CLASS):
                     self.guild_profiles[guild] = GuildProfile(guild_profile_data)
                 else:
                     profile._set_joined(guild_profile_data)
-            
+
             return self
-    
+
     elif CACHE_USER:
+
         def __new__(cls, data, guild=None):
             try:
                 user_data = data['user']
@@ -125,7 +133,7 @@ class User(USER_BASE_CLASS):
             except KeyError:
                 user_data = data
                 guild_profile_data = data.get('member', None)
-                
+
             user_id = int(user_data['id'])
 
             try:
@@ -135,16 +143,16 @@ class User(USER_BASE_CLASS):
                 self.id = user_id
                 self.guild_profiles = {}
                 update = True
-                
+
                 USERS[user_id] = self
             else:
                 update = self.partial
-            
+
             if update:
                 self.partial = False
                 self.is_bot = user_data.get('bot', False)
                 self._update_no_return(user_data)
-            
+
             if (guild_profile_data is not None) and (guild is not None):
                 try:
                     profile = self.guild_profiles[guild]
@@ -153,10 +161,11 @@ class User(USER_BASE_CLASS):
                     self.guild_profiles[guild] = GuildProfile(guild_profile_data)
                 else:
                     profile._set_joined(guild_profile_data)
-                    
+
             return self
-    
+
     else:
+
         def __new__(cls, data, guild=None):
             try:
                 user_data = data['user']
@@ -164,28 +173,29 @@ class User(USER_BASE_CLASS):
             except KeyError:
                 user_data = data
                 guild_profile_data = data.get('member', None)
-            
+
             user_id = int(user_data['id'])
-            
+
             try:
                 self = USERS[user_id]
             except KeyError:
                 self = object.__new__(cls)
                 self.id = user_id
                 self.guild_profiles = {}
-                
+
                 USERS[user_id] = self
-            
+
             self.partial = False
             self.is_bot = user_data.get('bot', False)
             self._update_no_return(user_data)
-            
+
             if (guild_profile_data is not None) and (guild is not None):
                 self.guild_profiles[guild] = GuildProfile(guild_profile_data)
-            
+
             return self
-    
-    set_docs(__new__,
+
+    set_docs(
+        __new__,
         """
         First tries to find the user by id. If fails, then creates a new ``User`` object. If guild was given
         and the given data contains member data as well, then it will create a respective guild profile for the user
@@ -202,67 +212,67 @@ class User(USER_BASE_CLASS):
         Returns
         -------
         user : ``ClientUserBase``
-        """)
-    
-    
+        """,
+    )
+
     @classmethod
     def precreate(cls, user_id, **kwargs):
         """
         Precreates a user by creating a partial one with the given parameters. When the user is loaded, the precreated
         one is picked up and is updated. If an already existing user would be precreated, returns that instead of
         creating a new one, and updates it only, if it is still a partial one.
-        
+
         Parameters
         ----------
         user_id : `int` or `str`
             The user's id.
         **kwargs : keyword parameters
             Additional predefined attributes for the user.
-        
+
         Other Parameters
         ----------------
         name : `str`, Optional (Keyword only)
             The user's ``.name``.
         discriminator : `int` or `str` instance, Optional (Keyword only)
             The user's ``.discriminator``. Is accepted as `str` instance as well and will be converted to `int`.
-        
+
         avatar : `None`, ``Icon`` or `str`, Optional (Keyword only)
             The user's avatar.
-            
+
             > Mutually exclusive with `avatar_type` and `avatar_hash`.
-        
+
         avatar_type : ``IconType``, Optional (Keyword only)
             The user's avatar's type.
-            
+
             > Mutually exclusive with `avatar_type`.
-        
+
         avatar_hash : `int`, Optional (Keyword only)
             The user's avatar's hash.
-            
+
             > Mutually exclusive with `avatar`.
-        
+
         banner : `None`, ``Icon`` or `str`, Optional (Keyword only)
             The user's banner.
-            
+
             > Mutually exclusive with `banner_type` and `banner_hash`.
-        
+
         banner_type : ``IconType``, Optional (Keyword only)
             The user's banner's type.
-            
+
             > Mutually exclusive with `banner_type`.
-        
+
         banner_hash : `int`, Optional (Keyword only)
             The user's banner hash.
-            
+
             > Mutually exclusive with `banner`.
-        
+
         flags : ``UserFlag`` or `int` instance, Optional (Keyword only)
             The user's ``.flags``. If not passed as ``UserFlag``, then will be converted to it.
-        
+
         Returns
         -------
         user : ``ClientUserBase``
-        
+
         Raises
         ------
         TypeError
@@ -271,10 +281,10 @@ class User(USER_BASE_CLASS):
             If an parameter's type is good, but it's value is unacceptable.
         """
         user_id = preconvert_snowflake(user_id, 'user_id')
-        
+
         if kwargs:
             processable = []
-            
+
             try:
                 name = kwargs.pop('name')
             except KeyError:
@@ -282,7 +292,7 @@ class User(USER_BASE_CLASS):
             else:
                 name = preconvert_str(name, 'name', 2, 32)
                 processable.append(('name', name))
-            
+
             try:
                 discriminator = kwargs.pop('discriminator')
             except KeyError:
@@ -290,10 +300,10 @@ class User(USER_BASE_CLASS):
             else:
                 discriminator = preconvert_discriminator(discriminator)
                 processable.append(('discriminator', discriminator))
-            
+
             cls.avatar.preconvert(kwargs, processable)
             cls.banner.preconvert(kwargs, processable)
-            
+
             try:
                 is_bot = kwargs.pop('is_bot')
             except KeyError:
@@ -301,7 +311,7 @@ class User(USER_BASE_CLASS):
             else:
                 is_bot = preconvert_bool(is_bot, 'is_bot')
                 processable.append(('is_bot', is_bot))
-            
+
             try:
                 flags = kwargs.pop('flags')
             except KeyError:
@@ -309,25 +319,25 @@ class User(USER_BASE_CLASS):
             else:
                 flags = preconvert_flag(flags, 'flags', UserFlag)
                 processable.append(('flags', flags))
-            
+
             if kwargs:
                 raise TypeError(f'Unused or unsettable attributes: {kwargs}.')
-        
+
         else:
             processable = None
-        
+
         self = create_partial_user_from_id(user_id)
         if not self.partial:
             return self
-        
-        if (processable is not None):
+
+        if processable is not None:
             for item in processable:
                 setattr(self, *item)
-        
+
         return self
-    
-    
+
     if CACHE_PRESENCE:
+
         @classmethod
         def _create_and_update(cls, data, guild=None):
             try:
@@ -336,9 +346,9 @@ class User(USER_BASE_CLASS):
             except KeyError:
                 user_data = data
                 guild_profile_data = None
-            
+
             user_id = int(user_data['id'])
-            
+
             try:
                 user = USERS[user_id]
             except KeyError:
@@ -348,13 +358,13 @@ class User(USER_BASE_CLASS):
                 user.status = Status.offline
                 user.statuses = {}
                 user.activities = None
-                
+
                 USERS[user_id] = user
-            
+
             user.partial = False
             user.is_bot = user_data.get('bot', False)
             user._update_no_return(user_data)
-            
+
             if (guild_profile_data is not None) and (guild is not None):
                 try:
                     profile = user.guild_profiles[guild]
@@ -364,10 +374,11 @@ class User(USER_BASE_CLASS):
                 else:
                     profile._set_joined(guild_profile_data)
                     profile._update_no_return(guild_profile_data)
-            
+
             return user
-        
+
     elif CACHE_USER:
+
         @classmethod
         def _create_and_update(cls, data, guild=None):
             try:
@@ -376,22 +387,22 @@ class User(USER_BASE_CLASS):
             except KeyError:
                 user_data = data
                 guild_profile_data = None
-            
+
             user_id = int(user_data['id'])
-            
+
             try:
                 user = USERS[user_id]
             except KeyError:
                 user = object.__new__(cls)
                 user.id = user_id
                 user.guild_profiles = {}
-                
+
                 USERS[user_id] = user
-            
+
             user.partial = False
             user.is_bot = user_data.get('bot', False)
             user._update_no_return(user_data)
-            
+
             if (guild_profile_data is not None) and (guild is not None):
                 try:
                     profile = user.guild_profiles[guild]
@@ -401,10 +412,11 @@ class User(USER_BASE_CLASS):
                 else:
                     profile._set_joined(guild_profile_data)
                     profile._update_no_return(guild_profile_data)
-            
+
             return user
-        
+
     else:
+
         @classmethod
         def _create_and_update(cls, data, guild=None):
             try:
@@ -414,28 +426,29 @@ class User(USER_BASE_CLASS):
                 guild_profile_data = None
             else:
                 guild_profile_data = data
-            
+
             user_id = int(user_data['id'])
-            
+
             try:
                 user = USERS[user_id]
             except KeyError:
                 user = object.__new__(cls)
                 user.id = user_id
                 user.guild_profiles = {}
-                
+
                 USERS[user_id] = user
-            
+
             user.partial = False
             user.is_bot = user_data.get('bot', False)
             user._update_no_return(user_data)
-            
+
             if (guild_profile_data is not None) and (guild is not None):
                 user.guild_profiles[guild] = GuildProfile(guild_profile_data)
-            
+
             return user
-    
-    set_docs(_create_and_update,
+
+    set_docs(
+        _create_and_update,
         """
         Creates a user with the given data. If the user already exists, updates it.
         
@@ -450,7 +463,8 @@ class User(USER_BASE_CLASS):
         Returns
         -------
         user : ``ClientUserBase``
-        """)
+        """,
+    )
 
 
 ZEROUSER = User._create_empty(0)

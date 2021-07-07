@@ -1,5 +1,14 @@
-__all__ = ('AuditLogEvent', 'ContentFilterLevel', 'GuildFeature', 'MFA', 'MessageNotificationLevel', 'NsfwLevel',
-    'VerificationLevel', 'VerificationScreenStepType', 'VoiceRegion', )
+__all__ = (
+    'AuditLogEvent',
+    'ContentFilterLevel',
+    'GuildFeature',
+    'MFA',
+    'MessageNotificationLevel',
+    'NsfwLevel',
+    'VerificationLevel',
+    'VerificationScreenStepType',
+    'VoiceRegion',
+)
 
 import warnings
 
@@ -11,14 +20,14 @@ from ..bases import PreinstancedBase, Preinstance as P
 class AuditLogEvent(PreinstancedBase):
     """
     Represents the event type of an ``AuditLogEntry``.
-    
+
     Attributes
     ----------
     name : `str`
         The name of audit log event.
     value : `int`
         The Discord side identifier value of the audit log event.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``AuditLogEvent``) items
@@ -27,9 +36,9 @@ class AuditLogEvent(PreinstancedBase):
         The audit log events' values' type.
     DEFAULT_NAME : `str` = `'UNDEFINED'`
         The default name of the audit log events
-    
+
     Every predefined audit log event can be accessed as class attribute as well:
-    
+
     +---------------------------+---------------------------+-------+
     | Class attribute name      | name                      | value |
     +===========================+===========================+=======+
@@ -110,22 +119,23 @@ class AuditLogEvent(PreinstancedBase):
     | sticker_delete            | sticker_delete            | 92    |
     +---------------------------+---------------------------+-------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = int
     DEFAULT_NAME = 'UNDEFINED'
-    
+
     __slots__ = ()
-    
+
     # predefined
     guild_update = P(1, 'guild_update')
-    
+
     channel_create = P(10, 'channel_create')
     channel_update = P(11, 'channel_update')
     channel_delete = P(12, 'channel_delete')
     channel_overwrite_create = P(13, 'channel_overwrite_create')
     channel_overwrite_update = P(14, 'channel_overwrite_update')
     channel_overwrite_delete = P(15, 'channel_overwrite_delete')
-    
+
     member_kick = P(20, 'member_kick')
     member_prune = P(21, 'member_prune')
     member_ban_add = P(22, 'member_ban_add')
@@ -135,33 +145,32 @@ class AuditLogEvent(PreinstancedBase):
     member_move = P(26, 'member_move')
     member_disconnect = P(27, 'member_disconnect')
     bot_add = P(28, 'member_role_update')
-    
+
     role_create = P(30, 'role_create')
     role_update = P(31, 'role_update')
     role_delete = P(32, 'role_delete')
-    
+
     invite_create = P(40, 'invite_create')
     invite_update = P(41, 'invite_update')
     invite_delete = P(42, 'invite_delete')
-    
+
     webhook_create = P(50, 'webhook_create')
     webhook_update = P(51, 'webhook_update')
     webhook_delete = P(52, 'webhook_delete')
-    
+
     emoji_create = P(60, 'emoji_create')
     emoji_update = P(61, 'emoji_update')
     emoji_delete = P(62, 'emoji_delete')
-    
+
     message_delete = P(72, 'message_delete')
     message_bulk_delete = P(73, 'message_bulk_delete')
     message_pin = P(74, 'message_pin')
     message_unpin = P(75, 'message_unpin')
-    
+
     integration_create = P(80, 'integration_create')
     integration_update = P(81, 'integration_update')
     integration_delete = P(82, 'integration_delete')
 
-    
     sticker_create = P(90, 'sticker_create')
     sticker_update = P(91, 'sticker_update')
     sticker_delete = P(92, 'sticker_delete')
@@ -170,14 +179,14 @@ class AuditLogEvent(PreinstancedBase):
 class VerificationLevel(PreinstancedBase):
     """
     Represents Discord's verification level.
-    
+
     Attributes
     ----------
     name : `str`
         The default name of the verification level.
     value : `int`
         The discord side identifier value of the verification level.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``VerificationLevel``) items
@@ -186,9 +195,9 @@ class VerificationLevel(PreinstancedBase):
         The verification levels' values' type.
     DEFAULT_NAME : `str` = `'Undefined'`
         The default name of the verification levels.
-    
+
     Every predefined verification level can be accessed as class attribute as well:
-    
+
     +-----------------------+-----------+-------+
     | Class attribute name  | name      | value |
     +=======================+===========+=======+
@@ -203,11 +212,12 @@ class VerificationLevel(PreinstancedBase):
     | extreme               | extreme   | 4     |
     +-----------------------+-----------+-------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = int
-    
+
     __slots__ = ()
-    
+
     # predefined
     none = P(0, 'none')
     low = P(1, 'low')
@@ -220,7 +230,7 @@ class VerificationLevel(PreinstancedBase):
 class VoiceRegion(PreinstancedBase):
     """
     Represents Discord's voice regions.
-    
+
     Attributes
     ----------
     custom : `bool`
@@ -233,7 +243,7 @@ class VoiceRegion(PreinstancedBase):
         The default name of the voice region.
     vip : `bool`
         Whether the voice region can be used only by guilds with `VIP_REGIONS` feature.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`str`, ``VoiceRegion``) items
@@ -242,9 +252,9 @@ class VoiceRegion(PreinstancedBase):
         The voice regions' values' type.
     DEFAULT_NAME : `str` = `'Undefined'`
         The default name of the voice regions.
-    
+
     Each predefined voice region is also stored as a class attribute:
-    
+
     +-----------------------+---------------+-------------------+---------------+-----------+-----------+
     | Class attribute name  | value         | name              | deprecated    | vip       | custom    |
     +=======================+===============+===================+===============+===========+===========+
@@ -293,23 +303,28 @@ class VoiceRegion(PreinstancedBase):
     | vip_amsterdam         | vip-amsterdam | VIP Amsterdam     | True          | True      | False     |
     +-----------------------+---------------+-------------------+---------------+-----------+-----------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = str
-    
-    __slots__ = ('custom', 'deprecated', 'vip',)
-    
+
+    __slots__ = (
+        'custom',
+        'deprecated',
+        'vip',
+    )
+
     @classmethod
     def _from_value(cls, value):
         """
         Creates a voice region from the given id and stores it at class's `.INSTANCES`.
-        
+
         Called by `.get` when no voice region was found with the given id.
-        
+
         Parameters
         ----------
         id_ : `str`
             The identifier of the voice region.
-        
+
         Returns
         -------
         voice_region : ``VoiceRegion``
@@ -322,9 +337,9 @@ class VoiceRegion(PreinstancedBase):
             else:
                 name_part = name_part.capitalize()
             name_parts[index] = name_part
-        
+
         name = ' '.join(name_parts)
-        
+
         self = object.__new__(cls)
         self.name = name
         self.value = value
@@ -333,14 +348,14 @@ class VoiceRegion(PreinstancedBase):
         self.custom = True
         self.INSTANCES[value] = self
         return self
-    
+
     @classmethod
     def from_data(cls, data):
         """
         Creates a voice region from the given data and stores it at the class's `.INSTANCES`.
-        
+
         If the voice region already exists returns that instead.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -355,7 +370,7 @@ class VoiceRegion(PreinstancedBase):
             return cls.INSTANCES[value]
         except KeyError:
             pass
-        
+
         self = object.__new__(cls)
         self.name = data['name']
         self.value = value
@@ -363,13 +378,13 @@ class VoiceRegion(PreinstancedBase):
         self.vip = data['vip']
         self.custom = data['custom']
         self.INSTANCES[value] = self
-        
+
         return self
-    
+
     def __init__(self, value, name, deprecated, vip):
         """
         Creates a new voice region with the given parameters and stores it at the class's `.INSTANCES`.
-        
+
         Parameters
         ----------
         value : `str`
@@ -387,9 +402,9 @@ class VoiceRegion(PreinstancedBase):
         self.vip = vip
         self.custom = False
         self.INSTANCES[value] = self
-    
+
     # predefined
-    
+
     # normal
     brazil = P('brazil', 'Brazil', False, False)
     dubai = P('dubai', 'Dubai', False, False)
@@ -421,14 +436,14 @@ class VoiceRegion(PreinstancedBase):
 class ContentFilterLevel(PreinstancedBase):
     """
     Represents Discord's content filter level.
-    
+
     Attributes
     ----------
     value : `int`
         The Discord side identifier value of the content filter level.
     name : `str`
         The default name of the content filter level.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``ContentFilterLevel``) items
@@ -439,9 +454,9 @@ class ContentFilterLevel(PreinstancedBase):
         The verification filer levels' values' type.
     DEFAULT_NAME : `str` = `'Undefined'`
         The default name of the content filter levels.
-    
+
     Every predefined content filter level is also stored as a class attribute:
-    
+
     +-----------------------+-----------+-------+
     | Class attribute name  | name      | value |
     +=======================+===========+=======+
@@ -452,16 +467,16 @@ class ContentFilterLevel(PreinstancedBase):
     | everyone              | everyone  | 2     |
     +-----------------------+-----------+-------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = int
-    
+
     __slots__ = ()
-    
+
     # predefined
     disabled = P(0, 'disabled')
     no_role = P(1, 'no_role')
     everyone = P(2, 'everyone')
-
 
 
 class GuildFeature(PreinstancedBase):
@@ -472,7 +487,7 @@ class GuildFeature(PreinstancedBase):
     ----------
     value : `str`
         The Discord side identifier value of the guild feature.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`str`, ``GuildFeature``) items
@@ -482,9 +497,9 @@ class GuildFeature(PreinstancedBase):
     DEFAULT_NAME : `str` = `''`
         The default name of the guild features. Guild features have the same value as name, so at their case it is not
         applicable.
-    
+
     Every predefined guild feature can be accessed as class attribute as well:
-    
+
     +-------------------------------+-----------------------------------+
     | Class attribute names         | Value                             |
     +===============================+===================================+
@@ -545,22 +560,23 @@ class GuildFeature(PreinstancedBase):
     | private_threads               | PRIVATE_THREADS                   |
     +-------------------------------+-----------------------------------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = str
     DEFAULT_NAME = ''
-    
+
     __slots__ = ()
-    
+
     @classmethod
     def _from_value(cls, value):
         """
         Creates a new guild feature with the given value.
-        
+
         Parameters
         ----------
         value : `str`
             The guild feature's identifier value.
-        
+
         Returns
         -------
         self : ``GuildFeature``
@@ -571,8 +587,7 @@ class GuildFeature(PreinstancedBase):
         self.name = value
         self.INSTANCES[value] = self
         return self
-    
-    
+
     # predefined
     animated_icon = P('ANIMATED_ICON', 'animated_icon')
     banner = P('BANNER', 'banner')
@@ -580,7 +595,9 @@ class GuildFeature(PreinstancedBase):
     community = P('COMMUNITY', 'community')
     discoverable = P('DISCOVERABLE', 'discoverable')
     discoverable_disabled = P('DISCOVERABLE_DISABLED', 'discoverable_disabled')
-    discoverable_enabled_before = P('ENABLED_DISCOVERABLE_BEFORE', 'discoverable_enabled_before')
+    discoverable_enabled_before = P(
+        'ENABLED_DISCOVERABLE_BEFORE', 'discoverable_enabled_before'
+    )
     featurable = P('FEATURABLE', 'featurable')
     member_list_disabled = P('MEMBER_LIST_DISABLED', 'member_list_disabled')
     more_emoji = P('MORE_EMOJI', 'more_emoji')
@@ -602,8 +619,7 @@ class GuildFeature(PreinstancedBase):
     thread_archive_3_day = P('THREE_DAY_THREAD_ARCHIVE', 'thread_archive_3_day')
     thread_archive_7_day = P('SEVEN_DAY_THREAD_ARCHIVE', 'thread_archive_7_day')
     private_threads = P('PRIVATE_THREADS', 'private_threads')
-    
-    
+
     @class_property
     def vanity(cls):
         """
@@ -612,23 +628,23 @@ class GuildFeature(PreinstancedBase):
         warnings.warn(
             f'`{cls.__name__}.vanity` is deprecated, and will be removed in 2021 September. '
             f'Please use `{cls.__name__}.vanity_invite` instead.',
-            FutureWarning)
-        
-        return cls.vanity_invite
+            FutureWarning,
+        )
 
+        return cls.vanity_invite
 
 
 class NsfwLevel(PreinstancedBase):
     """
     Represents a guild's nsfw level.
-    
+
     Attributes
     ----------
     name : `str`
         The name of the nsfw filter level.
     value : `int`
         The identifier value the nsfw filter level
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``NsfwLevel``) items
@@ -637,9 +653,9 @@ class NsfwLevel(PreinstancedBase):
         The nsfw level' values' type.
     DEFAULT_NAME : `str` = `'UNDEFINED'`
         The default name of the nsfw levels.
-    
+
     Every predefined nsfw level can be accessed as class attribute as well:
-    
+
     +-----------------------+-------------------+-------+
     | Class attribute name  | Name              | Value |
     +=======================+===================+=======+
@@ -652,12 +668,13 @@ class NsfwLevel(PreinstancedBase):
     | age_restricted        | age_restricted    | 3     |
     +-----------------------+-------------------+-------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = int
     DEFAULT_NAME = 'UNDEFINED'
-    
+
     __slots__ = ()
-    
+
     none = P(0, 'none')
     explicit = P(1, 'explicit')
     safe = P(2, 'safe')
@@ -667,14 +684,14 @@ class NsfwLevel(PreinstancedBase):
 class MessageNotificationLevel(PreinstancedBase):
     """
     Represents the default message notification level of a ``Guild``.
-    
+
     Attributes
     ----------
     value : `int`
         The Discord side identifier value of the message notification level.
     name : `str`
         The default name of the message notification level.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``MessageNotificationLevel``) items
@@ -684,9 +701,9 @@ class MessageNotificationLevel(PreinstancedBase):
         The notification levels' values' type.
     DEFAULT_NAME : `str` = `'Undefined'`
         The default name of the notification levels.
-    
+
     Each predefined message notification level can also be accessed as a class attribute:
-    
+
     +-----------------------+---------------+-------+
     | Class attribute name  | name          | value |
     +=======================+===============+=======+
@@ -699,11 +716,12 @@ class MessageNotificationLevel(PreinstancedBase):
     | null                  | null          | 3     |
     +-----------------------+---------------+-------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = int
-    
+
     __slots__ = ()
-    
+
     # predefined
     all_messages = P(0, 'all_messages')
     only_mentions = P(1, 'only_mentions')
@@ -714,14 +732,14 @@ class MessageNotificationLevel(PreinstancedBase):
 class MFA(PreinstancedBase):
     """
     Represents Discord's Multi-Factor Authentication's levels.
-    
+
     Attributes
     ----------
     name : `str`
         The default name of the MFA level.
     value : `int`
         The Discord side identifier value of the MFA level.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``MFA``) items
@@ -731,9 +749,9 @@ class MFA(PreinstancedBase):
         The mfa levels' values' type.
     DEFAULT_NAME : `str` = `'Undefined'`
         The default name of the mfa levels.
-    
+
     Each predefined MFA can also be accessed as class attribute:
-    
+
     +-----------------------+-----------+-------+
     | Class attribute name  | name      | value |
     +=======================+===========+=======+
@@ -742,15 +760,15 @@ class MFA(PreinstancedBase):
     | elevated              | elevated  | 1     |
     +-----------------------+-----------+-------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = int
-    
+
     __slots__ = ()
-    
+
     # Predefined
     none = P(0, 'none')
     elevated = P(1, 'elevated')
-
 
 
 class VerificationScreenStepType(PreinstancedBase):
@@ -761,7 +779,7 @@ class VerificationScreenStepType(PreinstancedBase):
     ----------
     value : `str`
         The Discord side identifier value of the verification step types.
-    
+
     Class Attributes
     ----------------
     INSTANCES : `dict` of (`int`, ``VerificationScreenStepType``) items
@@ -771,31 +789,32 @@ class VerificationScreenStepType(PreinstancedBase):
     DEFAULT_NAME : `str` = `''`
         The default name of the verification screen step types.Verification screen step types have the
         same value as name, so at their case it is not applicable.
-    
+
     Every predefined verification screen step type can be accessed as class attribute as well:
-    
+
     +-----------------------+-------+
     | Class attribute names | Value |
     +=======================+=======+
     | rules                 | TERMS |
     +-----------------------+-------+
     """
+
     INSTANCES = {}
     VALUE_TYPE = str
     DEFAULT_NAME = ''
-    
+
     __slots__ = ()
-    
+
     @classmethod
     def _from_value(cls, value):
         """
         Creates a new verification screen type with the given value.
-        
+
         Parameters
         ----------
         value : `str`
             The verification screen type's identifier value.
-        
+
         Returns
         -------
         self : ``VerificationScreenStepType``
@@ -806,9 +825,9 @@ class VerificationScreenStepType(PreinstancedBase):
         self.name = value
         self.INSTANCES[value] = self
         return self
-    
+
     def __repr__(self):
         """Returns the representation of the verification screen type."""
         return f'{self.__class__.__name__}(value={self.value!r})'
-    
+
     rules = P('TERMS', 'rules')

@@ -1,4 +1,7 @@
-__all__ = ('ClientUserBase', 'ClientUserPBase',)
+__all__ = (
+    'ClientUserBase',
+    'ClientUserPBase',
+)
 
 from ...backend.utils import copy_docs
 
@@ -14,10 +17,11 @@ from .flags import UserFlag
 from .guild_profile import GuildProfile
 from .activity_change import ActivityChange, ActivityUpdate
 
+
 class ClientUserBase(UserBase):
     """
     Base class for discord users and clients.
-    
+
     Attributes
     ----------
     id : `int`
@@ -47,12 +51,13 @@ class ClientUserBase(UserBase):
         A Dictionary which contains the thread profiles for the user in thread channel - thread profile relation.
         Defaults to `None`.
     """
+
     __slots__ = ('guild_profiles', 'is_bot', 'flags', 'partial', 'thread_profiles')
-    
+
     def _update_no_return(self, data):
         """
         Updates the user with the given data by overwriting it's old attributes.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -60,31 +65,31 @@ class ClientUserBase(UserBase):
         """
         self.name = data['username']
         self.discriminator = int(data['discriminator'])
-        
+
         self._set_avatar(data)
         self._set_banner(data)
-        
+
         self.flags = UserFlag(data.get('public_flags', 0))
         self.thread_profiles = None
-    
+
     def _update(self, data):
         """
         Updates the user and returns it's overwritten attributes as a `dict` with a `attribute-name` - `old-value`
         relation.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             User data received from Discord.
-        
+
         Returns
         -------
         old_attributes : `dict` of (`str`, `Any`) items
             All item in the returned dict is optional.
-        
+
         Returned Data Structure
         -----------------------
-        
+
         +---------------+---------------+
         | Keys          | Values        |
         +===============+===============+
@@ -100,35 +105,34 @@ class ClientUserBase(UserBase):
         +---------------+---------------+
         """
         old_attributes = {}
-        
+
         name = data['username']
         if self.name != name:
             old_attributes['name'] = self.name
             self.name = name
-        
+
         discriminator = int(data['discriminator'])
         if self.discriminator != discriminator:
             old_attributes['discriminator'] = self.discriminator
             self.discriminator = discriminator
-        
+
         self._update_avatar(data, old_attributes)
         self._update_banner(data, old_attributes)
-        
+
         flags = data.get('public_flags', 0)
         if self.flags != flags:
             old_attributes['flags'] = self.flags
             self.flags = UserFlag(flags)
-        
+
         return old_attributes
-    
-    
+
     @classmethod
     def _update_profile(cls, data, guild):
         """
         First tries to find the user, then it's respective guild profile for the given guild to update it.
-        
+
         If the method cannot find the user, or the respective guild profile, then creates them.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -143,7 +147,7 @@ class ClientUserBase(UserBase):
         old_attributes : `dict` of (`str`, `Any`) items
             The changed attributes of the respective guild profile as a `dict` with `attribute-name` - `old-attribute`
             relation.
-            
+
             The possible keys and values within `old_attributes` are all optional and they can be any of the following:
             +-------------------+-----------------------+
             | Keys              | Values                |
@@ -156,13 +160,13 @@ class ClientUserBase(UserBase):
             +-------------------+-----------------------+
         """
         user_id = int(data['user']['id'])
-        
+
         try:
             user = USERS[user_id]
         except KeyError:
             user = cls(data, guild)
             return user, {}
-        
+
         try:
             profile = user.guild_profiles[guild]
         except KeyError:
@@ -172,31 +176,30 @@ class ClientUserBase(UserBase):
 
         profile._set_joined(data)
         return user, profile._update(data)
-    
-    
+
     @classmethod
     def _update_profile_no_return(cls, data, guild):
         """
         First tries to find the user, then it's respective guild profile for the given guild to update it.
-        
+
         If the method cannot find the user, or the respective guild profile, then creates them.
-        
+
         Not like ``._update_profile``, this method not calculates changes.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Received guild member data.
         guild : ``Guild``
             The respective guild of the profile to update.
-        
+
         Returns
         -------
         user : ``UserBase``
             The updated user.
         """
         user_id = int(data['user']['id'])
-        
+
         try:
             user = USERS[user_id]
         except KeyError:
@@ -208,17 +211,16 @@ class ClientUserBase(UserBase):
                 user.guild_profiles[guild] = GuildProfile(data)
             else:
                 profile._update_no_return(data)
-        
+
         return user
-    
-    
+
     @staticmethod
     def _bypass_no_cache(data, guild):
         """
         Sets a ``Client``'s guild profile.
-        
+
         > Only available when user or presence caching is disabled.
-        
+
         Parameters
         ----------
         data : `dict`
@@ -229,14 +231,14 @@ class ClientUserBase(UserBase):
         """
         user_data = data['user']
         guild_profile_data = data
-        
+
         user_id = int(user_data['id'])
-        
+
         try:
             user = USERS[user_id]
         except KeyError:
             return
-        
+
         try:
             profile = user.guild_profiles[guild]
         except KeyError:
@@ -246,17 +248,16 @@ class ClientUserBase(UserBase):
             profile._set_joined(guild_profile_data)
             profile._update_no_return(guild_profile_data)
 
-    
     @classmethod
     def _from_client(cls, client):
         """
         Creates a client alter ego.
-        
+
         Parameters
         ----------
         client : ``Client``
             The client to copy.
-        
+
         Returns
         -------
         user : ``ClientUserBase``
@@ -265,54 +266,53 @@ class ClientUserBase(UserBase):
         self.id = client.id
         self.discriminator = client.discriminator
         self.name = client.name
-        
+
         guild_profiles = client.guild_profiles
-        if (guild_profiles is not None):
+        if guild_profiles is not None:
             guild_profiles = guild_profiles.copy()
-        
+
         self.guild_profiles = guild_profiles
         self.is_bot = client.is_bot
         self.flags = client.flags
         self.partial = client.partial
         self.thread_profiles = client.thread_profiles.copy()
-        
+
         self.avatar_hash = client.avatar_hash
         self.avatar_type = client.avatar_type
-        
+
         self.banner_hash = client.banner_hash
         self.banner_type = client.banner_type
-        
+
         return self
-    
-    
+
     @copy_docs(UserBase._set_default_attributes)
     def _set_default_attributes(self):
         UserBase._set_default_attributes(self)
-        
+
         self.is_bot = False
         self.flags = UserFlag()
-        
+
         self.guild_profiles = {}
         self.partial = True
         self.thread_profiles = None
-    
+
     # if CACHE_PRESENCE is False, this should be never called from this class
     def _update_presence(self, data):
         """
         Updates the user's presence and returns it's overwritten attributes as a `dict` with a `attribute-name` -
         `old-value` relation. An exception from this is `activities`, because that's a ``ActivityChange`` instance
         containing all the changes of the user's activities.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
             Received guild member data.
-        
+
         Returns
         -------
         old_attributes : `dict` of (`str`, `Any`) items
             All item in the returned dict is optional.
-        
+
         Returned Data Structure
         -----------------------
         +---------------+-----------------------------------+
@@ -326,12 +326,11 @@ class ClientUserBase(UserBase):
         +---------------+-----------------------------------+
         """
         return {}
-    
-    
+
     def _update_presence_no_return(self, data):
         """
         Updates the user's presences with the given data.
-        
+
         Parameters
         ----------
         data : `dict` of (`str`, `Any`) items
@@ -339,7 +338,6 @@ class ClientUserBase(UserBase):
         """
         pass
 
-    
     def _delete(self):
         """
         Deletes the user from it's guilds.
@@ -352,24 +350,22 @@ class ClientUserBase(UserBase):
                 del guild.users[self.id]
             except KeyError:
                 pass
-    
-    
+
     @copy_docs(UserBase.color_at)
     def color_at(self, guild):
-        if (guild is not None):
+        if guild is not None:
             try:
                 profile = self.guild_profiles[guild]
             except KeyError:
                 pass
             else:
                 return profile.color
-        
+
         return Color()
-    
-    
+
     @copy_docs(UserBase.name_at)
     def name_at(self, guild):
-        if (guild is not None):
+        if guild is not None:
             try:
                 profile = self.guild_profiles[guild]
             except KeyError:
@@ -378,110 +374,105 @@ class ClientUserBase(UserBase):
                 nick = profile.nick
                 if nick is not None:
                     return nick
-        
+
         return self.name
-    
-    
+
     @copy_docs(UserBase.has_role)
     def has_role(self, role):
         # if role is deleted, it's guild is None
         guild = role.guild
         if guild is None:
             return False
-        
+
         try:
             profile = self.guild_profiles[guild]
         except KeyError:
             return False
-        
+
         roles = profile.roles
         if roles is None:
             return False
-        
-        return (role in profile.roles)
-    
-    
+
+        return role in profile.roles
+
     @copy_docs(UserBase.top_role_at)
     def top_role_at(self, guild, default=None):
-        if (guild is not None):
+        if guild is not None:
             try:
                 profile = self.guild_profiles[guild]
             except KeyError:
                 pass
             else:
                 return profile.get_top_role(default)
-        
+
         return default
-    
-    
+
     @copy_docs(UserBase.can_use_emoji)
     def can_use_emoji(self, emoji):
         if emoji.is_unicode_emoji():
             return True
-        
+
         guild = emoji.guild
         if guild is None:
             return False
-        
+
         try:
             profile = self.guild_profiles[guild]
         except KeyError:
             return False
-        
+
         emoji_roles = emoji.roles
-        if (emoji_roles is None):
+        if emoji_roles is None:
             return True
-        
+
         if guild.owner_id == self.id:
             return True
-        
+
         profile_roles = profile.roles
-        if (profile_roles is None):
+        if profile_roles is None:
             return False
-        
+
         if emoji_roles.isdisjoint(profile_roles):
             return False
-        
+
         return True
-    
-    
+
     @copy_docs(UserBase.has_higher_role_than)
     def has_higher_role_than(self, role):
         guild = role.guild
         if guild is None:
             return False
-        
+
         try:
             profile = self.guild_profiles[guild]
         except KeyError:
             return False
-        
+
         if guild.owner_id == self.id:
             return True
-        
+
         top_role = profile.get_top_role()
         if top_role is None:
             return False
-        
+
         if top_role > role:
             return True
-        
+
         return False
-    
-    
+
     @copy_docs(UserBase.has_higher_role_than_at)
     def has_higher_role_than_at(self, user, guild):
-        if (guild is None):
+        if guild is None:
             return False
-        
+
         try:
             own_profile = self.guild_profiles[guild]
         except KeyError:
             return False
-        
+
         if guild.owner_id == self.id:
             return True
-        
+
         try:
             other_profile = user.guild_profiles[guild]
         except KeyError:
@@ -493,21 +484,21 @@ class ClientUserBase(UserBase):
             # if (own_profile.roles is not None):
             #    return True
             return True
-        
+
         if guild.owner_id == user.id:
             return False
-        
+
         own_top_role = own_profile.get_top_role()
         if own_top_role is None:
             return False
-        
+
         other_top_role = other_profile.get_top_role()
         if other_top_role is None:
             return True
-        
+
         if own_top_role > other_top_role:
             return True
-        
+
         return False
 
 
@@ -515,7 +506,7 @@ class ClientUserPBase(ClientUserBase):
     """
     Base class for discord users and clients. This class is used as ``user`` superclass only if presence is enabled,
     so by default.
-    
+
     Attributes
     ----------
     id : `int`
@@ -551,149 +542,156 @@ class ClientUserPBase(ClientUserBase):
     statuses : `dict` of (`str`, `str`) items
         The user's statuses for each platform.
     """
+
     __slots__ = ('activities', 'status', 'statuses')
-    
+
     @classmethod
     @copy_docs(ClientUserBase._from_client)
     def _from_client(cls, client):
         self = super(ClientUserPBase, cls)._from_client(client)
-        
+
         activities = client.activities
-        if (activities is not None):
+        if activities is not None:
             activities = activities.copy()
         self.activities = activities
         self.status = client.status
         statuses = client.statuses
-        if (statuses is not None):
+        if statuses is not None:
             statuses = statuses.copy()
         self.statuses = statuses
-        
+
         return self
 
     @copy_docs(ClientUserBase._set_default_attributes)
     def _set_default_attributes(self):
         ClientUserBase._set_default_attributes(self)
-        
+
         self.status = Status.offline
         self.statuses = {}
         self.activities = None
-    
+
     @copy_docs(ClientUserBase._update_presence)
     def _update_presence(self, data):
         old_attributes = {}
-        
+
         statuses = data['client_status']
         if self.statuses != statuses:
             old_attributes['statuses'] = self.statuses
             self.statuses = statuses
-            
+
             status = data['status']
             if self.status.value != status:
                 old_attributes['status'] = self.status
                 self.status = Status.get(status)
-        
+
         activity_datas = data['activities']
-        
+
         old_activities = self.activities
         new_activities = None
-        
+
         if activity_datas:
             if old_activities is None:
                 for activity_data in activity_datas:
                     activity = create_activity_from_data(activity_data)
-                    
+
                     if new_activities is None:
                         new_activities = []
-                    
+
                     new_activities.append(activity)
-                
+
                 activity_change = ActivityChange(new_activities, None, None)
-                
+
             else:
                 added_activities = None
                 updated_activities = None
                 removed_activities = old_activities.copy()
-                
+
                 for activity_data in activity_datas:
                     activity_type = activity_data['type']
                     for index in range(len(removed_activities)):
                         activity = removed_activities[index]
-                        
+
                         if activity_type != activity.type:
                             continue
-                            
+
                         if activity_data['id'] != activity.discord_side_id:
                             continue
-                        
+
                         del removed_activities[index]
-                        
+
                         activity_old_attributes = activity._update(activity_data)
                         if activity_old_attributes:
-                            activity_update = ActivityUpdate(activity, activity_old_attributes)
-                            
+                            activity_update = ActivityUpdate(
+                                activity, activity_old_attributes
+                            )
+
                             if updated_activities is None:
                                 updated_activities = []
-                            
+
                             updated_activities.append(activity_update)
-                        
+
                         if new_activities is None:
                             new_activities = []
-                        
+
                         new_activities.append(activity)
                         break
                     else:
                         activity = create_activity_from_data(activity_data)
-                        
+
                         if new_activities is None:
                             new_activities = []
-                        
+
                         new_activities.append(activity)
-                        
+
                         if added_activities is None:
                             added_activities = []
-                        
+
                         added_activities.append(activity)
-                
+
                 if not removed_activities:
                     removed_activities = None
-                
+
                 if None is added_activities is updated_activities is removed_activities:
                     activity_change = None
                 else:
-                    activity_change = ActivityChange(added_activities, updated_activities, removed_activities)
-        
+                    activity_change = ActivityChange(
+                        added_activities, updated_activities, removed_activities
+                    )
+
         else:
             if old_activities is None:
                 activity_change = None
             else:
                 activity_change = ActivityChange(None, None, old_activities)
-        
-        if (activity_change is not None):
+
+        if activity_change is not None:
             old_attributes['activities'] = activity_change
-        
+
         self.activities = new_activities
-        
+
         return old_attributes
-    
+
     @copy_docs(ClientUserBase._update_presence_no_return)
     def _update_presence_no_return(self, data):
         self.status = Status.get(data['status'])
-        
+
         try:
             # not included sometimes
             self.statuses = data['client_status']
         except KeyError:
             pass
-        
+
         activity_datas = data['activities']
         if activity_datas:
-            new_activities = [create_activity_from_data(activity_data) for activity_data in activity_datas]
+            new_activities = [
+                create_activity_from_data(activity_data)
+                for activity_data in activity_datas
+            ]
         else:
             new_activities = None
-        
+
         self.activities = new_activities
-    
-    
+
     @property
     @copy_docs(UserBase.activity)
     def activity(self):
@@ -706,10 +704,9 @@ class ClientUserPBase(ClientUserBase):
                     break
             else:
                 activity = None
-        
+
         return activity
-    
-    
+
     @property
     @copy_docs(UserBase.custom_activity)
     def custom_activity(self):
@@ -722,10 +719,9 @@ class ClientUserPBase(ClientUserBase):
                     break
             else:
                 activity = None
-        
+
         return activity
-    
-    
+
     @property
     @copy_docs(UserBase.platform)
     def platform(self):
@@ -736,4 +732,3 @@ class ClientUserPBase(ClientUserBase):
                 if l_status == status:
                     return platform
         return ''
-
